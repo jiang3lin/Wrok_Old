@@ -1,0 +1,580 @@
+/**************************************************************************
+ *                                                                        *
+ *         Copyright (c) 2010 by DXG Technology Co., Ltd.             *
+ *                                                                        *
+ *  This software is copyrighted by and is the property of DXG        *
+ *  Technology Co., Ltd. All rights are reserved by DXG Technology    *
+ *  Co., Ltd. This software may only be used in accordance with the       *
+ *  corresponding license agreement. Any unauthorized use, duplication,   *
+ *  distribution, or disclosure of this software is expressly forbidden.  *
+ *                                                                        *
+ *  This Copyright notice MUST not be removed or modified without prior   *
+ *  written consent of DXG Technology Co., Ltd.                       *
+ *                                                                        *
+ *  DXG Technology Co., Ltd. reserves the right to modify this        *
+ *  software without notice.                                              *
+ *                                                                        *
+ *  DXG Technology Co., Ltd.                                          *
+ *  MIN ZHI IND., PARK,					            *
+ *  LONG HUA,BAOAN,SHEN ZHEN,P.R.O.C.                                           *
+ *                                                                        *
+ *  Author: Wujf                                                  *
+ *                                                                         *
+ **************************************************************************/
+#define HOST_DBG 0
+#include <time.h>
+
+#include "app_com_def.h"
+#include "app_com_api.h"
+
+#include "sp5k_global_api.h"
+#include "sp5k_ae_api.h"
+#include "sp5k_capture_api.h"
+#include "sp5k_disp_api.h"
+#include "sp5k_media_api.h"
+#include "sp5k_rsvblk_api.h"
+#include "sp5k_gfx_api.h"
+#include "sp5k_aud_api.h"
+
+#include "app_pal.h"
+#include "app_icon.h"
+#include "app_icon_def.h"
+#include "app_zoom_api.h"
+#include "app_still.h"
+#include "app_video.h"
+#include "app_error_msg.h"
+#include "app_view_param.h"
+#include "app_calib_api.h"
+#include "app_ui_para.h"
+#include "app_view_osd.h"
+#include "app_osd_api.h"
+#include "app_osdfont.h"
+#include "app_video.h"
+#include "app_cdfs_api.h"
+#include "app_exif.h"
+#include "app_battery.h"
+#include "app_aealg_debug.h"
+#include "app_error_msg.h"
+#include "app_init.h"
+#include "app_gSensor.h"
+#include "app_menu.h"
+#include "app_gps.h"
+#include "app_md.h"
+#include "app_face_detect_ex.h"
+#include "app_wifi_connection.h"
+
+#include "app_buzzer.h"
+#include "app_osd_api_lcm.h"
+#include "app_osd_draw_lcm.h"
+#include "app_ptp.h"
+#include "App_exif.h"
+#include "app_scdv_ui_para_def.h"
+#include "sp5k_disk_api.h"
+#include "app_rf_def.h"
+#include "cmd.h"
+#include "app_msg.h"
+#include "app_cdfs_api.h"
+/**************************************************************************
+ *                           C O N S T A N T S                            *
+ **************************************************************************/
+
+/**************************************************************************
+ *                              M A C R O S                               *
+ **************************************************************************/
+
+/**************************************************************************
+ *                          D A T A    T Y P E S                          *
+ **************************************************************************/
+
+/**************************************************************************
+ *                         G L O B A L    D A T A                         *
+ **************************************************************************/
+static int nSnapToAVIFlag=0;
+extern UINT8 alreadyRecFileFlag;
+extern UINT8 eventLockFileName[32];
+extern UINT8 gsensorRecEventFlag;
+
+/**************************************************************************
+ *                 E X T E R N A L    R E F E R E N C E S                 *
+ **************************************************************************/
+extern UINT8 powerOffInVideoRec;
+
+extern void appVideo_SetFaceTracking(UINT8 command);
+extern void appVideoRecLogFileAdd(UINT32 msgadd ,UINT32 param);
+extern void callStack(void);
+extern void appSdvVideoRecTimeOsdShow(void);
+extern void appSdvVideoRecFileCntOsdShow(void);
+extern void appVideoRecStampUpdate(UINT32 first, UINT32 second);
+extern void appVideoRecStampExit(void);
+extern void appSdvVideoRecStateWifiMsg(UINT32 msg, UINT32 param);
+	
+/**************************************************************************
+ *               F U N C T I O N    D E C L A R A T I O N S               *
+ **************************************************************************/
+
+void appCdvGSensorTrigger(void)
+{
+	UINT32 sTime;
+	UINT8 dst[32], tmp_path[32];
+
+	sp5kMediaRecAttrGet(SP5K_MEDIA_ATTR_SEAMLESS_TIME_SLOT,&sTime);
+	
+	if(gVideoCB.CapSec < sTime / 3)
+	{
+		printf("--cdv rec time < 2/3\n");
+		if(0/*alreadyRecFileFlag == 1*/)
+		{
+			alreadyRecFileFlag = 0;
+			memset(tmp_path, 0, 32);
+			strcpy(tmp_path, eventLockFileName);
+			printf("--event  file name=%s\n",eventLockFileName);
+
+			appCdfsFileDel(tmp_path);
+			appCdfsAbsolutePathToFile(tmp_path);	//get the short file name
+			appCdfsEventProcess(tmp_path, VIDEO_EVENT_IN_VIDEO);
+
+			memset(dst, 0, 32);
+			appCdfsFolder2Path(CDFS_FILE_FOLDER_EVENT, dst);
+			sprintf(dst, "%s/%s", dst,tmp_path);
+
+			appCdfsFileFolderSet(CDFS_FILE_FOLDER_EVENT);
+			appCdfsEventFlagSet(VIDEO_EVENT_IN_VIDEO);
+			appCdfsFileAdd(dst);
+			printf("--event  dst file name=%s\n",dst);
+			//appCdfsFileFolderSet(CDFS_FILE_FOLDER_VIDEO);
+			//appCdfsEventFlagClean(VIDEO_EVENT_IN_VIDEO);
+		}
+		gsensorRecEventFlag = 1;	
+		appCdfsEventFlagSet(VIDEO_EVENT_IN_VIDEO);
+	}
+	else if(gVideoCB.CapSec > 2 * sTime / 3)
+	{
+		printf("--cdv rec time >2/3\n");
+		gsensorRecEventFlag = 1;
+		appCdfsEventFlagSet(VIDEO_EVENT_IN_VIDEO);
+	}
+	else
+	{
+		appCdfsEventFlagSet(VIDEO_EVENT_IN_VIDEO);
+	}
+}
+
+void appCdvVideoRecStop(void)
+{
+	DBG_PRINT("video stop\n");
+        appCalibData_t *pCalib;
+        pCalib = appCalibDataGet();
+	uiPara_t* puiPara = appUiParaGet();
+
+	sp5kAeModeSet(SP5K_AE_MODE_OFF);
+	sp5kAwbModeSet(SP5K_AWB_MODE_OFF);
+
+	#if GPS_SUPPORT
+	if(puiPara->MediaFormat == MEDIA_FORMAT_MOV/* &&  GPS on && G-senor on*/){
+		printf("GPS wirte end\n");
+		appUsrDataWriteEnd();
+	}
+	#endif
+	appTimerClear(&gVideoCB.CapTimer);
+	
+	/* DIST + RSC OFF */ /* add by sc.liu */
+	sp5kMediaRecCfgSet(SP5K_MEDIA_REC_DIS_LEVEL,MEDIA_REC_RSC_DIS_OFF);
+
+	if(puiPara->SystemDateStamp == UI_SCDV_SYSTEM_DATE_STAMP_ON)
+	{
+		//appVideoSeamlessGPSFileDel();
+		//App_videoGPSDataSave();
+
+		#if CVR_WARN_SYS_INT_DBG
+		videoSeamlessFrameId=0;
+		//appVideoLogFileSave();
+		appVideoLogFileInit();
+		#endif
+
+		if(pCalib->aedebug == TRUE)
+		{
+			//appVideoLogFileSave();
+	    		appVideoLogFileInit();
+		}
+
+		//appOsd_GfxRectShapeDraw(SP5K_GFX_PAGE_OSD_0,30, 30, 320, 60);
+		/*appOsd_GfxRectShapeDraw(SP5K_GFX_PAGE_PIP_0,0, 30, 320, 240);*/  /*mask for mantis bug 0047302*/
+		appVideoRecStampExit();
+	}
+	
+	callStack();
+	
+	appVideo_SetFaceTracking(VIEW_FT_STATUS_DESTROY);
+
+	
+
+	appModeSet(SP5K_MODE_VIDEO_PREVIEW);
+	//sp5kModeSet(SP5K_MODE_VIDEO_PREVIEW);
+	//sp5kModeWait(SP5K_MODE_VIDEO_PREVIEW);
+	//sp5kTimeDelay(SP5K_TIME_DELAY_1MS, 200);
+	//sp5kModeSet(SP5K_MODE_VIDEO_PREVIEW);
+	//appHostMsgWait(SP5K_MSG_MODE_READY,NULL,20000);
+	//VideoRecStatus = VIDEO_REC_STATUS_CLOSE;
+	
+	sp5kAeModeSet(SP5K_AE_MODE_INFO_ONLY);
+	sp5kAwbModeSet(SP5K_AWB_MODE_INFO_ONLY);
+	
+	#if SP5K_CDFS_OPT
+	if(appCdfsAddFileStsGet())
+	{
+		appCdfsFileAdd(appCdfsLastAviNameGet());
+	}
+	#endif
+
+	/*if open datestamp,the scale factor had be set to stampDrawRatioW&stampDrawRatioH, must reset it */
+	sp5kGfxAttrSet(SP5K_GFX_RGB565_PIC_SCALE_FACTOR, 1000, 1000, 0, 0);
+	
+	RFDualStreamSampleDeinit();	
+	LED_RULES_NORMAL;
+	
+}
+void appCdvVideoRecStateInit(void)
+{
+	appCalibData_t *pCalib = appCalibDataGet();
+	uiPara_t* puiPara = appUiParaGet();
+
+	__FUNC_TRACK__;
+	RFDualStreamSampleInit();
+	sp5kMediaRecCfgSet(SP5K_MEDIA_REC_SYNC_THRESHOLD_US, 3600);
+	UINT32 cfg;
+	sp5kSystemCfgGet(SP5K_DISK_SD_HW_PIN_CFG, &cfg);
+	/* set SD driving to high 6mA -> 8mA*/
+	sp5kSystemCfgSet(SP5K_DISK_SD_HW_PIN_CFG, cfg | 0x02);
+
+	LED_RULES_REC;
+	appAutoPowerOffEnable(FALSE);
+	appLcmPowerSaveEnable(FALSE);
+
+	if(pCalib->aedebug == TRUE)
+		appVideoLogFileInit();
+
+	appExif_SetAviChunk();
+	
+	appAePreviewRestore();
+	
+	///appRfCopyBufferCallbackSet();
+	sp5kModeSet(SP5K_MODE_VIDEO_RECORD);
+	sp5kModeWait(SP5K_MODE_VIDEO_RECORD);
+	RFRecCaptureWaitRelease();
+	//sp5kTimeDelay(SP5K_TIME_DELAY_1MS, 300);
+	gVideoCB.CapTimer = appTimerSet(100, "CapVid");
+	gVideoCB.CapSec = 0;
+	//appCdfsFileListSecondCreate();	
+	if(appWiFiConnection_UtilityStateGet() <= WIFI_UTILITY_CLOSE)
+		appSdvVideoRecTimeOsdShow();		
+			
+	appBtnEnable(BTN_ALL);
+	//CdvCmdLoad();//lyc@add 
+}
+
+
+void appCdvVideoRecStateOnMsg(UINT32 msg, UINT32 param)
+{
+	UINT32 elsTime;
+	UINT32 tmpU32;
+	SINT16 tmp16_x,tmp16_y,tmp16_z;
+	static UINT32 updateCnt=0;
+	extern UINT32 appAeInfoExpidxGet();
+	extern UINT32 appAeInfoAgcidxGet();
+
+   	appCalibData_t* pCalib = appCalibDataGet();
+	uiPara_t* puiPara = appUiParaGet();
+	UINT32 nLoopRec=0;
+	appSdvVideoRecStateWifiMsg(msg, param);
+	
+	switch(msg) 
+	{
+		case SP5K_MSG_MODE_READY:
+
+			break;
+		case SP5K_MSG_MEDIA_REC_START:
+			if (param==SP5K_MSG_MEDIA_PARAM_OKAY)
+			{
+				DBG_PRINT("__OmMsg: REC_START(OKAY)\n");
+			}
+			else
+			{
+				DBG_PRINT("__OmMsg: REC_START(FAIL) !!\n");
+				appTimerClear(&gVideoCB.CapTimer);
+				appModeSet(SP5K_MODE_VIDEO_PREVIEW);
+				appBuzzerPlay(BUZZER_WARNING);
+			}
+			break;
+		case SP5K_MSG_MEDIA_REC_STOP:
+			printf("SP5K_MSG_MEDIA_REC_STOP:0x%x\n",param);
+			appCdvVideoRecStop();
+			if (param==SP5K_MSG_MEDIA_PARAM_OKAY)
+			{
+				appTimerClear(&gVideoCB.CapTimer);
+				if(appNextStateGet() !=APP_STATE_NULL)
+				 {
+					appStateCloseDone();
+				 }
+				 else
+				 {
+				 	if(appWiFiConnection_UtilityStateGet() > WIFI_UTILITY_CLOSE)
+				 	{
+						appStateChange(APP_STATE_WIFI_CONNECTION, STATE_PARAM_NORMAL_INIT);
+					}
+					else
+					{
+						appStateChange(APP_STATE_CARDV_VIDEO_PREVIEW, STATE_PARAM_NORMAL_INIT);
+					}
+				 }
+			}
+			else
+			{
+				printf("__OmMsg: REC_STOP(FAIL) !!\n");
+				/*-- There wont have this msg out of middleware.
+				 * Instead, middleware will send SP5K_MSG_DISK_ERROR.
+				 */
+			}
+			break;
+		/* view handling */
+		case SP5K_MSG_AE_READY:
+			if(puiPara->MotionDetect == 1)
+			{
+				appMotionDetectHdr();
+			}
+			break;
+		case SP5K_MSG_AWB_READY:
+			appAwbPreviewAdjust(param);
+			break;
+		case SP5K_MSG_MEDIA_SEAMLESS_CHANGE_FILE:
+			
+			if(nSnapToAVIFlag) //SP5K_CDFS_OPT
+			{
+				if(appCdvAddFileStsGet())
+				{
+						appCdfsFileAdd(appCdfsLastAviNameGet());							
+						
+				}
+				nSnapToAVIFlag=0;			
+			}					
+			//gsensorTriggerRecordingStateFlag = 0;
+			
+			break;
+		case SP5K_MSG_MEDIA_CLOSE_FILE_DONE:
+			break;
+	   	//case SP5K_MSG_MEDIA_SEMALESS_CNT_NOTIFY :
+		case SP5K_MSG_TIMER:
+			if (param == gVideoCB.CapTimer)
+			{
+				sp5kMediaRecAttrGet(SP5K_MEDIA_ATTR_ELAPSED_TIME, &elsTime);
+				elsTime = (elsTime+500)/1000;
+				if(gVideoCB.CapSec != elsTime)
+				{
+					if(elsTime == 2)	//for seamless update file cnt
+					{
+						updateCnt++;							
+						appSdvVideoRecFileCntOsdShow();
+																				
+					}
+					if(elsTime==1)
+					{
+						appCdfsFileFolderSet(CDFS_FILE_FOLDER_VIDEO);//lyc@add	
+						appCdfsEventFlagClean(VIDEO_EVENT_IN_VIDEO);		
+					}
+
+					#ifdef VIDEO_REC_STAMP
+					if(puiPara->SystemDateStamp == UI_SCDV_SYSTEM_DATE_STAMP_ON)
+					{
+						appVideoRecStampUpdate(1, 1);
+						sp5kGfxAttrSet(SP5K_GFX_FONT_ID, SP5K_RES_OSD_FONT, 0, 0, 0);/*junqiong.hu@20130104 add for mantis bug 0046617*/
+					}
+					#endif
+				
+					gVideoCB.CapSec = elsTime;
+					appSdvVideoRecTimeOsdShow();	
+					
+					#if 0
+					#if GPS_SUPPORT
+					if(puiPara->MediaFormat == MEDIA_FORMAT_MOV/* &&  GPS on && G-senor on*/){
+						appGpsWrite2TxtEn(1);
+						appUsrDataWrite();
+						memset(GSensorInfo,0,sizeof(GSensorInfo));
+					}
+					#endif
+					GSensorReadFlag = 0;
+
+					#if CAM_TYPE_CVR
+					appGsensorTriggerVideoRecProc();
+					appCountDownRecProc();
+					#endif
+					#endif
+					APP_OSD_REFRESH_ON;
+				}
+			}
+			break;
+		case APP_UI_MSG_GSENSOR_TRIGGER:
+			if(puiPara->CdvGsensorTrigger == UI_SCDV_GSENSOR_TRIGGER_ON)
+			{				
+				appCdvGSensorTrigger();
+			}
+			break;
+
+		/* media rec */
+		case SP5K_MSG_MEDIA_ELAPSED_TIME_UPDATE:
+			DBG_PRINT("_OnMsg: MEDIA_ELAPSED_TIME_UPDATE\n");
+			break;
+		case SP5K_MSG_MEDIA_REC_DROP_FRAME:
+			printf("_OnMsg: MEDIA_REC_DROP_FRAME param=%x\n",param & 0xf0000000 ); 
+			//Ethan if drop frame stop rrecording (H624)
+			appVideoRecLogFileAdd(msg,param);
+			if(((param & 0xF0000000) == 0x90000000)||((param & 0xF0000000) == 0x10000000))
+			{
+				break;
+			}
+			else
+			{
+				__FUNC_TRACK__;
+				appCdvVideoRecStop();
+			}
+			break;
+		case SP5K_MSG_MEDIA_REC_PAUSE_FINISH:
+		case SP5K_MSG_MEDIA_REC_RESUME_FINISH:
+			break;
+		case SP5K_MSG_MEDIA_FILE_SIZE_NOTIFY:
+			if (param == 0x4)
+			{
+				__FUNC_TRACK__;
+				appCdvVideoRecStop();
+			}
+			DBG_PRINT("_OnMsg: MEDIA_BETTER_FILE_SIZE\n");
+			break;
+		case SP5K_MSG_MEDIA_AVI_REC_FPS_LOW://happen with slow card and enough space(>2G)		
+			break;
+		case SP5K_MSG_MEDIA_REC_DISK_FULL:
+			printf("video msg: MEDIA_REC_DISK_FULL\n");
+			break;
+		case SP5K_MSG_DISK_ERROR:
+			printf("video msg: SP5K_MSG_DISK_ERROR  param=%x\n",param); 
+			appTimerClear(&gVideoCB.CapTimer);
+			__FUNC_TRACK__;
+			appCdvVideoRecStop();
+			appBuzzerPlay(BUZZER_WARNING);
+			break;
+		case APP_STATE_MSG_ABORT:
+			DBG_PRINT("video msg: APP_STATE_MSG_ABORT\n");
+			break;
+		case APP_UI_MSG_MD_STOP:
+			break;
+		default:
+			break;
+	}
+}
+
+void appCdvVideoRecStateOnKey(UINT32 msg, UINT32 param)
+{
+	uiPara_t* puiPara = appUiParaGet();
+
+	switch(msg) 
+	{
+		case APP_KEY_PRESS_OK:
+			
+			if(gVideoCB.CapSec >1||appWiFiConnection_UtilityStateGet() > WIFI_UTILITY_CLOSE)
+			{
+				appBtnDisable(BTN_OK);
+				appMsgFlush(APP_MSG_KEY_QUE);
+				//appBtnEnable(BTN_OK);
+				appCdvVideoRecStop();
+			 	if(appWiFiConnection_UtilityStateGet() > WIFI_UTILITY_CLOSE)
+			 	{
+					appStateChange(APP_STATE_WIFI_CONNECTION, STATE_PARAM_NORMAL_INIT);
+				}
+				else
+				{
+					appStateChange(APP_STATE_CARDV_VIDEO_PREVIEW,STATE_PARAM_NORMAL_INIT);
+				}
+			}
+			break;
+		case APP_KEY_PRESS_POWER:	//SnapShot
+			if(puiPara->VideoFormat == VIDEO_FORMAT_H264)
+			{	
+				if(appRFSkipFunction()==FALSE||appWiFiConnection_UtilityStateGet() > WIFI_UTILITY_CLOSE)
+					break;						
+				if(appCdfsFileNameValidCheck(SP5K_DCF_FILETYPE_JPG) == SUCCESS)
+				{
+					
+					appCdfsEventFlagSet(JPG_EVENT_IN_VIDEO);
+					appBtnDisable(BTN_ALL);
+					appCdfsFileFolderSet(CDFS_FILE_FOLDER_JPG);
+					appCdfsFolderInit(CDFS_FILE_FOLDER_JPG);
+					/*sp5kMediaRecControl(SP5K_MEDIA_REC_FRAME_CAPTURE);*/
+					sp5kMediaRecControl(SP5K_MEDIA_REC_JFIF_CAPTURE);
+					appBtnEnable(BTN_ALL);
+					nSnapToAVIFlag = 1;					
+					appCdfsFileFolderSet(CDFS_FILE_FOLDER_VIDEO);
+					appCdfsFolderInit(CDFS_FILE_FOLDER_VIDEO);
+				}				
+			}
+			else
+			{
+				printf("video format is not H264,do not support capture in movie!!");
+			}
+			break;
+		default:
+			break;
+	}
+}
+
+void appCdvVideoRecState(UINT32 msg, UINT32 param)
+{
+	switch (msg)
+	{
+		case APP_UI_MSG_RF_RCWD01_REC_OK:	
+			if(gVideoCB.CapSec >1||appWiFiConnection_UtilityStateGet() > WIFI_UTILITY_CLOSE)
+			{
+				appBtnDisable(BTN_OK);//lyc@add
+				appMsgFlush(APP_MSG_KEY_QUE);
+				//appBtnEnable(BTN_OK);//lyc@add
+				appCdvVideoRecStop();
+			 	if(appWiFiConnection_UtilityStateGet() > WIFI_UTILITY_CLOSE)
+			 	{
+					appStateChange(APP_STATE_WIFI_CONNECTION, STATE_PARAM_NORMAL_INIT);
+				}
+				else
+				{
+					appStateChange(APP_STATE_CARDV_VIDEO_PREVIEW,STATE_PARAM_NORMAL_INIT);
+				}
+			}
+			break;
+		case APP_STATE_MSG_INIT:
+			RPrintf("appCdvVideoRecState");
+			appCdvVideoRecStateInit();
+			break;
+		case APP_STATE_MSG_CLOSE:
+			DBG_PRINT("%s : close\n",__FUNCTION__);
+			appCdvVideoRecStop();
+			if(!IS_CARD_EXIST && appNextStateGet()==APP_STATE_POWER_OFF)
+			{
+				appStateCloseDone();
+			}
+			else
+			{
+				appModeSet(SP5K_MODE_VIDEO_PREVIEW);
+			}
+			break;
+		case APP_STATE_MSG_ABORT:
+			__FUNC_TRACK__;
+			appCdvVideoRecStop();
+			appStateChange(APP_STATE_CARDV_VIDEO_PREVIEW,STATE_PARAM_NORMAL_INIT);
+			break;
+		default:
+			if (IS_APP_KEY_MSG(msg))
+			{
+				appCdvVideoRecStateOnKey(msg,param);
+			}
+			else
+			{
+				appCdvVideoRecStateOnMsg(msg,param);
+			}
+			break;
+	}
+}
+

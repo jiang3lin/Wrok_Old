@@ -1,0 +1,75 @@
+/**************************************************************************
+ *
+ *        Copyright (c) 2006-2008 by Sunplus mMedia Inc., Ltd.
+ *
+ *  This software is copyrighted by and is the property of Sunplus
+ *  mMedia Inc., Ltd. All rights are reserved by Sunplus mMedia
+ *  Inc., Ltd. This software may only be used in accordance with the
+ *  corresponding license agreement. Any unauthorized use, duplication,
+ *  distribution, or disclosure of this software is expressly forbidden.
+ *
+ *  This Copyright notice MUST not be removed or modified without prior
+ *  written consent of Sunplus mMedia Inc., Ltd.
+ *
+ *  Sunplus mMedia Inc., Ltd. reserves the right to modify this
+ *  software without notice.
+ *
+ *  Sunplus mMedia Inc., Ltd.
+ *  19-1, Innovation First Road, Science-Based Industrial Park,
+ *  Hsin-Chu, Taiwan, R.O.C. 
+ *
+ **************************************************************************/
+/*reference code, a simple demo only*/
+#include "common.h"
+#include "customization/solution_def.h"
+#include "customization/dev_init.h"
+#include "middleware/sensor_def.h"
+#include "api/sp5k_global_api.h"
+
+/*id:
+ *  SENSOR_DEV_POWER_ID_SYS_ON  = 0,
+ *  SENSOR_DEV_POWER_ID_RST_ON  = 1,
+ *  SENSOR_DEV_POWER_ID_SEN_ON  = 2,
+ *  SENSOR_DEV_POWER_ID_HDR_ON  = 3,
+ *  SENSOR_DEV_POWER_ID_HDR_OFF = 0x83,
+ *  SENSOR_DEV_POWER_ID_SEN_OFF = 0x82,
+ *  SENSOR_DEV_POWER_ID_RST_OFF = 0x81,
+ *  SENSOR_DEV_POWER_ID_SYS_OFF = 0x80,
+ */
+
+extern void appSensorPowerDownSet(UINT8 PWRDN);/*haiyan.he added*/
+
+UINT32
+sensorDevPowerCustomCb(
+		UINT32 id
+		)
+{
+
+	UINT32 ret = SUCCESS;
+
+
+	switch (id) {
+	default: break;
+	case SENSOR_DEV_POWER_ID_SYS_ON:
+		appSensorPowerDownSet(FALSE);
+		break;
+	case SENSOR_DEV_POWER_ID_RST_ON:
+		break;
+	case SENSOR_DEV_POWER_ID_SEN_ON:
+		break;
+	case SENSOR_DEV_POWER_ID_HDR_ON:
+		break;
+	case SENSOR_DEV_POWER_ID_HDR_OFF:
+		break;
+	case SENSOR_DEV_POWER_ID_SEN_OFF:
+		break;
+	case SENSOR_DEV_POWER_ID_RST_OFF:
+		break;
+	case SENSOR_DEV_POWER_ID_SYS_OFF:			
+		appSensorPowerDownSet(TRUE);		
+		break;
+	}
+	return ret;
+
+}
+

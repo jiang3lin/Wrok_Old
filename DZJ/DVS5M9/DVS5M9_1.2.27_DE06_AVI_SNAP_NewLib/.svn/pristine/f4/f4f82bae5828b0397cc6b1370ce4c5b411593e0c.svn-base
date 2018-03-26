@@ -1,0 +1,912 @@
+/**************************************************************************
+ *                                                                        *
+ *         Copyright (c) 2010 by DXG Technology Co., Ltd.             *
+ *                                                                        *
+ *  This software is copyrighted by and is the property of DXG        *
+ *  Technology Co., Ltd. All rights are reserved by DXG Technology    *
+ *  Co., Ltd. This software may only be used in accordance with the       *
+ *  corresponding license agreement. Any unauthorized use, duplication,   *
+ *  distribution, or disclosure of this software is expressly forbidden.  *
+ *                                                                        *
+ *  This Copyright notice MUST not be removed or modified without prior   *
+ *  written consent of DXG Technology Co., Ltd.                       *
+ *                                                                        *
+ *  DXG Technology Co., Ltd. reserves the right to modify this        *
+ *  software without notice.                                              *
+ *                                                                        *
+ *  DXG Technology Co., Ltd.                                          *
+ *  MIN ZHI IND., PARK,					            *
+ *  LONG HUA,BAOAN,SHEN ZHEN,P.R.O.C.                                           *
+ *                                                                        *
+ *  Author: Wujf                                                  *
+ *                                                                         *
+ **************************************************************************/
+#define HOST_DBG 0
+#include <time.h>
+
+#include "app_com_def.h"
+#include "app_com_api.h"
+
+#include "sp5k_global_api.h"
+#include "sp5k_ae_api.h"
+#include "sp5k_capture_api.h"
+#include "sp5k_disp_api.h"
+#include "sp5k_media_api.h"
+#include "sp5k_rsvblk_api.h"
+#include "sp5k_gfx_api.h"
+#include "sp5k_aud_api.h"
+
+#include "app_pal.h"
+#include "app_icon.h"
+#include "app_icon_def.h"
+#include "app_zoom_api.h"
+#include "app_still.h"
+#include "app_video.h"
+#include "app_error_msg.h"
+#include "app_view_param.h"
+#include "app_calib_api.h"
+#include "app_ui_para.h"
+#include "app_view_osd.h"
+#include "app_osd_api.h"
+#include "app_osdfont.h"
+#include "app_video.h"
+#include "app_cdfs_api.h"
+#include "app_exif.h"
+#include "app_battery.h"
+#include "app_aealg_debug.h"
+#include "app_error_msg.h"
+#include "app_init.h"
+#include "app_gSensor.h"
+#include "app_menu.h"
+#include "app_gps.h"
+#include "app_md.h"
+#include "app_face_detect_ex.h"
+#include "app_wifi_connection.h"
+
+#include "app_buzzer.h"
+#include "app_osd_api_lcm.h"
+#include "app_osd_draw_lcm.h"
+#include "app_ptp.h"
+#include "App_exif.h"
+#include "app_scdv_ui_para_def.h"
+#include "sp5k_utility_api.h"
+#include "sp5k_global_api.h"
+#include "sp5k_disk_api.h"
+#include "debug_mod/dbg_api.h"
+#include "app_rf_def.h"
+
+/**************************************************************************
+ *                           C O N S T A N T S                            *
+ **************************************************************************/
+
+/**************************************************************************
+ *                              M A C R O S                               *
+ **************************************************************************/
+
+/**************************************************************************
+ *                          D A T A    T Y P E S                          *
+ **************************************************************************/
+typedef struct videoLapse_s 
+{
+	UINT32 videoLapseTimer;
+	UINT32 videoLapseTime; 
+	UINT32 videoLapseInterval;
+	UINT32 videoLapseFrame;
+	BOOL videoLapseTrigger;
+	UINT8* pYuvBuffer;
+	UINT32 yuvBufferWidth;
+	UINT32 yuvBufferHeight;
+	BOOL bYuvBufferReady;
+	BOOL bYuvStandby;
+}videoLapse_t;
+
+/**************************************************************************
+ *                         G L O B A L    D A T A                         *
+ **************************************************************************/
+static videoLapse_t gVideoLapse;
+
+/**************************************************************************
+ *                 E X T E R N A L    R E F E R E N C E S                 *
+ **************************************************************************/
+extern UINT8 powerOffInVideoRec;
+
+extern void appVideo_SetFaceTracking(UINT8 command);
+extern void appVideoRecLogFileAdd(UINT32 msgadd ,UINT32 param);
+extern void callStack(void);
+extern void appSdvVideoRecTimeOsdShow(void);
+extern void appVideoRecStampUpdate(UINT32 first, UINT32 second);
+extern void appVideoRecStampExit(void);
+extern void appCdvGSensorTrigger(void);
+extern void appSdvVideoRecStateWifiMsg(UINT32 msg, UINT32 param);
+	
+/**************************************************************************
+ *               F U N C T I O N    D E C L A R A T I O N S               *
+ **************************************************************************/
+
+void appCdvVideoRecLapseFrameShow(void)
+{
+	CHAR TimeString[OSD_STRING_SIZE];
+
+	sprintf(TimeString, "%03d", gVideoLapse.videoLapseFrame);
+	appLcmOsdLargeTextShow(TimeString, FALSE);
+}
+
+void appCdvVideoRecLapseOsdShow(void)
+{
+	CHAR TimeString[OSD_STRING_SIZE];
+
+	//sprintf(TimeString, "\x41%d:%02d:%02d", gVideoLapse.videoLapseTime / 3600, (gVideoLapse.videoLapseTime / 60) % 60, gVideoLapse.videoLapseTime % 60);
+	sprintf(TimeString, "%c%d:%02d:%02d", ID_TEXT_REC_ICON,gVideoLapse.videoLapseTime / 3600, (gVideoLapse.videoLapseTime / 60) % 60, gVideoLapse.videoLapseTime % 60);
+
+	appLcmOsdTipsTextShow(TimeString, FALSE);
+
+	appCdvVideoRecLapseFrameShow();
+	
+	appLcmRefresh();
+}
+
+/*test timelapse h.264 sample code must update basefw to 17859 or higher*/
+/*test code from timelapse H.264*/ /*IBBP test (enter standby mode)*/
+void appCdvVideoRecLapseDateStamp(void)
+{
+	sp5kGfxPageCapabDesc_t cap;
+	sp5kGfxObj_t gfxObjSrc,gfxObjDst;
+	sp5kGfxPicture_t srcPic, dstPic;
+	UINT8* pYuvBuffer = NULL;
+
+	UINT8 StampDateBuf[128];
+	tmx_t videoLapseRtc;
+
+	pYuvBuffer = sp5kYuvBufferAlloc(gVideoLapse.yuvBufferWidth, (gVideoLapse.yuvBufferHeight + 15) & (~15));
+
+	sp5kRtcDateTimeGet( SP5K_DATE_TIME_OPTION, &videoLapseRtc);
+	sprintf(	StampDateBuf,  "%d/%02d/%02d  %02d:%02d:%02d",	
+			videoLapseRtc.tmx_year+1900, videoLapseRtc.tmx_mon,videoLapseRtc.tmx_mday,
+			videoLapseRtc.tmx_hour, videoLapseRtc.tmx_min, videoLapseRtc.tmx_sec);
+
+	sp5kGfxAttrSet(SP5K_GFX_REFRESH_ACTIVE, 0, 0, 0, 0);
+	//sp5kGfxAttrSet(SP5K_GFX_LAYER_ACTIVE, 10, 0, 0, 0);
+	sp5kGfxPageClear(SP5K_GFX_PAGE_PIP_0, PAL_NOCOLOR);
+	sp5kGfxAttrSet(SP5K_GFX_FONT_ID, SP5K_RES_DATE_STAMP_OSD, 0, 0, 0);
+	appOsd_ColorDrawTextColorSet(PAL_ORANGEB, PAL_NOCOLOR, PAL_NOCOLOR, PAL_BLEND_100);
+	sp5kGfxAttrSet(SP5K_GFX_RGB565_PIC_SCALE_FACTOR, 1000, 1000, 0, 0);
+	sp5kGfxStringDraw(SP5K_GFX_PAGE_PIP_0, 0, 0, SP5K_GFX_ALIGN_TOP_LEFT, STR_ENCODE_ASCII, StampDateBuf); /*Stamp String*/
+
+	sp5kGfxPageCapabilityGet(SP5K_GFX_PAGE_PIP_0, &cap);
+
+	//fsSimpleWrite("D:\\RGB565.RGB", cap.pbuf, cap.frmW * cap.frmH * 2);
+
+	/* Gfx Object Convert */
+	gfxObjSrc.pbuf = cap.pbuf;
+	gfxObjSrc.roiX = gfxObjSrc.roiY = 0;
+	gfxObjSrc.bufW = cap.frmW;
+	gfxObjSrc.bufH = cap.frmH;
+	gfxObjSrc.roiW = cap.frmW;
+	gfxObjSrc.roiH = 128/*48*/;
+	gfxObjSrc.paplaneBuf = NULL;
+	gfxObjSrc.fmt = SP5K_GFX_FMT_RGB565;
+
+	gfxObjDst.pbuf = pYuvBuffer;
+	gfxObjDst.roiX = gfxObjDst.roiY = 0;
+	gfxObjDst.bufW = gVideoLapse.yuvBufferWidth;
+	gfxObjDst.bufH = (gVideoLapse.yuvBufferHeight + 15) & (~15);
+	gfxObjDst.roiW = gfxObjSrc.roiW;
+	gfxObjDst.roiH = gfxObjSrc.roiH;
+	gfxObjDst.paplaneBuf = NULL;
+	gfxObjDst.fmt = SP5K_GFX_FMT_YUV422;
+
+	sp5kGfxObjectConvert(&gfxObjSrc, &gfxObjDst);
+
+	//fsSimpleWrite("D:\\CAP.YUV", ConvertBuf, img_w * ((img_h+15)&(~15)) * 2);
+
+	/* YUV & OSD blend */
+	srcPic.pbuf = gfxObjDst.pbuf;
+	srcPic.frmW = gfxObjDst.bufW;
+	srcPic.frmH = gfxObjDst.bufH;
+	srcPic.roiX = 0;
+	srcPic.roiY = 0;
+	srcPic.roiW = gfxObjSrc.roiW;	/* it must be multiple of 16x and multiple of roiW of src and dst can't over 12x */
+	srcPic.roiH = gfxObjSrc.roiH;	/* it must be multiple of 16x and multiple of roiH of src and dst can't over 12x */
+	srcPic.fmt  = SP5K_GFX_FMT_YUV422;
+
+	dstPic.pbuf = gVideoLapse.pYuvBuffer;
+	dstPic.frmW = gVideoLapse.yuvBufferWidth;
+	dstPic.frmH = gVideoLapse.yuvBufferHeight;
+	dstPic.roiX = 0;
+	dstPic.roiY = 0;
+	dstPic.roiW = srcPic.roiW/*uwImgW*/;
+	dstPic.roiH = srcPic.roiH/*uwImgH*/;
+	dstPic.fmt  = SP5K_GFX_FMT_YUV422;
+
+	sp5kGfxPictureBlend(&dstPic, 128, 1, 0, &srcPic);
+
+	#if 0
+	fsSimpleWrite("D:\\DST.YUV", dstPic.pbuf, dstPic.frmW* dstPic.frmH*2);
+	fsSimpleWrite("D:\\SRCGFX.YUV", srcPic.pbuf, srcPic.frmW * srcPic.frmH* 2);
+	#endif
+	//fsSimpleWrite("D:\\Result.YUV", dstPic.pbuf, dstPic.frmW * dstPic.frmH * 2);
+
+	sp5kYuvBufferFree(pYuvBuffer);
+	CLEAR_PIP_SRC;
+	sp5kGfxAttrSet(SP5K_GFX_REFRESH_ACTIVE, 1, 0, 1, 0);
+}
+sp5kGfxObj_t SrcCdvLapseGfxObj,  Src16X9CdvLapseGfxObj,RfCdvLapseJfifgfxObj;
+int  nWifiRFMutex=0;
+int  nCdvLapseWifiRFMutex=0;
+UINT32 appCdvVideoRecLapsePreviewCallback(UINT32 fid, UINT8 *pbuf, UINT32 w, UINT32 h)
+{
+	//DBG_TIME_DECLARE(30);
+	UINT32 starTime,endTime;
+	
+	printf("--fidLapse=%d w=%d h=%d cLapseMutex=%d lapse=%d\n",fid,w,h,nCdvLapseWifiRFMutex,nWifiRFMutex);
+	
+	if(gVideoLapse.bYuvBufferReady == FALSE)
+	{
+		//__FUNC_TRACK__;
+		
+		//DBG_TIME_GET();
+		//starTime = dbgTimeGet();
+		//printf("%d, %d, %d, %d\n", gVideoLapse.yuvBufferWidth, gVideoLapse.yuvBufferHeight, w, h);
+		memcpy(gVideoLapse.pYuvBuffer, pbuf, gVideoLapse.yuvBufferWidth* gVideoLapse.yuvBufferHeight * 2);
+		gVideoLapse.bYuvBufferReady = TRUE;
+		//gVideoLapse.videoLapseTrigger = FALSE;
+		//DBG_TIME_GET_DUMP();
+		//endTime = dbgTimeGet();
+		//printf("appCdvVideoRecLapsePreviewCallback Run Time: %d\n", endTime - starTime);
+		//printf("%d: %d\n", __LINE__, endTime - starTime);
+	}
+	else
+	{
+	#if  1
+		
+		//return ;
+		if(h==1072)
+			return 1;
+		if(nWifiRFMutex==1&&nCdvLapseWifiRFMutex==1)
+			return 1;
+		if(appRFSkipFunction()==1)
+			return 1;
+		//if((fid%FrameFreqencyFactor())!=0)
+			//return 1;
+		//printf("lapse 1080p Record\n");
+		#define ROUND_DOWN_TO_DIVISIBLE(num,div) 		((UINT32)(num) & -(UINT32)(div))
+		#define ROUND_UP_TO_DIVISIBLE(num,div) 		ROUND_DOWN_TO_DIVISIBLE((UINT32)(num) + (div) - 1, div)
+		SrcCdvLapseGfxObj.pbuf = pbuf;
+		SrcCdvLapseGfxObj.fmt = SP5K_GFX_FMT_YUV422;
+
+		if(w==1920)
+		{
+			SrcCdvLapseGfxObj.bufW = 1920;
+			SrcCdvLapseGfxObj.bufH  = 1088;
+		}
+		else
+		{
+			SrcCdvLapseGfxObj.bufW = ROUND_UP_TO_DIVISIBLE(w, 16);
+			SrcCdvLapseGfxObj.bufH  = ROUND_UP_TO_DIVISIBLE(h, 16);
+		}
+		SrcCdvLapseGfxObj.roiX = 0;		
+		SrcCdvLapseGfxObj.roiY  = 0;		
+		SrcCdvLapseGfxObj.roiW = w;
+
+		if(w==1920)	
+			SrcCdvLapseGfxObj.roiH  = 1088;
+		else
+			SrcCdvLapseGfxObj.roiH  = h;	
+		
+		SrcCdvLapseGfxObj.roiX = 30;	//for set JPG qtable idx
+
+		//printf("--bufW=%d bufH=%d\n",SrcCdvLapseGfxObj.bufW,SrcCdvLapseGfxObj.bufH);
+		
+		//return;
+		#if 1
+		if( app_mjpeg_fifo_is_full() )
+		{
+			//printf("lapse jpg fifo full.\n");
+			return 1;
+		}
+		#endif
+		if(w * 3 == h * 4)		
+		{
+
+			//printf("--ratio 4:3\n");
+			RfCdvLapseJfifgfxObj.bufW=128;
+			RfCdvLapseJfifgfxObj.bufH=96;
+			RfCdvLapseJfifgfxObj.roiX = 0;
+			RfCdvLapseJfifgfxObj.roiY  = 0;
+			RfCdvLapseJfifgfxObj.roiW = 128;
+			RfCdvLapseJfifgfxObj.roiH  = 96;			
+			
+			sp5kGfxObjectConvert(&SrcCdvLapseGfxObj, &RfCdvLapseJfifgfxObj);
+		}
+		else
+		{
+			//printf("--ratio 16:9\n");
+
+			//sp5kGfxObjectScale(&SrcCdvLapseGfxObj, &Src16X9CdvLapseGfxObj);
+
+			RfCdvLapseJfifgfxObj.bufW=128;
+			RfCdvLapseJfifgfxObj.bufH=72;
+			RfCdvLapseJfifgfxObj.roiX = 0;
+			RfCdvLapseJfifgfxObj.roiY  = 0;
+			RfCdvLapseJfifgfxObj.roiW = 128;
+			RfCdvLapseJfifgfxObj.roiH  = 72;
+			
+			Src16X9CdvLapseGfxObj.roiX = 90;
+			//sp5kGfxObjectConvert(&Src16X9CdvLapseGfxObj, &RfCdvLapseJfifgfxObj);
+			sp5kGfxObjectConvert(&SrcCdvLapseGfxObj, &RfCdvLapseJfifgfxObj);
+			
+		}
+		//return;
+		if(RfCdvLapseJfifgfxObj.roiX<3*1024)
+		app_mjpeg_fifo_write(RfCdvLapseJfifgfxObj.pbuf, RfCdvLapseJfifgfxObj.roiX);
+		//printf("--Lapsexx Jpg Success =%d\n",RfCdvLapseJfifgfxObj.roiX);
+
+	#endif
+	}
+	
+	return 0;
+}
+void appRfCdvLapseBufferInit()
+{
+
+	if(RfCdvLapseJfifgfxObj.pbuf!=NULL)
+		return;
+	
+	RfCdvLapseJfifgfxObj.pbuf=sp5kYuvBufferAlloc(128,96);
+	RfCdvLapseJfifgfxObj.fmt=SP5K_GFX_FMT_JFIF;
+	RfCdvLapseJfifgfxObj.bufW=128;
+	RfCdvLapseJfifgfxObj.bufH=96;
+	RfCdvLapseJfifgfxObj.roiX = 0;
+	RfCdvLapseJfifgfxObj.roiY  = 0;
+	RfCdvLapseJfifgfxObj.roiW = 128;
+	RfCdvLapseJfifgfxObj.roiH  = 96;
+
+	Src16X9CdvLapseGfxObj.pbuf=sp5kYuvBufferAlloc(256,144);
+	Src16X9CdvLapseGfxObj.fmt=SP5K_GFX_FMT_YUV422;
+	Src16X9CdvLapseGfxObj.bufW=256;
+	Src16X9CdvLapseGfxObj.bufH=144;
+	Src16X9CdvLapseGfxObj.roiX = 0;
+	Src16X9CdvLapseGfxObj.roiY  = 0;
+	Src16X9CdvLapseGfxObj.roiW = 256;
+	Src16X9CdvLapseGfxObj.roiH  = 144;	
+	
+
+}
+
+
+UINT32 appCdvVideoRecLapseSwTrigCb(UINT8 *pbuf, sp5kYuvCbImgSize_t *pinfo, UINT32 rsvd0, UINT32 rsvd1)
+{
+
+
+	
+	if(gVideoLapse.videoLapseTrigger==TRUE)
+	{
+		if (gVideoLapse.bYuvBufferReady == FALSE)
+		{
+			//sp5kPreviewCallbackSet(15, appTimelapsePreviewCallback, img_w, img_h);
+			//sp5kPreCallbackSet(1, appCdvVideoRecLapsePreviewCallback);
+			//yuvCBIntFlg = 1;
+		}
+		gVideoLapse.videoLapseTrigger=FALSE;
+		//while(!gVideoLapse.bYuvBufferReady)
+			//ros_thread_sleep(1);
+	}
+	else if(gVideoLapse.bYuvBufferReady == TRUE)
+	{
+		uiPara_t* puiPara = appUiParaGet();
+
+		__FUNC_TRACK__;
+		
+			if(puiPara->SystemDateStamp == UI_SCDV_SYSTEM_DATE_STAMP_ON)
+			{
+				appCdvVideoRecLapseDateStamp();
+			}
+			
+			memcpy(pbuf, gVideoLapse.pYuvBuffer, gVideoLapse.yuvBufferWidth* gVideoLapse.yuvBufferHeight * 2);
+
+			gVideoLapse.bYuvBufferReady = FALSE;
+
+			//for mosaic
+			sp5kModeCfgSet(SP5K_MODE_CFG_STANDBY_DUP,1);//keep the last frame		
+			gVideoLapse.bYuvBufferReady = FALSE;
+			sp5kModeSet(SP5K_MODE_STANDBY);
+			sp5kModeWait(SP5K_MODE_STANDBY);
+			//gVideoLapse.bYuvStandby=TRUE;
+		
+			return SUCCESS;
+	}
+	else
+	{
+		//if(gVideoLapse.bYuvStandby==TRUE)
+		{
+		UINT32 Mode;
+		sp5kModeGet(&Mode);
+		if(Mode != SP5K_MODE_VIDEO_PREVIEW)
+		{
+			//sp5kPreCallbackSet(1, appCdvVideoRecLapsePreviewCallback);
+			sp5kModeSet(SP5K_MODE_VIDEO_PREVIEW);
+			sp5kModeWait(SP5K_MODE_VIDEO_PREVIEW);
+		}
+		gVideoLapse.bYuvStandby=FALSE;
+		
+		}
+
+
+	}
+	return FAIL;
+}
+
+void appCdvVideoRecLapseTrigger(void)
+{
+	//printf("--videoLapseTime=%d\n",gVideoLapse.videoLapseTime);
+	
+	if(gVideoLapse.videoLapseTime % gVideoLapse.videoLapseInterval == 0)
+	{
+		gVideoLapse.videoLapseTrigger = TRUE;		
+		gVideoLapse.videoLapseFrame ++;
+		//printf("--videoLapseFrame=%d\n",gVideoLapse.videoLapseFrame);
+	}
+}
+
+void appCdvVideoRecLapseStart(void)
+{
+	#if 0
+	
+	uiPara_t* puiPara = appUiParaGet();
+	UINT32 clipFrameRate;
+	
+	gVideoLapse.videoLapseTimer = appTimerSet(500, "video lapse");
+	gVideoLapse.videoLapseTime = 0;
+
+	switch(puiPara->CdvVideoLapseTime)
+	{
+		case UI_SCDV_VIDEO_LAPSE_TIME_1S:
+			clipFrameRate = gVideoCB.framePerSec / 2;
+			break;
+		case UI_SCDV_VIDEO_LAPSE_TIME_3S:
+			clipFrameRate = gVideoCB.framePerSec / 3;
+			break;
+		case UI_SCDV_VIDEO_LAPSE_TIME_5S:
+			clipFrameRate = gVideoCB.framePerSec / 4;
+			break;
+		case UI_SCDV_VIDEO_LAPSE_TIME_10S:
+			clipFrameRate = gVideoCB.framePerSec / 4;
+			break;
+		case UI_SCDV_VIDEO_LAPSE_TIME_30S:
+			clipFrameRate = gVideoCB.framePerSec / 4;
+			break;
+		case UI_SCDV_VIDEO_LAPSE_TIME_60S:
+			clipFrameRate = gVideoCB.framePerSec / 4;
+			break;
+		default:
+			clipFrameRate = gVideoCB.framePerSec;
+			break;
+	}
+	sp5kMediaRecAttrSet(SP5K_MEDIA_ATTR_VIDEO_FRAME_RATE, gVideoCB.framePerSec); 
+	sp5kMediaRecCfgSet( SP5K_MEDIA_REC_SAVED_FRAME_RATE, gVideoCB.framePerSec);
+	sp5kMediaRecCfgSet( SP5K_MEDIA_REC_FRAME_RATE_CLIP, 1);	
+	sp5kMediaRecAttrSet(SP5K_MEDIA_ATTR_AUDIO_CODEC,SP5K_MEDIA_AUDIO_UNKNOWN); 
+	//sp5kMediaRecCfgSet( SP5K_MEDIA_REC_TIMELAPSE_FILE, 1);	
+	
+	sp5kModeSet(SP5K_MODE_VIDEO_RECORD);
+	sp5kModeWait(SP5K_MODE_VIDEO_RECORD);
+	
+	#else
+	
+	uiPara_t* puiPara = appUiParaGet();
+	
+	gVideoLapse.bYuvBufferReady = FALSE;
+	gVideoLapse.videoLapseFrame = 0;
+	gVideoLapse.videoLapseTrigger = FALSE;
+	gVideoLapse.bYuvStandby = FALSE;
+
+	sp5kModeSet(SP5K_MODE_STANDBY);
+	sp5kModeWait(SP5K_MODE_STANDBY);
+	
+	/* 1920x1080 h264 video as an example */
+	sp5kMediaRecAttrSet(SP5K_MEDIA_ATTR_VIDEO_FRAME_RATE, 30);
+	sp5kMediaRecAttrSet(SP5K_MEDIA_ATTR_VIDEO_CODEC, MEDIA_VIDEO_H264);
+	sp5kMediaRecAttrSet(SP5K_MEDIA_ATTR_AUDIO_CODEC, MEDIA_AUDIO_UNKNOWN);
+	sp5kMediaRecAttrSet(SP5K_MEDIA_ATTR_STAMP_OPTION, 0);
+	sp5kMediaRecAttrSet(SP5K_MEDIA_ATTR_H264_GOP_STRUCTURE, 0x0);	/* 0x00 for IBBP, 0x10 for IPPP, 0x20 for IIII */
+
+	/* malloc buffer */
+	sp5kMediaRecAttrGet(SP5K_MEDIA_ATTR_WIDTH, &gVideoLapse.yuvBufferWidth);
+	sp5kMediaRecAttrGet(SP5K_MEDIA_ATTR_HEIGHT, &gVideoLapse.yuvBufferHeight);
+	if(gVideoLapse.yuvBufferHeight == 1080)
+	{
+		gVideoLapse.yuvBufferHeight = 1088;	//for 1080p frame error
+	}	
+	if(gVideoLapse.pYuvBuffer != NULL)
+	{
+		sp5kYuvBufferFree(gVideoLapse.pYuvBuffer);
+	}
+	gVideoLapse.pYuvBuffer = sp5kYuvBufferAlloc(gVideoLapse.yuvBufferWidth, gVideoLapse.yuvBufferHeight);
+
+	sp5kModeSet(SP5K_MODE_VIDEO_PREVIEW);
+	sp5kModeWait(SP5K_MODE_VIDEO_PREVIEW);
+
+	//register preview callback to trige encode
+	switch(puiPara->CdvVideoLapseTime)	//base is 30fps
+	{
+		case UI_SCDV_VIDEO_LAPSE_TIME_1S:
+			gVideoLapse.videoLapseInterval = 1;
+			break;
+		case UI_SCDV_VIDEO_LAPSE_TIME_3S:
+			gVideoLapse.videoLapseInterval = 3;
+			break;
+		case UI_SCDV_VIDEO_LAPSE_TIME_5S:
+			gVideoLapse.videoLapseInterval = 5;
+			break;
+		case UI_SCDV_VIDEO_LAPSE_TIME_10S:
+			gVideoLapse.videoLapseInterval = 10;
+			break;
+		case UI_SCDV_VIDEO_LAPSE_TIME_30S:
+			gVideoLapse.videoLapseInterval = 30;
+			break;
+		case UI_SCDV_VIDEO_LAPSE_TIME_60S:
+			gVideoLapse.videoLapseInterval = 60;
+			break;
+		default:
+			gVideoLapse.videoLapseInterval = 1;
+			break;
+	}	
+	//sp5kPreviewCallbackSet(1, appCdvVideoRecLapsePreviewCallback, gVideoLapse.yuvBufferWidth, gVideoLapse.yuvBufferHeight);
+	///if(gVideoLapse.yuvBufferHeight*4==gVideoLapse.yuvBufferWidth*3)
+	printf("--video w=%d h=%d\n",gVideoLapse.yuvBufferWidth,gVideoLapse.yuvBufferHeight);
+	sp5kPreCallbackSet(5, appCdvVideoRecLapsePreviewCallback);
+	//sp5kPreviewCallbackSet(1, appCdvVideoRecLapsePreviewCallback, gVideoLapse.yuvBufferWidth, gVideoLapse.yuvBufferHeight);	
+	
+	/* Register the callback to enable the feature */
+	sp5kMediaRecCfgSet(SP5K_MEDIA_REC_SWTRIG_CB, (UINT32)appCdvVideoRecLapseSwTrigCb);
+	sp5kMediaRecControl(SP5K_MEDIA_REC_SWTRIG_START);
+	
+	gVideoLapse.videoLapseTimer = appTimerSet(1000, "video lapse");
+	gVideoLapse.videoLapseTime = 0;		
+	//appCdvVideoRecLapseTrigger();//lyc@add videoLapseFrame syncronize to timer display   	
+	appCdvVideoRecLapseFrameShow();
+	
+	printf("record start...\n");
+	#endif
+}	
+
+void appCdvVideoRecLapseStop(void)
+{
+	printf("video rec lapse stop\n");
+	UINT32 nWaitNum=0;
+	sp5kPreCallbackSet(0, NULL);
+	sp5kTimeDelay(SP5K_TIME_DELAY_1MS, 500);//lyc@add
+	while(gVideoLapse.bYuvBufferReady == TRUE)
+	{
+		nWaitNum++;		
+		appOsDelayMs(10);		
+		if(nWaitNum>10)
+		{
+			gVideoLapse.bYuvBufferReady=FALSE;
+			break;
+		}	
+		
+	}
+	gVideoLapse.videoLapseTrigger = FALSE;
+	gVideoLapse.bYuvStandby=FALSE;
+	//sp5kPreviewCallbackSet(0, NULL, 0, 0);
+	//sp5kPreCallbackSet(1, NULL);
+	appTimerClear(&gVideoLapse.videoLapseTimer);
+	sp5kMediaRecControl(SP5K_MEDIA_REC_SWTRIG_STOP);
+		
+	gVideoLapse.bYuvBufferReady = FALSE;
+			
+	/* invoked when received the finished signal */	
+	/* clear the callback to disable the feature. */
+	sp5kMediaRecCfgSet(SP5K_MEDIA_REC_SWTRIG_CB, (UINT32)NULL);
+	
+	
+	
+	
+	if(gVideoLapse.pYuvBuffer != NULL)
+	{
+		sp5kYuvBufferFree(gVideoLapse.pYuvBuffer);
+		gVideoLapse.pYuvBuffer = NULL;
+	}
+	gVideoLapse.videoLapseTime = 0;
+	gVideoLapse.bYuvBufferReady = FALSE;
+	gVideoLapse.videoLapseFrame = 0;
+	gVideoLapse.videoLapseTrigger = FALSE;
+	nWifiRFMutex=0;
+	sp5kTimeDelay(SP5K_TIME_DELAY_1MS, 1000);//lyc@add	
+	printf("sw record stopped.\n");
+}
+
+void appCdvVideoRecLapseStateInit(void)
+{
+	appCalibData_t *pCalib = appCalibDataGet();
+	uiPara_t* puiPara = appUiParaGet();
+
+	__FUNC_TRACK__;
+	 nWifiRFMutex=1;//lyc@add
+	appRfCdvLapseBufferInit();
+	appRfCdvLapseCallbackRelease();//lyc@add 
+	UINT32 cfg;
+	sp5kSystemCfgGet(SP5K_DISK_SD_HW_PIN_CFG, &cfg);
+	/* set SD driving to high 6mA -> 8mA*/
+	sp5kSystemCfgSet(SP5K_DISK_SD_HW_PIN_CFG, cfg | 0x02);
+
+	LED_RULES_REC;
+	appAutoPowerOffEnable(FALSE);
+	appLcmPowerSaveEnable(FALSE);
+
+	if(pCalib->aedebug == TRUE)
+		appVideoLogFileInit();
+
+	appExif_SetAviChunk();
+	
+	appAePreviewRestore();
+
+	appCdvVideoRecLapseOsdShow();
+	appCdvVideoRecLapseStart();
+
+	appBtnEnable(BTN_ALL);
+}
+
+void appCdvVideoRecLapseStateOnMsg(UINT32 msg, UINT32 param)
+{
+	UINT32 tmpU32;
+	SINT16 tmp16_x,tmp16_y,tmp16_z;
+
+	extern UINT32 appAeInfoExpidxGet();
+	extern UINT32 appAeInfoAgcidxGet();
+
+   	appCalibData_t* pCalib = appCalibDataGet();
+	uiPara_t* puiPara = appUiParaGet();
+
+	appSdvVideoRecStateWifiMsg(msg, param);
+
+	switch(msg) 
+	{
+		case SP5K_MSG_MODE_READY:
+			break;
+		case SP5K_MSG_MEDIA_REC_START:
+			if (param==SP5K_MSG_MEDIA_PARAM_OKAY)
+			{
+				DBG_PRINT("__OmMsg: REC_START(OKAY)\n");
+			}
+			else
+			{
+				DBG_PRINT("__OmMsg: REC_START(FAIL) !!\n");
+				appTimerClear(&gVideoLapse.videoLapseTimer);
+				appModeSet(SP5K_MODE_VIDEO_PREVIEW);
+				appBuzzerPlay(BUZZER_WARNING);
+			}
+			break;
+		case SP5K_MSG_MEDIA_REC_STOP:
+			//printf("--wifi stop1\n");
+			printf("SP5K_MSG_MEDIA_REC_STOP:0x%x\n",param);
+			if (param==SP5K_MSG_MEDIA_PARAM_OKAY)
+			{
+				appTimerClear(&gVideoLapse.videoLapseTimer);
+				if(appNextStateGet() !=APP_STATE_NULL)
+				 {
+					appStateCloseDone();
+				 }
+				 else
+				 {
+				 	if(appWiFiConnection_UtilityStateGet() > WIFI_UTILITY_CLOSE)
+				 	{
+						appStateChange(APP_STATE_WIFI_CONNECTION, STATE_PARAM_NORMAL_INIT);
+					}
+					else
+					{
+						appStateChange(APP_STATE_CARDV_VIDEO_PREVIEW, STATE_PARAM_NORMAL_INIT);
+					}
+				 }
+			}
+			else
+			{
+				printf("__OmMsg: REC_STOP(FAIL) !!\n");
+				/*-- There wont have this msg out of middleware.
+				 * Instead, middleware will send SP5K_MSG_DISK_ERROR.
+				 */
+			}
+			break;
+		/* view handling */
+		case SP5K_MSG_AE_READY:
+			if(puiPara->MotionDetect == 1)
+			{
+				appMotionDetectHdr();
+			}
+			break;
+		case SP5K_MSG_AWB_READY:
+			appAwbPreviewAdjust(param);
+			break;
+		case SP5K_MSG_MEDIA_SEAMLESS_CHANGE_FILE:
+			//gsensorTriggerRecordingStateFlag = 0;
+			//cutSkipFlag--;
+			break;
+	   	//case SP5K_MSG_MEDIA_SEMALESS_CNT_NOTIFY :
+		case SP5K_MSG_TIMER:
+			if (param == gVideoLapse.videoLapseTimer)
+			{
+				gVideoLapse.videoLapseTime ++;
+				appCdvVideoRecLapseTrigger();				
+				//printf("--CapSec =%d videoLapseFrame=%d\n",gVideoCB.CapSec, gVideoLapse.videoLapseFrame);
+				if(gVideoCB.CapSec != gVideoLapse.videoLapseTime)
+				{
+					gVideoCB.CapSec = gVideoLapse.videoLapseTime;
+					//printf("--videoLapseTime=%d\n",gVideoLapse.videoLapseTime);
+					appCdvVideoRecLapseFrameShow();
+					appSdvVideoRecTimeOsdShow();
+				
+					#if 0
+					#if GPS_SUPPORT
+					if(puiPara->MediaFormat == MEDIA_FORMAT_MOV/* &&  GPS on && G-senor on*/){
+						appGpsWrite2TxtEn(1);
+						appUsrDataWrite();
+						memset(GSensorInfo,0,sizeof(GSensorInfo));
+					}
+					#endif
+					GSensorReadFlag = 0;
+
+					#if CAM_TYPE_CVR
+					appGsensorTriggerVideoRecProc();
+					appCountDownRecProc();
+					#endif
+					#endif
+					APP_OSD_REFRESH_ON;
+				}
+			}
+			break;
+		case APP_UI_MSG_GSENSOR_TRIGGER:
+			if(puiPara->CdvGsensorTrigger == UI_SCDV_GSENSOR_TRIGGER_ON)
+			{
+				appCdvGSensorTrigger();
+			}
+			break;
+
+		/* media rec */
+		case SP5K_MSG_MEDIA_ELAPSED_TIME_UPDATE:
+			DBG_PRINT("_OnMsg: MEDIA_ELAPSED_TIME_UPDATE\n");
+			break;
+		case SP5K_MSG_MEDIA_REC_DROP_FRAME:
+			printf("_OnMsg: MEDIA_REC_DROP_FRAME param=%x\n",param & 0xf0000000 ); 
+			//Ethan if drop frame stop rrecording (H624)
+			appVideoRecLogFileAdd(msg,param);
+			if(((param & 0xF0000000) == 0x90000000)||((param & 0xF0000000) == 0x10000000))
+			{
+				break;
+			}
+			else
+			{
+				__FUNC_TRACK__;
+				appCdvVideoRecLapseStop();
+			}
+			break;
+		case SP5K_MSG_MEDIA_REC_PAUSE_FINISH:
+		case SP5K_MSG_MEDIA_REC_RESUME_FINISH:
+
+			break;
+		case SP5K_MSG_MEDIA_FILE_SIZE_NOTIFY:
+			if (param == 0x4)
+			{
+				__FUNC_TRACK__;
+				appCdvVideoRecLapseStop();
+			}
+			DBG_PRINT("_OnMsg: MEDIA_BETTER_FILE_SIZE\n");
+			break;
+		case SP5K_MSG_MEDIA_AVI_REC_FPS_LOW://happen with slow card and enough space(>2G)
+		
+			break;
+		case SP5K_MSG_MEDIA_REC_DISK_FULL:
+			printf("video msg: MEDIA_REC_DISK_FULL\n");
+
+			break;
+		case SP5K_MSG_DISK_ERROR:
+			printf("video msg: SP5K_MSG_DISK_ERROR  param=%x\n",param); 
+			appTimerClear(&gVideoLapse.videoLapseTimer);
+			__FUNC_TRACK__;
+
+			appCdvVideoRecLapseStop();
+			appBuzzerPlay(BUZZER_WARNING);
+			break;
+		case APP_STATE_MSG_ABORT:
+			DBG_PRINT("video msg: APP_STATE_MSG_ABORT\n");
+			break;
+		case APP_UI_MSG_MD_STOP:
+
+			break;
+		default:
+			break;
+	}
+}
+
+void appCdvVideoRecLapseStateOnKey(UINT32 msg, UINT32 param)
+{
+	uiPara_t* puiPara = appUiParaGet();
+
+	switch(msg) 
+	{
+		case APP_KEY_PRESS_POWER:	//SnapShot
+			if(puiPara->VideoFormat == VIDEO_FORMAT_H264)
+			{	
+				#if 0
+				if(appRFSkipFunction()==FALSE||appWiFiConnection_UtilityStateGet() > WIFI_UTILITY_CLOSE)
+					break;	
+				if(appCdfsFileNameValidCheck(SP5K_DCF_FILETYPE_JPG) == SUCCESS)
+				{
+					appCdfsEventFlagSet(JPG_EVENT_IN_VIDEO);
+					appBtnDisable(BTN_ALL);
+					/*sp5kMediaRecControl(SP5K_MEDIA_REC_FRAME_CAPTURE);*/
+					sp5kMediaRecControl(SP5K_MEDIA_REC_JFIF_CAPTURE);
+					appBtnEnable(BTN_ALL);
+				}
+				#endif
+			}
+			else
+			{
+				printf("video format is not H264,do not support capture in movie!!");
+			}
+			break;
+		case APP_KEY_PRESS_OK:
+			printf("--wifi stop2\n");
+			if(gVideoCB.CapSec > 0)
+			{
+				appCdvVideoRecLapseStop();
+			 	if(appWiFiConnection_UtilityStateGet() > WIFI_UTILITY_CLOSE)
+			 	{
+					appStateChange(APP_STATE_WIFI_CONNECTION, STATE_PARAM_NORMAL_INIT);
+				}
+				else
+				{
+					appStateChange(APP_STATE_CARDV_VIDEO_PREVIEW, STATE_PARAM_NORMAL_INIT);
+				}
+			}
+			break;
+		default:
+			break;
+	}
+}
+
+void appCdvVideoRecLapseState(UINT32 msg, UINT32 param)
+{
+	switch (msg)
+	{
+		case APP_STATE_MSG_INIT:
+			RPrintf("appCdvVideoRecLapseState");
+			appCdvVideoRecLapseStateInit();
+			break;
+		case APP_STATE_MSG_CLOSE:
+			DBG_PRINT("%s : close\n",__FUNCTION__);
+			appCdvVideoRecLapseStop();
+			if(!IS_CARD_EXIST && appNextStateGet()==APP_STATE_POWER_OFF)
+			{
+				appStateCloseDone();
+			}
+			else
+			{
+				appModeSet(SP5K_MODE_VIDEO_PREVIEW);
+			}
+			break;
+		case APP_STATE_MSG_ABORT:
+			__FUNC_TRACK__;
+			appCdvVideoRecLapseStop();
+		 	if(appWiFiConnection_UtilityStateGet() > WIFI_UTILITY_CLOSE)
+		 	{
+				appStateChange(APP_STATE_WIFI_CONNECTION, STATE_PARAM_NORMAL_INIT);
+			}
+			else
+			{
+				appStateChange(APP_STATE_CARDV_VIDEO_PREVIEW, STATE_PARAM_NORMAL_INIT);
+			}
+			break;
+		default:
+			if (IS_APP_KEY_MSG(msg))
+			{
+				appCdvVideoRecLapseStateOnKey(msg,param);
+			}
+			else
+			{
+				appCdvVideoRecLapseStateOnMsg(msg,param);
+			}
+			break;
+	}
+}
+

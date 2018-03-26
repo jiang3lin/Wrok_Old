@@ -1,0 +1,279 @@
+/**************************************************************************
+ *
+ *        Copyright (c) 2006-2008 by Sunplus mMedia Inc., Ltd.
+ *
+ *  This software is copyrighted by and is the property of Sunplus
+ *  mMedia Inc., Ltd. All rights are reserved by Sunplus mMedia
+ *  Inc., Ltd. This software may only be used in accordance with the
+ *  corresponding license agreement. Any unauthorized use, duplication,
+ *  distribution, or disclosure of this software is expressly forbidden.
+ *
+ *  This Copyright notice MUST not be removed or modified without prior
+ *  written consent of Sunplus mMedia Inc., Ltd.
+ *
+ *  Sunplus mMedia Inc., Ltd. reserves the right to modify this
+ *  software without notice.
+ *
+ *  Sunplus mMedia Inc., Ltd.
+ *  19-1, Innovation First Road, Science-Based Industrial Park,
+ *  Hsin-Chu, Taiwan, R.O.C. 
+ *
+ **************************************************************************/
+
+#define HOST_DBG 1
+#include "app_com_def.h"
+#include "app_com_api.h"
+#include "sp5k_global_api.h"
+#include "sp5k_utility_api.h"
+#include "sp5k_aud_api.h"
+#include "sp5k_disp_api.h"
+#include "sp5k_gfx_api.h"
+#include "sp5k_rsvblk_api.h"
+#include "app_timer.h"
+#include "app_lens_api.h"
+#include "app_tvlcd.h"
+#include "app_sensor.h"
+#include "app_gSensor.h"
+#include "app_gSensor_def.h"
+#include "app_error_msg.h"
+#include "app_sound.h"
+#include "app_ui_para.h"
+#include "App_jpg_draw.h"
+#include "App_osd_api.h"
+#include "Sp5k_usb_api.h"
+#include "App_battery.h"
+#include "app_ui_para.h"
+#include "dev_init.h"
+#include "app_key_msg.h"
+#include "app_view_param_def.h"
+#include "app_rtc.h"
+
+#include "app_osd_draw_lcm.h"
+#include "app_scdv_ui_para_def.h"
+
+/**************************************************************************
+ *                           C O N S T A N T S                            *
+ **************************************************************************/
+
+/**************************************************************************
+ *                              M A C R O S                               *
+ **************************************************************************/
+
+/**************************************************************************
+ *                          D A T A    T Y P E S                          *
+ **************************************************************************/
+
+/**************************************************************************
+ *                         G L O B A L    D A T A                         *
+ **************************************************************************/
+
+/**************************************************************************
+ *                 E X T E R N A L    R E F E R E N C E S                 *
+ **************************************************************************/
+extern UINT8 timelapse_act;
+/**************************************************************************
+ *               F U N C T I O N    D E C L A R A T I O N S               *
+ **************************************************************************/
+ 
+static UINT32 powerOffEvent;
+extern BOOL appGetBoot4ChargingFlag(void);
+
+void
+_powerOffWarningProc(
+	void
+)
+{
+	switch(powerOffEvent){
+		case STATE_PARAM_BATT_EMPTY:
+			appErrMsgWithSound(ERR_MSG_OUT_OF_BATTERY,ERR_MSG_WITH_WARNING_SOUND,ERR_MSG_SHOW_1SEC);
+			break;
+		case STATE_PARAM_LENS_ERROR:	
+		case STATE_PARAM_VIDEO_REC_ERROR:			
+			appPreloadSoundPlay(SOUND_ID_WARNING);
+			appTimeDelayMs( ERR_MSG_SHOW_1SEC);
+			break;
+	}
+}
+
+void appPeriodicalCaptureTimeSet(void)
+{
+	UINT32 time;
+	uiPara_t* puiPara = appUiParaGet();
+	
+	switch(puiPara->PeriodicalCap)
+	{
+		case PERIODICAL_CAPTURE_5SEC:
+			time=5;
+			break;
+		case PERIODICAL_CAPTURE_10SEC:
+			time = 10;
+			break;
+		case PERIODICAL_CAPTURE_30SEC:
+			time = 30;
+			break;
+		case PERIODICAL_CAPTURE_60SEC:
+			time =60;
+			break;
+		case PERIODICAL_CAPTURE_OFF:
+		default:
+			time=0;
+			break;
+	}
+
+	if(!time)
+	{
+		return;
+	}
+	appPowerOffWakeupSet(time);	
+
+}
+
+void
+appPsuedoPowerOff(
+ 	UINT32 powerDown
+)
+{
+#if CAM_TYPE_CVR
+	UINT32 intValue[9] = {0, 10, 20, 30, 60, 300, 600, 1800, 3600};
+#else
+	UINT32 intValue[6] = {0, 1, 3, 5, 60, 300};
+#endif
+	uiPara_t* puiPara = appUiParaGet();
+	UINT32 pParam;
+	#if COMPEL_POWEROFF_CHARGE
+	tmx_t rtc;
+	
+	if(appGetBoot4ChargingFlag())
+	{
+		if(sp5kUsbDetectStateGet()){
+			sp5kRtcReliableSet(0x5a);
+			sp5kRtcDateTimeGet(SP5K_DATE_TIME_OPTION, &rtc);
+			rtc.tmx_sec += 1;
+			sp5kRtcDateTimeSet(SP5K_WAKEUP_OPTION, &rtc);
+		}
+		sp5kPowerCtrl(SP5K_POWER_OFF, 0);
+		while(1);
+		return;
+	}
+	#endif
+
+	CLEAR_OSD_SRC;
+	APP_OSD_REFRESH_ON;
+	if(BuzzerPlayEnableGet() == TRUE)
+	sp5kResourceFilePlay(SP5K_RES_TYPE_WAV,RES_WAV_POWER_OFF, NULL);	
+	sp5kGfxAttrSet(SP5K_GFX_REFRESH_ACTIVE,0, 0, 0, 0);
+	#if KIT_WITH_HDMI
+	if(IS_HDMI_IN){
+		appRsvFileScaleDraw(SP5K_GFX_PAGE_PIP_0,SP5K_RES_TYPE_JPG,"A:\\RO_RES\\UI\\JPG\\MEDION.JPG",0,0,640,360);
+		printf("MEDION.JPG\n");
+	}else
+	#endif
+	{
+		appJpgFileDraw(JPG_DRAW_PIP_LAYER, "A:\\RO_RES\\UI\\JPG\\MEDION.JPG", 0,0,0,0);
+		printf("GOODBYE2.JPG\n");
+	}
+	sp5kGfxAttrSet(SP5K_GFX_REFRESH_ACTIVE,1, 0, 1, 0);
+	sp5kDispDevAttrSet(SP5K_DISP_PIP_ACTIVE, 1, 0, 0, 0);
+	sp5kDispDevAttrSet(SP5K_DISP_IMG_ACTIVE, 0, 0, 0, 0); 
+	
+	appBuzzerStop(TRUE);	
+	appBuzzerPlay(BUZZER_POWER_OFF);
+	appLcmOsdDrawPowerOffLogo();
+
+	sp5kTimeDelay(SP5K_TIME_DELAY_1MS,500);		
+	appHostMsgWait(SP5K_MSG_MEDIA_SOUND_FINISH,&pParam,2000);
+	LED_FLICKER_POWER_OFF;
+	/* UI param update*/
+	/*appUserSettingSave(pUiSetting);*/
+	appUIParaSave();
+		
+	appPeriodicalCaptureTimeSet();	
+	#if KIT_WITH_LENS
+	appLensStopWait();
+	appLensClose();
+	#endif
+
+	appLcdTurnOff();
+	
+	//power off sensor
+	appSensorPowerOff();
+	APP_SLEEP_MS(1);
+	
+	//LED ON
+	sp5kGpioWrite(SP5K_GPIO_GRP_GEN, 1<<0, 1);
+	#if KIT_WITH_LENS
+	appLensStopWait();
+	#endif
+	APP_SLEEP_MS(30);
+	LCD_PWR_OFF;
+	ALL_LED_OFF;
+	DBG_PRINT(".done...\n");
+	
+	if (!powerDown)
+	{
+		return;
+	}
+	#if COMPEL_POWEROFF_CHARGE
+	if(sp5kUsbDetectStateGet() && (appBatteryAdcValueGet() > 100) && !appGetBoot4ChargingFlag())
+	{
+		sp5kRtcReliableSet(0x5b);
+		sp5kRtcDateTimeGet(SP5K_DATE_TIME_OPTION, &rtc);
+		rtc.tmx_sec += 1;
+		sp5kRtcDateTimeSet(SP5K_WAKEUP_OPTION, &rtc);
+	}
+	else
+		sp5kRtcReliableSet(0x5a);
+	#endif
+	
+	if(puiPara->TimeLapse != UI_TIMELAPSE_OFF)
+	{	
+		if(puiPara->TimeLapse >= TIMELAPSE_POWER_OFF && timelapse_act)
+		{
+			appPowerOffWakeupSet(intValue[puiPara->TimeLapse]);
+			sp5kRtcReliableSet(0x5d);
+		}
+	}
+	
+	#if CAM_TYPE_CVR
+	if(	puiPara->CollisionDetection 
+		|| (puiPara->CdvGsensorTrigger == UI_SCDV_GSENSOR_TRIGGER_ON && puiPara->ScdvMainMode == UI_SCDV_MAIN_MODE_CAR))
+	{
+		appGsensorInit(GSENSOR_COLLISIONDET_INIT);
+	}
+	else
+	{
+		appGsensorInit(GSENSOR_RESET_INIT);
+	}
+	#endif		
+	while(VALI_PocuGPIO(bit_0)==TRUE)
+	{
+		sp5kTimeDelay(50, 1);
+	}		
+	M01120BlackLightPowerOff();
+	sp5kTimeDelay(100, 1);
+	sp5kPowerCtrl(SP5K_POWER_OFF, 0);
+
+	while(1);
+}
+
+void 
+appPowerOffState(
+	UINT32 msg,
+	UINT32 param
+)
+{	
+	switch (msg)
+	{
+		case APP_STATE_MSG_INIT:
+			RPrintf("appPowerOffState");
+			powerOffEvent = param;
+			appPsuedoPowerOff(TRUE);
+			break;	
+		default:
+			break;
+	}
+} 
+
+
+
+

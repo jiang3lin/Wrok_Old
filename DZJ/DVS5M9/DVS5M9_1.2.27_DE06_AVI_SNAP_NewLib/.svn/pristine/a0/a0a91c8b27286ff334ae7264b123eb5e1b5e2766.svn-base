@@ -1,0 +1,1374 @@
+/**************************************************************************
+ *                                                                        *
+ *         Copyright (c) 2010 by DXG Technology Co., Ltd.             *
+ *                                                                        *
+ *  This software is copyrighted by and is the property of DXG        *
+ *  Technology Co., Ltd. All rights are reserved by DXG Technology    *
+ *  Co., Ltd. This software may only be used in accordance with the       *
+ *  corresponding license agreement. Any unauthorized use, duplication,   *
+ *  distribution, or disclosure of this software is expressly forbidden.  *
+ *                                                                        *
+ *  This Copyright notice MUST not be removed or modified without prior   *
+ *  written consent of DXG Technology Co., Ltd.                       *
+ *                                                                        *
+ *  DXG Technology Co., Ltd. reserves the right to modify this        *
+ *  software without notice.                                              *
+ *                                                                        *
+ *  DXG Technology Co., Ltd.                                          *
+ *  MIN ZHI IND., PARK,					            *
+ *  LONG HUA,BAOAN,SHEN ZHEN,P.R.O.C.                                           *
+ *                                                                        *
+ *  Author: Wujf                                                  *
+ *                                                                         *
+ **************************************************************************/
+ 
+ /*
+
+ The suggestion video fllow.
+ 1. set video size.
+ 2. sp5k mode set to "video_privew." (need to allocate buffer)
+ 3. sp5k mode set to "video_record" as recording.
+ 4. set media abort to stop. (to stop and add file name to DCF)
+ 5. set sp5k mode set to "video_preview."
+ 
+ */
+ 
+#define HOST_DBG 0
+
+#include "sp5k_global_api.h"
+#include "sp5k_ae_api.h"
+#include "sp5k_capture_api.h"
+#include "sp5k_disp_api.h"
+#include "sp5k_disk_api.h"
+#include "sp5k_rsvblk_api.h"
+#include "sp5k_gfx_api.h"
+#include "sp5k_aud_api.h"
+#include "sp5k_dcf_api.h"
+#include "sp5k_media_api.h"
+#include "sp5k_dzoom_api.h"
+#include "sp5k_sensor_api.h"
+
+#include "app_com_def.h"
+#include "app_com_api.h"
+#include "app_osd.h"
+#include "app_pal.h"
+#include "app_icon.h"
+#include "app_icon_def.h"
+#include "app_stringid.h"
+#include "app_face_detect_ex.h"
+#include "app_calib_api.h"
+#include "app_ui_para.h" 
+#include "app_zoom_api.h"
+#include "app_still.h"
+#include "app_video.h"
+#include "app_user_setting.h"
+#include "app_sound.h"
+#include "app_aaa.h"
+#include "app_view_param.h"
+#include "app_error_msg.h"
+#include "app_view_osd.h"
+#include "gpio_custom.h"
+#include "app_audio.h"
+#include "app_osd_api.h"
+#include "app_cdfs_api.h"
+#include "Sp5k_usb_api.h"
+#include "app_init.h"
+#include "app_md.h"
+#include "app_menu_tab.h"
+#include "app_gps.h"
+#include "app_wifi_connection.h"
+#include "app_ptp.h"
+#include "app_wifi_utility.h"
+#include "app_awbalg_api.h" 
+
+#include "app_osd_api_lcm.h"
+#include "app_osd_draw_lcm.h"
+#include "app_scdv_ui_para_def.h"
+#include "App_exif.h"
+#include "app_rf_def.h"
+#include "app_msg.h"
+#include "app_ui_msg.h"
+
+#if VIEW_YUV_CAP
+#define ROUND_DOWN_TO_DIVISIBLE(num,div) \
+	( (UINT32)(num) & -(UINT32)(div) )
+#define ROUND_UP_TO_DIVISIBLE(num,div) \
+	ROUND_DOWN_TO_DIVISIBLE( (UINT32)(num) + (div) - 1, div )
+#endif
+
+/**************************************************************************
+ *                           C O N S T A N T S                            *
+ **************************************************************************/
+
+
+/**************************************************************************
+ *                              M A C R O S                               *
+ **************************************************************************/
+
+
+/**************************************************************************
+ *                          D A T A    T Y P E S                          *
+ **************************************************************************/
+
+
+
+/**************************************************************************
+ *                         G L O B A L    D A T A                         *
+ **************************************************************************/
+
+
+
+/**************************************************************************
+ *                 E X T E R N A L    R E F E R E N C E S                 *
+ **************************************************************************/
+extern UINT8 fileTypeSelect;
+extern UINT8 countDownRecFlag;
+extern UINT8 carchargerDetectFlag;
+extern UINT8 gsensorDelayRecTimes;
+extern UINT8 gsensorTriggerByIntFlag;
+
+extern UINT32 appAWBALGLib_WBParamSet( UINT32 sel, UINT32 val );
+extern void applightFrequencySetting(LIGHT_FREQ_e lightfreq);
+extern void appSdvStillFrequencySet(void);
+extern void appSdvVideoRecStop(void);
+extern void appIqSetWdr(UINT8 enable);
+extern void appVideoRecStampInit(void);
+
+/**************************************************************************
+ *               F U N C T I O N    D E C L A R A T I O N S               *
+ **************************************************************************/
+
+#define APP_DEFAULT_REC_AUD_VOL		31
+
+static UINT32 gAudRecVol=APP_DEFAULT_REC_AUD_VOL;
+static UINT32 gAudRecVolSave=APP_DEFAULT_REC_AUD_VOL;
+
+void appSdvVideoPvOsdShow(void)
+{
+	uiPara_t* puiPara = appUiParaGet();
+	UINT8 nWifiOpen=appWiFiConnection_UtilityStateGet() > WIFI_UTILITY_CLOSE;
+	appLcmOsdClean();
+
+
+	if(TRUE)
+	{
+		//Mode Icon
+		if(puiPara->SdvVideoMode == UI_SCDV_VIDEO_MODE_NORMAL)
+		{
+			switch(puiPara->SdvVideoNormalSize)
+			{
+				case UI_SCDV_VIDEO_SIZE_1080P30:
+					appLcmOsdLargeIconShow(LcmOsdIconIndex0, ID_ICON_SDV_VIDEO_SIZE_1080P30, FALSE);
+					break;
+				case UI_SCDV_VIDEO_SIZE_960P30:
+					appLcmOsdLargeIconShow(LcmOsdIconIndex0, ID_ICON_SDV_VIDEO_SIZE_960P30, FALSE);
+					break;
+				case UI_SCDV_VIDEO_SIZE_720P60:
+					appLcmOsdLargeIconShow(LcmOsdIconIndex0, ID_ICON_SDV_VIDEO_SIZE_720P60, FALSE);
+					break;
+				case UI_SCDV_VIDEO_SIZE_720P30:
+					appLcmOsdLargeIconShow(LcmOsdIconIndex0, ID_ICON_SDV_VIDEO_SIZE_720P30, FALSE);
+					break;
+				case UI_SCDV_VIDEO_SIZE_WVGAP60:
+					appLcmOsdLargeIconShow(LcmOsdIconIndex0, ID_ICON_SDV_VIDEO_SIZE_WVGAP60, FALSE);
+					break;
+				case UI_SCDV_VIDEO_SIZE_WVGAP30:
+					appLcmOsdLargeIconShow(LcmOsdIconIndex0, ID_ICON_SDV_VIDEO_SIZE_WVGAP30, FALSE);
+					break;
+				case UI_SCDV_VIDEO_SIZE_VGAP90:
+					appLcmOsdLargeIconShow(LcmOsdIconIndex0, ID_ICON_SDV_VIDEO_SIZE_VGAP90, FALSE);
+					break;			
+			}
+		}
+		else if(puiPara->SdvVideoMode == UI_SCDV_VIDEO_MODE_SLOW)
+		{
+			switch(puiPara->SdvVideoSlowTime)
+			{
+				case UI_SCDV_VIDEO_SLOW_1_2:
+					appLcmOsdLargeIconShow(LcmOsdIconIndex0, ID_ICON_SDV_VIDEO_SLOW_TIME_1_2, FALSE);
+					break;
+				case UI_SCDV_VIDEO_SLOW_1_3:
+					appLcmOsdLargeIconShow(LcmOsdIconIndex0, ID_ICON_SDV_VIDEO_SLOW_TIME_1_3, FALSE);
+					break;
+				case UI_SCDV_VIDEO_SLOW_1_4:
+					appLcmOsdLargeIconShow(LcmOsdIconIndex0, ID_ICON_SDV_VIDEO_SLOW_TIME_1_4, FALSE);
+					break;
+			}
+		}
+		else 
+		{
+			#if 0
+			switch(puiPara->SdvVideoLapseTime)
+			{
+				case UI_SSPDV_VIDEO_LAPSE_TIME_1S:
+					appLcmOsdLargeIconShow(LcmOsdIconIndex0, ID_ICON_CDV_VIDEO_LAPSE_01S, FALSE);
+					break;
+				case UI_SSPDV_VIDEO_LAPSE_TIME_3S:
+					appLcmOsdLargeIconShow(LcmOsdIconIndex0, ID_ICON_CDV_VIDEO_LAPSE_03S, FALSE);
+					break;
+				case UI_SSPDV_VIDEO_LAPSE_TIME_5S:
+					appLcmOsdLargeIconShow(LcmOsdIconIndex0, ID_ICON_CDV_VIDEO_LAPSE_05S, FALSE);
+					break;
+				case UI_SSPDV_VIDEO_LAPSE_TIME_10S:
+					appLcmOsdLargeIconShow(LcmOsdIconIndex0, ID_ICON_CDV_VIDEO_LAPSE_10S, FALSE);
+					break;
+				case UI_SSPDV_VIDEO_LAPSE_TIME_30S:
+					appLcmOsdLargeIconShow(LcmOsdIconIndex0, ID_ICON_CDV_VIDEO_LAPSE_30S, FALSE);
+					break;
+				case UI_SSPDV_VIDEO_LAPSE_TIME_60S:
+					appLcmOsdLargeIconShow(LcmOsdIconIndex0, ID_ICON_CDV_VIDEO_LAPSE_60S, FALSE);
+					break;
+			}
+			#endif
+			
+		}
+
+		//File Cnt
+		switch(appDiskStatusGet())
+		{
+			case APP_DISK_STATUS_NO_CARD:
+			case APP_DISK_STATUS_MOUNTING:
+			case APP_DISK_STATUS_MOUNTED_FAIL:
+				appLcmOsdLargeTextShow("___", FALSE);
+				break;
+			case APP_DISK_STATUS_CARD_LOCKED:
+			case APP_DISK_STATUS_MEMORY_FULL:
+			case APP_DISK_STATUS_MOUNTED_OK:
+				{
+					UINT32 FileNume;
+					appCdfsFileNumGet(&FileNume);
+					CHAR String[OSD_STRING_SIZE];
+					sprintf(String, "%03d", FileNume);
+					appLcmOsdLargeTextShow(String, FALSE);
+				}
+				break;
+		}	
+
+		//Mode Tips
+		switch(puiPara->SdvVideoMode)
+		{
+			case UI_SCDV_VIDEO_MODE_NORMAL:
+				appLcmOsdModeStringShow(ID_STR_VIDEO, FALSE);
+				break;
+			case UI_SCDV_VIDEO_MODE_SLOW:
+				appLcmOsdModeStringShow(ID_STR_SLOW, FALSE);
+				break;
+			//case UI_SSPDV_VIDEO_MODE_LAPSE:
+				//appLcmOsdModeStringShow(ID_STR_LAPSE, FALSE);
+				//break;
+		}
+
+		//Tips
+		switch(appDiskStatusGet())
+		{
+			case APP_DISK_STATUS_NO_CARD:
+				appLcmOsdTipsTextShow(ID_TEXT_CARD_NULL, FALSE);
+				break;
+			case APP_DISK_STATUS_MOUNTING:
+				appLcmOsdTipsTextShow(ID_TEXT_CARD_MOUNTING, FALSE);
+				break;
+			case APP_DISK_STATUS_MOUNTED_FAIL:
+				appLcmOsdTipsTextShow(ID_TEXT_CARD_ERROR, FALSE);
+				break;
+			case APP_DISK_STATUS_CARD_LOCKED:
+				appLcmOsdTipsTextShow(ID_TEXT_CARD_LOCKED, FALSE);
+				break;
+			case APP_DISK_STATUS_MEMORY_FULL:
+				appLcmOsdTipsTextShow(ID_TEXT_CARD_FULL, FALSE);
+				break;
+		}
+
+		//Battery
+		appLcmOsdDrawBattery(TRUE, -1);
+
+
+
+	}
+			
+	///appLcmRefresh();
+}
+
+void appSdvVideoBitRateSet(void)
+{
+
+	UINT8 nWifiOpen=0;
+	nWifiOpen=appWiFiConnection_UtilityStateGet() > WIFI_UTILITY_CLOSE;
+
+	#if 0
+	UINT8 qualityRatio[UI_SCDV_VIDEO_SIZE_MAX][3] = 	{	//Super	Fine		Normal
+														{17,		14,		11},               //UI_SCDV_VIDEO_SIZE_1080P30
+														{17,		14,		11},               //UI_SCDV_VIDEO_SIZE_960P30
+														{17/2,	14/2,	11/2},	      	//UI_SCDV_VIDEO_SIZE_720P60
+														{17*2/3,	14*2/3,	11*2/3},   	//UI_SCDV_VIDEO_SIZE_720P30
+														{17/2,	14/2,	11/2},	      	//UI_SCDV_VIDEO_SIZE_WVGAP60
+														{17*2/3,	14*2/3,	11*2/3},   	//UI_SCDV_VIDEO_SIZE_WVGAP30
+														{17/3,	14/3,	11/3},         	//UI_SCDV_VIDEO_SIZE_VGAP90
+														{17/4,	14/4,	11/4},         	//UI_SCDV_VIDEO_SIZE_QVGAP240 
+													};
+	#endif
+
+
+	
+	
+	UINT8 qualityRatio[UI_SCDV_VIDEO_SIZE_MAX][3] = 	{	//Super	Fine		Normal
+																{13,		9,		7},               //UI_SCDV_VIDEO_SIZE_1080P30
+																{13,		9,		7},               //UI_SCDV_VIDEO_SIZE_960P30
+																{17/2,	8,	11/2},	      	//UI_SCDV_VIDEO_SIZE_720P60
+																{17*2/3,	8,	11*2/3},   	//UI_SCDV_VIDEO_SIZE_720P30
+																{17/2,	14/2,	11/2},	      	//UI_SCDV_VIDEO_SIZE_WVGAP60
+																{17*2/3,	14*2/3,	11*2/3},   	//UI_SCDV_VIDEO_SIZE_WVGAP30
+																{17/3,	14/3,	11/3},         	//UI_SCDV_VIDEO_SIZE_VGAP90
+																{17/4,	14/4,	11/4},         	//UI_SCDV_VIDEO_SIZE_QVGAP240 
+															};
+
+
+	
+	if (nWifiOpen)
+	{
+			qualityRatio[0][1]=8;
+			qualityRatio[1][1]=8;
+			qualityRatio[2][1]=8;
+			qualityRatio[3][1]=8;
+			
+
+	}
+	else
+	{
+			qualityRatio[0][1]=9;
+			qualityRatio[1][1]=9;
+			qualityRatio[2][1]=8;
+			qualityRatio[3][1]=8;
+
+	}
+	
+	
+	UINT32 mjpgQualityRatio[UI_SCDV_VIDEO_SIZE_MAX] = {150, 110, 130, 50, 30, 30, 30, 30};
+	uiPara_t* puiPara = appUiParaGet();
+
+	UINT32 size_idx = puiPara->SdvVideoNormalSize;
+	UINT32 quality_idx = 1;
+	
+	switch(size_idx) 
+	{
+		default:
+		case UI_SCDV_VIDEO_SIZE_1080P30:
+		case UI_SCDV_VIDEO_SIZE_960P30:
+			if(puiPara->VideoFormat == VIDEO_FORMAT_H264)
+			{
+				gVideoCB.streamBytesPerSec = qualityRatio[size_idx][quality_idx] * 1000000 / 8;
+			}
+			else
+			{
+				gVideoCB.streamBytesPerSec = mjpgQualityRatio[size_idx] * 30 * 1024;
+			}
+			
+			if(nWifiOpen)
+			{
+				if(puiPara->Seamless != UI_VIDEO_SEAMLESS_OFF)
+				{
+						sp5kMediaRecCfgSet(SP5K_MEDIA_REC_VIDEO_FIFO_BUF_NO,512);
+						sp5kMediaRecCfgSet(SP5K_MEDIA_REC_AUDIO_FIFO_BUF_NO,512);
+				}
+					
+					sp5kMediaRecCfgSet(SP5K_MEDIA_REC_VLC_BUF_SIZE,2*1024*1024);
+					sp5kMediaRecCfgSet(SP5K_MEDIA_REC_VLC_BUF_CNT,24);
+			}
+			else
+			{
+				if(puiPara->Seamless != UI_VIDEO_SEAMLESS_OFF)
+				{
+					sp5kMediaRecCfgSet(SP5K_MEDIA_REC_VIDEO_FIFO_BUF_NO,256);
+					sp5kMediaRecCfgSet(SP5K_MEDIA_REC_AUDIO_FIFO_BUF_NO,256);
+				}
+			
+				sp5kMediaRecCfgSet(SP5K_MEDIA_REC_VLC_BUF_SIZE,2*1024*1024);
+				sp5kMediaRecCfgSet(SP5K_MEDIA_REC_VLC_BUF_CNT,12);
+
+			}
+			
+			if(nWifiOpen)
+			{
+				sp5kAwbCfgSet(SP5K_AWB_ACCUM_PERIOD,4);
+				sp5kAeCfgSet(SP5K_AE_ACCUM_PERIOD, 4); 
+			}
+			else
+			{
+
+				sp5kAwbCfgSet(SP5K_AWB_ACCUM_PERIOD,1);
+				sp5kAeCfgSet(SP5K_AE_ACCUM_PERIOD, 1); 
+
+			}
+			sp5kMediaRecCfgSet(SP5K_MEDIA_REC_VIDEO_MSGQ_NO,100);
+			sp5kMediaRecCfgSet(SP5K_MEDIA_REC_AUDIO_MSGQ_NO,64);
+			break;
+			
+		case UI_SCDV_VIDEO_SIZE_720P30:
+		case UI_SCDV_VIDEO_SIZE_WVGAP30:
+			if(puiPara->VideoFormat == VIDEO_FORMAT_H264)
+			{
+				gVideoCB.streamBytesPerSec =  qualityRatio[size_idx][quality_idx]*1000000/8;
+			}
+			else
+			{
+				gVideoCB.streamBytesPerSec = mjpgQualityRatio[size_idx] * 30 * 1024;
+			}
+
+			if(puiPara->Seamless != UI_VIDEO_SEAMLESS_OFF)
+			{
+				sp5kMediaRecCfgSet(SP5K_MEDIA_REC_VIDEO_FIFO_BUF_NO,256);
+				sp5kMediaRecCfgSet(SP5K_MEDIA_REC_AUDIO_FIFO_BUF_NO,256);
+			}
+		
+			sp5kMediaRecCfgSet(SP5K_MEDIA_REC_VLC_BUF_SIZE,0);
+			sp5kMediaRecCfgSet(SP5K_MEDIA_REC_VLC_BUF_CNT,0);
+			sp5kAwbCfgSet(SP5K_AWB_ACCUM_PERIOD,1);
+			sp5kAeCfgSet(SP5K_AE_ACCUM_PERIOD, 1);
+			sp5kMediaRecCfgSet(SP5K_MEDIA_REC_VIDEO_MSGQ_NO,100);
+			sp5kMediaRecCfgSet(SP5K_MEDIA_REC_AUDIO_MSGQ_NO,64);
+			break;
+		
+		case UI_SCDV_VIDEO_SIZE_720P60:
+		case UI_SCDV_VIDEO_SIZE_WVGAP60:
+			if(puiPara->VideoFormat == VIDEO_FORMAT_H264)
+			{
+				gVideoCB.streamBytesPerSec =  qualityRatio[size_idx][quality_idx]*1000000/8;
+			}
+			else
+			{
+				gVideoCB.streamBytesPerSec = mjpgQualityRatio[size_idx] * 30 * 1024;
+			}
+
+			if(nWifiOpen)
+			{
+				if(puiPara->Seamless != UI_VIDEO_SEAMLESS_OFF)
+				{
+					sp5kMediaRecCfgSet(SP5K_MEDIA_REC_VIDEO_FIFO_BUF_NO,512);
+					sp5kMediaRecCfgSet(SP5K_MEDIA_REC_AUDIO_FIFO_BUF_NO,512);
+				}
+				
+				sp5kMediaRecCfgSet(SP5K_MEDIA_REC_VLC_BUF_SIZE,2*1024*1024);
+				sp5kMediaRecCfgSet(SP5K_MEDIA_REC_VLC_BUF_CNT,24);
+			}
+			else
+			{
+				if(puiPara->Seamless != UI_VIDEO_SEAMLESS_OFF)
+				{
+					sp5kMediaRecCfgSet(SP5K_MEDIA_REC_VIDEO_FIFO_BUF_NO,420);
+					sp5kMediaRecCfgSet(SP5K_MEDIA_REC_AUDIO_FIFO_BUF_NO,210);
+				}
+			
+				sp5kMediaRecCfgSet(SP5K_MEDIA_REC_VLC_BUF_SIZE,2*1024*1024);
+				sp5kMediaRecCfgSet(SP5K_MEDIA_REC_VLC_BUF_CNT,18);
+
+			}
+			
+			if(nWifiOpen)
+			{
+
+				sp5kAwbCfgSet(SP5K_AWB_ACCUM_PERIOD,4);
+				sp5kAeCfgSet(SP5K_AE_ACCUM_PERIOD, 4); 
+			}
+			else
+			{
+				sp5kAwbCfgSet(SP5K_AWB_ACCUM_PERIOD,2);
+				sp5kAeCfgSet(SP5K_AE_ACCUM_PERIOD, 2);
+			}
+			sp5kMediaRecCfgSet(SP5K_MEDIA_REC_VIDEO_MSGQ_NO,0);
+			sp5kMediaRecCfgSet(SP5K_MEDIA_REC_AUDIO_MSGQ_NO,0);
+			break;
+			
+		case UI_SCDV_VIDEO_SIZE_VGAP90:
+			if(puiPara->VideoFormat == VIDEO_FORMAT_H264)
+			{
+				gVideoCB.streamBytesPerSec =  qualityRatio[size_idx][quality_idx]*1000000/8;
+			}
+			else
+			{
+				gVideoCB.streamBytesPerSec = mjpgQualityRatio[size_idx] * 30 * 1024;
+			}
+
+			if(puiPara->Seamless != UI_VIDEO_SEAMLESS_OFF)
+			{
+				sp5kMediaRecCfgSet(SP5K_MEDIA_REC_VIDEO_FIFO_BUF_NO,256);
+				sp5kMediaRecCfgSet(SP5K_MEDIA_REC_AUDIO_FIFO_BUF_NO,256);
+			}
+			
+			sp5kMediaRecCfgSet(SP5K_MEDIA_REC_VLC_BUF_SIZE,600*1024);
+			sp5kMediaRecCfgSet(SP5K_MEDIA_REC_VLC_BUF_CNT,40);
+			sp5kAwbCfgSet(SP5K_AWB_ACCUM_PERIOD,4);
+			sp5kAeCfgSet(SP5K_AE_ACCUM_PERIOD, 4);
+			sp5kMediaRecCfgSet(SP5K_MEDIA_REC_VIDEO_MSGQ_NO,100);
+			sp5kMediaRecCfgSet(SP5K_MEDIA_REC_AUDIO_MSGQ_NO,64);
+			break;
+			
+		case UI_SCDV_VIDEO_SIZE_QVGAP240:
+			if(puiPara->VideoFormat == VIDEO_FORMAT_H264)
+			{
+				gVideoCB.streamBytesPerSec =  qualityRatio[size_idx][quality_idx]*1000000/8;
+			}
+			else
+			{
+				gVideoCB.streamBytesPerSec = mjpgQualityRatio[size_idx] * 30 * 1024;
+			}
+
+			if(puiPara->Seamless != UI_VIDEO_SEAMLESS_OFF)
+			{
+				sp5kMediaRecCfgSet(SP5K_MEDIA_REC_VIDEO_FIFO_BUF_NO,256);
+				sp5kMediaRecCfgSet(SP5K_MEDIA_REC_AUDIO_FIFO_BUF_NO,256);
+			}
+			
+			sp5kMediaRecCfgSet(SP5K_MEDIA_REC_VLC_BUF_SIZE,600*1024);
+			sp5kMediaRecCfgSet(SP5K_MEDIA_REC_VLC_BUF_CNT,40);
+			sp5kAwbCfgSet(SP5K_AWB_ACCUM_PERIOD,4);
+			sp5kAeCfgSet(SP5K_AE_ACCUM_PERIOD, 4);
+			sp5kMediaRecCfgSet(SP5K_MEDIA_REC_VIDEO_MSGQ_NO,100);
+			sp5kMediaRecCfgSet(SP5K_MEDIA_REC_AUDIO_MSGQ_NO,64);
+			break;	
+		
+	}
+	
+	HLPrintf1("\n streamBytesPerSec=%d\n",gVideoCB.streamBytesPerSec);
+	sp5kMediaRecAttrSet(SP5K_MEDIA_ATTR_VIDEO_BRC_TYPE, SP5K_MEDIA_CBR);
+	sp5kMediaRecAttrSet(SP5K_MEDIA_ATTR_VIDEO_AVG_BITRATE, gVideoCB.streamBytesPerSec<<3);
+	/*if(appWiFiConnection_UtilityStateGet() > WIFI_UTILITY_CLOSE)
+	{
+		sp5kMediaRecAttrSet(MEDIA_ATTR_H264_GOP_STRUCTURE, 0x10);
+	}
+	else
+	{
+		sp5kMediaRecAttrSet(MEDIA_ATTR_H264_GOP_STRUCTURE, 0x00);
+	}*/
+
+	if(puiPara->VideoFormat == VIDEO_FORMAT_H264)
+	{
+		gVideoCB.aviKbPerSec = 	(gVideoCB.streamBytesPerSec /* video data */
+								+ (gVideoCB.framePerSec)*(16+8) /* video hdr */
+								+ VIDEO_AUDIO_SAMPLE_RATE*(VIDEO_AUDIO_SAMPLE_BIT/8)*(VIDEO_AUDIO_CHANNEL) /* audio data */
+								+ 1024)>>10; /* other overhead (audio hdr, index, fat... */
+	}
+	else
+	{
+		gVideoCB.aviKbPerSec = 	(gVideoCB.streamBytesPerSec /* video data */
+								+ (gVideoCB.framePerSec)*616 /* video hdr */
+								+ VIDEO_AUDIO_SAMPLE_RATE*(VIDEO_AUDIO_SAMPLE_BIT/8)*(VIDEO_AUDIO_CHANNEL) /* audio data */
+								+ 1024)>>10; /* other overhead (audio hdr, index, fat... */
+	}
+}
+
+void appSdvVideoSeamlessCallback(void)
+{
+	appCalibData_t *pCalib;
+	uiPara_t* puiPara = appUiParaGet();
+	pCalib = appCalibDataGet();
+	if(pCalib->aedebug == TRUE){
+
+	}
+
+	if(pCalib->awbdebug == TRUE){
+
+	}
+	appExif_SetAviChunk(); //GQ add ,fix  mantis 45349
+
+	profLogAdd(0,"VideoSeamlessDelFile S");
+	if(puiPara->Seamless!= UI_VIDEO_SEAMLESS_OFF)
+	{
+		profLogAdd(0,"appCdfsFreeSpaceCheck S");
+		if(appCdfsFreeSpaceCheck(CDFS_FILE_FOLDER_VIDEO, FALSE) == FAIL)
+		{
+			if(gVideoCB.CapSec>=2)
+			{
+				__FUNC_TRACK__;
+				appSdvVideoRecStop();
+				gVideoCB.err = VIEW_ERR_MEMORY_FULL;
+			}
+		}
+		profLogAdd(0,"appCdfsFreeSpaceCheck E");
+	}
+	profLogAdd(0,"VideoSeamlessDelFile E");
+
+	#if !ICAT_WIFI
+	if(appCdfsAddFileStsGet())
+	{
+		appCdfsFileAdd(appCdfsLastAviNameGet());
+	}	
+	#else
+	{
+		static UINT8 pMediafilename[32]={'\0'};	
+
+		sprintf(pMediafilename,"%s",appCdfsPreFileNameGet());
+		//pMediafilename[2] = '\\';
+		//pMediafilename[8] = '\\';
+		appPathSlashReplace(pMediafilename);
+		
+		appStill_PIMA_Send_Event(PTP_EC_OBJECT_ADDED, (UINT32)pMediafilename, 0, 0);
+	}
+	#endif
+	
+	profLogAdd(0,"appCdfsFileAdd E");
+	profLogAdd(0,"AppVideoSeamlessCallback E");
+ 
+}
+
+void appSdvVideoSizeSet(void)
+{
+	uiPara_t* puiPara = appUiParaGet();
+
+	switch(puiPara->SdvVideoNormalSize)
+	{
+		case UI_SCDV_VIDEO_SIZE_1080P30:	
+			sp5kSensorModeCfgSet(SP5K_MODE_VIDEO_PREVIEW , SENSOR_MODE_1080P);
+			sp5kMediaRecAttrSet(SP5K_MEDIA_ATTR_WIDTH, 1920);
+			sp5kMediaRecAttrSet(SP5K_MEDIA_ATTR_HEIGHT, 1080);	
+			gVideoCB.framePerSec =30;
+			break;
+		case UI_SCDV_VIDEO_SIZE_960P30:
+			sp5kSensorModeCfgSet(SP5K_MODE_VIDEO_PREVIEW , SENSOR_MODE_XGA_30FPS);
+			sp5kMediaRecAttrSet(SP5K_MEDIA_ATTR_WIDTH, 1280);
+			sp5kMediaRecAttrSet(SP5K_MEDIA_ATTR_HEIGHT, 960);	
+			gVideoCB.framePerSec =30;
+			break;
+		case UI_SCDV_VIDEO_SIZE_720P60:
+			sp5kSensorModeCfgSet(SP5K_MODE_VIDEO_PREVIEW , SENSOR_MODE_720P_60FPS);
+			sp5kMediaRecAttrSet(SP5K_MEDIA_ATTR_WIDTH, 1280);
+			sp5kMediaRecAttrSet(SP5K_MEDIA_ATTR_HEIGHT, 720);	
+			gVideoCB.framePerSec =60;
+			break;
+		case UI_SCDV_VIDEO_SIZE_720P30:
+			sp5kSensorModeCfgSet(SP5K_MODE_VIDEO_PREVIEW , SENSOR_MODE_720P_30FPS);
+			sp5kMediaRecAttrSet(SP5K_MEDIA_ATTR_WIDTH, 1280);
+			sp5kMediaRecAttrSet(SP5K_MEDIA_ATTR_HEIGHT, 720);	
+			gVideoCB.framePerSec =30;
+			break;
+		case UI_SCDV_VIDEO_SIZE_WVGAP60:
+			sp5kSensorModeCfgSet(SP5K_MODE_VIDEO_PREVIEW , SENSOR_MODE_720P_60FPS);
+			sp5kMediaRecAttrSet(SP5K_MEDIA_ATTR_WIDTH, 848);
+			sp5kMediaRecAttrSet(SP5K_MEDIA_ATTR_HEIGHT, 480);	
+			gVideoCB.framePerSec =60;
+			break;
+		case UI_SCDV_VIDEO_SIZE_WVGAP30:
+			sp5kSensorModeCfgSet(SP5K_MODE_VIDEO_PREVIEW , SENSOR_MODE_720P_30FPS);
+			sp5kMediaRecAttrSet(SP5K_MEDIA_ATTR_WIDTH, 848);
+			sp5kMediaRecAttrSet(SP5K_MEDIA_ATTR_HEIGHT, 480);	
+			gVideoCB.framePerSec =30;
+			break;
+		case UI_SCDV_VIDEO_SIZE_VGAP90:
+			sp5kSensorModeCfgSet(SP5K_MODE_VIDEO_PREVIEW , SENSOR_MODE_VGA_120FPS);
+			sp5kMediaRecAttrSet(SP5K_MEDIA_ATTR_WIDTH, 640);
+			sp5kMediaRecAttrSet(SP5K_MEDIA_ATTR_HEIGHT, 480);	
+			gVideoCB.framePerSec =90;
+			break;
+		case UI_SCDV_VIDEO_SIZE_QVGAP240:
+			sp5kSensorModeCfgSet(SP5K_MODE_VIDEO_PREVIEW , SENSOR_MODE_QVGA_240FPS);
+			sp5kMediaRecAttrSet(SP5K_MEDIA_ATTR_WIDTH, 320);
+			sp5kMediaRecAttrSet(SP5K_MEDIA_ATTR_HEIGHT, 240);	
+			gVideoCB.framePerSec =240;
+			break;
+	}   
+
+	sp5kMediaRecAttrSet(SP5K_MEDIA_ATTR_VIDEO_FRAME_RATE, gVideoCB.framePerSec); 
+	sp5kMediaRecCfgSet( SP5K_MEDIA_REC_SAVED_FRAME_RATE, gVideoCB.framePerSec);
+	//sp5kMediaRecCfgSet( SP5K_MEDIA_REC_FRAME_RATE_CLIP, gVideoCB.framePerSec);	
+	appAeFrameRateSet(gVideoCB.framePerSec);
+}
+
+void appSdvVideoWdrSet(void)
+{
+	uiPara_t* puiPara = appUiParaGet();
+	
+	switch(puiPara->SystemWdr)
+	{
+		case UI_SCDV_SYSTEM_WDR_ON:
+			appIqSetWdr(TRUE);
+			break;
+		case UI_SCDV_SYSTEM_WDR_OFF:
+			appIqSetWdr(FALSE);
+			break;
+	}
+}
+
+void appSdvVideoDistSet(void)
+{	
+	uiPara_t* puiPara = appUiParaGet();
+
+	switch(puiPara->SystemDis)
+	{
+		case UI_SCDV_SYSTEM_DIS_ON:
+			sp5kMediaRecCfgSet(SP5K_MEDIA_DIS_COMP_TYPE,  SP5K_MEDIA_DIS_COMP_SMOOTH);
+			sp5kMediaRecCfgSet(SP5K_MEDIA_REC_DIS_LEVEL, SP5K_MEDIA_REC_DIS_MID);
+			break;
+		case UI_SCDV_SYSTEM_DIS_OFF:
+			sp5kMediaRecCfgSet(SP5K_MEDIA_DIS_COMP_TYPE,  SP5K_MEDIA_DIS_COMP_SMOOTH);
+			sp5kMediaRecCfgSet(SP5K_MEDIA_REC_DIS_LEVEL, SP5K_MEDIA_REC_DIS_OFF);
+			break;
+	}
+}
+
+void appSdvVideoDateStampSet(void)
+{
+	uiPara_t* puiPara = appUiParaGet();
+
+	//puiPara->SystemDateStamp = UI_SCDV_SYSTEM_DATE_STAMP_OFF;	//for debug
+	if(puiPara->SystemDateStamp == UI_SCDV_SYSTEM_DATE_STAMP_ON)
+	{
+		sp5kMediaRecAttrSet(SP5K_MEDIA_ATTR_STAMP_OPTION, SP5K_MEDIA_STAMP_RGB565);
+		sp5kGfxAttrSet(SP5K_GFX_FONT_ID, SP5K_RES_OSD_FONT, 0, 0, 0);
+		appVideoRecStampInit();
+		sp5kGfxAttrSet(SP5K_GFX_FONT_ID, SP5K_RES_OSD_FONT, 0, 0, 0);
+		//appOsd_FontIconFontSet("UI\\FONT\\DATSTAMP.SFN");
+	}
+	else if(puiPara->SystemDateStamp == UI_SCDV_SYSTEM_DATE_STAMP_OFF)
+	{
+		GPrintf("stamp off");
+		sp5kMediaRecAttrSet(SP5K_MEDIA_ATTR_STAMP_OPTION, SP5K_MEDIA_STAMP_NONE);
+	}
+}
+
+void appSdvVideoSettingInit(void)
+{
+	uiPara_t* puiPara = appUiParaGet();
+
+	//  recover the breoken files
+	sp5kMediaRecCfgSet(SP5K_MEDIA_REC_RECOVERY_EN,1); 
+	appStill_SetMetering(puiPara->AEMetering);
+	appStill_SetWB(puiPara->WBMode);
+	appStill_SetISO(puiPara->Iso);
+	appStill_SetExposure(puiPara->AEMode);
+	//appStill_SetAF(puiPara->af);
+	appStill_SetShutterSpeed(puiPara->shutter);
+	appStill_SetApertureValue(pViewParam->aperture);
+	/*appStill_SetPhotoFrame(puiPara->PhotoFrame);*/  /*mask for mantis bug 0047368  0047512*/
+	//appVideo_SetSeamLess(puiPara->Seamless);
+	appVideo_SetParkingMode(puiPara->ParkingMode);
+	applightFrequencySetting(puiPara->LightFreq);
+
+	if(puiPara->VideoFormat == VIDEO_FORMAT_H264)
+	{
+		sp5kMediaRecAttrSet(SP5K_MEDIA_ATTR_VIDEO_CODEC, SP5K_MEDIA_VIDEO_H264);	
+	}
+	else
+	{
+		sp5kMediaRecAttrSet(SP5K_MEDIA_ATTR_VIDEO_CODEC, SP5K_MEDIA_VIDEO_MJPG);
+	}
+	sp5kMediaRecAttrSet(SP5K_MEDIA_ATTR_VIDEO_BRC_TYPE, SP5K_MEDIA_CBR);
+	
+	if(puiPara->MediaFormat == MEDIA_FORMAT_AVI)
+	{
+		sp5kMediaRecAttrSet(SP5K_MEDIA_ATTR_FILE_TYPE, SP5K_MEDIA_AVI);
+	}
+	else
+	{
+		sp5kMediaRecAttrSet(SP5K_MEDIA_ATTR_FILE_TYPE, SP5K_MEDIA_MOV);
+	}
+	
+	appSdvVideoSizeSet();
+	appSdvVideoBitRateSet();
+	#if 0
+	//Seamless Setting
+	if(appDiskStatusGet() != APP_DISK_STATUS_MEMORY_FULL)
+	{
+		sp5kMediaRecAttrSet(SP5K_MEDIA_ATTR_SEAMLESS_TIME_SLOT, 60); /* Second */ 
+	}	
+	else
+	{
+		printf("--sdv memory full\n");
+	}
+	sp5kMediaRecCfgSet(SP5K_MEDIA_REC_SEAMLESS_CALLBACK, (UINT32)appSdvVideoSeamlessCallback); 
+	#endif
+	//Audio Setting		
+	sp5kAudDevSrcSet(SP5K_AUD_DEV_REC, SP5K_AUD_DEV_REC_SRC_MIC_IN | SP5K_AUD_REC_CH_LEFT);	//set audio device source to mic in and left channel
+	sp5kMediaRecCfgSet(SP5K_MEDIA_REC_MUTE_PERIOD, 100);
+	sp5kMediaRecAttrSet(SP5K_MEDIA_ATTR_AUDIO_CODEC, SP5K_MEDIA_AUDIO_PCM);
+	sp5kMediaRecAttrSet(SP5K_MEDIA_ATTR_AUDIO_SAMPLE_RATE, SCDV_VIDEO_AUDIO_SAMPLE_RATE);
+	sp5kMediaRecAttrSet(SP5K_MEDIA_ATTR_AUDIO_SAMPLE_BITS, SCDV_VIDEO_AUDIO_SAMPLE_BIT);
+	sp5kMediaRecAttrSet(SP5K_MEDIA_ATTR_AUDIO_CHANNELS, SCDV_VIDEO_AUDIO_CHANNEL);
+	sp5kMediaRecAttrSet( SP5K_MEDIA_ATTR_AUDIO_AVG_BITRATE, SCDV_VIDEO_AUDIO_SAMPLE_BIT * SCDV_VIDEO_AUDIO_SAMPLE_RATE);
+
+	/* Spca6330 ALC Function */
+	sp5kMediaRecCfgSet(SP5K_MEDIA_REC_ALC_MODE, SP5K_MEDIA_REC_ALC_DRC_MODE);
+	sp5kMediaRecCfgSet(SP5K_MEDIA_REC_ALC_MUTE, 0);
+	sp5kMediaRecAttrSet(SP5K_MEDIA_ATTR_AUDIO_ALC_MAX_VOL, SCDV_VIDEO_AUDIO_DEFAULT_VOL);
+	sp5kMediaRecAttrSet(SP5K_MEDIA_ATTR_AUDIO_ALC_HB, 500);
+	sp5kMediaRecAttrSet(SP5K_MEDIA_ATTR_AUDIO_ALC_LB, 100);
+	sp5kMediaAlcParamFileLoad("A:\\RO_RES\\WAV\\ALC.TXT");
+	//MicPhoe Setting
+	if(0)//puiPara->VoiceRec == VOICEREC_OFF)
+	{
+		//printf("\n>>>>>>>>>>>>>>>>>>\n AUD Vol MUTE !! \n\n");
+		sp5kMediaRecCfgSet(SP5K_MEDIA_REC_ALC, SP5K_MEDIA_REC_OFF);
+		sp5kAudDevVolumeSet(SP5K_AUD_DEV_REC, 0);
+		sp5kAudDevVolumeSet(SP5K_AUD_DEV_REC_VOL_BOOST | SP5K_AUD_REC_CH_ALL, 15/* MUTE */);
+	}
+	else
+	{
+		//printf("\n******************** \n AUD Vol RESTORE !! \n\n");
+		sp5kMediaRecCfgSet(SP5K_MEDIA_REC_ALC, SP5K_MEDIA_REC_ON);
+		sp5kAudDevVolumeSet(SP5K_AUD_DEV_REC|SP5K_AUD_REC_CH_ALL, SCDV_VIDEO_AUDIO_DEFAULT_VOL);
+		sp5kAudDevVolumeSet(SP5K_AUD_DEV_REC_VOL_BOOST | SP5K_AUD_REC_CH_ALL, 0x80000003);
+		//sp5kAudDevVolumeSet(SP5K_AUD_DEV_REC_VOL_BOOST | SP5K_AUD_REC_CH_ALL, 0x00000008);
+	}
+
+	appSdvVideoWdrSet();
+	appSdvVideoDistSet();
+	appSdvStillFrequencySet();
+	appSdvVideoDateStampSet();
+	appSensorFlipSet();
+}	
+
+UINT8 appSdvVideoDiskCheckMemeoryFull(void)
+{
+	UINT32 sTime;	
+	appDiskInfo_t *pDiskInfo = appCurDiskInfoGet();
+
+	profLogAdd(0, "appSdvVideoDiskCheckMemeoryFull");
+
+	//workaround for remain space is not enough to seamless record
+	//sp5kMediaRecAttrGet(SP5K_MEDIA_ATTR_SEAMLESS_TIME_SLOT,&sTime);
+	sTime=300;
+	printf("sTime = %d\n", sTime);
+	if(appVideoRemainSecGet() < sTime * 1.5)
+	{
+		return TRUE;
+	}
+	else
+	{
+		return FALSE;
+	}
+}
+void SdvSeamlessSetting()
+{
+	#if 1	
+	uiPara_t* puiPara = appUiParaGet();
+	//Seamless Setting
+	//if(appDiskStatusGet() != APP_DISK_STATUS_MEMORY_FULL)
+	{
+		sp5kMediaRecAttrSet(SP5K_MEDIA_ATTR_SEAMLESS_TIME_SLOT, 300); /* Second */ 		
+	}	
+	
+	sp5kMediaRecCfgSet(SP5K_MEDIA_REC_SEAMLESS_CALLBACK, (UINT32)appSdvVideoSeamlessCallback); 
+	#endif
+
+}
+void appSdvVideoPvStateInit(UINT32 preState)
+{
+	UINT32 mode;
+	uiPara_t* puiPara = appUiParaGet();
+
+	profLogAdd(0,"appSdvVideoPvStateInit s");
+
+	//Global Setting
+	appAutoPowerOffEnable(TRUE);
+	appLcmPowerSaveEnable(TRUE);
+	
+	//Led setting
+	LED_RULES_NORMAL;
+	RFRecCaptureWaitRelease();
+	appRfCopyBufferCallbackRelease();
+	
+	//if(nSPDVSwitchResolution==TRUE)
+	if(appWiFiConnection_UtilityStateGet() <= WIFI_UTILITY_CLOSE)
+	{
+		sp5kModeSet(SP5K_MODE_STANDBY);
+		sp5kModeWait(SP5K_MODE_STANDBY);
+		nSPDVSwitchResolution=FALSE;
+		
+	}	
+	appCdfsFileFolderSet(CDFS_FILE_FOLDER_JPG);
+	appCdfsFolderInit(CDFS_FILE_FOLDER_JPG);
+		
+	appCdfsFileFolderSet(CDFS_FILE_FOLDER_VIDEO);
+	appCdfsFolderInit(CDFS_FILE_FOLDER_VIDEO);
+	
+	//IQ Setting
+	appAePreviewSet();	
+	appStillViewIqSet();
+	sp5kAwbParamSet(SP5K_AWB_CONVERGE_SPEED, 0xffffffff);
+	sp5kAeModeSet(SP5K_AE_MODE_INFO_ONLY);
+	sp5kAwbModeSet(SP5K_AWB_MODE_AUTO_SET);	
+	#ifdef ALGORITHM_G4_AWB
+	appAWBALGLib_WBParamSet ( AWB_PARA_PREVIEW_IMMEDIATELY, 0 );
+	appAWBALGLib_WBParamSet ( AWB_PARA_UPDTREFE_FRAME_NUM, 99 );	
+	appAWBALGLib_WBParamSet ( AWB_PARA_HIGH_SPEED, 1 );
+	appAWBALGLib_WBParamSet ( AWB_PARA_MEDIUM_SPEED, 2 );
+	appAWBALGLib_WBParamSet ( AWB_PARA_LOW_SPEED, 4 );
+	appAWBALGLib_WBParamSet ( AWB_PARA_SW_WHITE_CLIP_EN, 1 );
+	#endif
+	
+	//Video Setting
+	//sp5kModeCfgSet(SP5K_MODE_CFG_PV_FREEZE, 1);
+	
+	appSdvVideoSettingInit();
+	//disk
+	if(appScdvWaitForDiskReady() == TRUE)
+	{	
+		//appCdfsFileFolderSet(CDFS_FILE_FOLDER_JPG);
+		//appCdfsFolderInit(CDFS_FILE_FOLDER_JPG);
+		
+		//appCdfsFileFolderSet(CDFS_FILE_FOLDER_VIDEO);
+		//appCdfsFolderInit(CDFS_FILE_FOLDER_VIDEO);
+	}
+	
+	SdvSeamlessSetting();
+	//Osd
+	appSdvVideoPvOsdShow();
+	if(appWiFiConnection_UtilityStateGet() > WIFI_UTILITY_CLOSE)
+		sp5kTimeDelay(SP5K_TIME_DELAY_1MS, 500);
+	
+	/* enter preview mode */
+	sensorDevPowerCustomCb(SENSOR_DEV_POWER_ID_SYS_ON);
+	sp5kModeSet(SP5K_MODE_VIDEO_PREVIEW);
+	sp5kModeWait(SP5K_MODE_VIDEO_PREVIEW);
+	//sp5kModeCfgSet(SP5K_MODE_CFG_PV_FREEZE, 2);
+	appRfCopyBufferCallbackSet();
+	
+	//button setting
+	appBtnEnable(BTN_ALL);
+	nHDMIFastBoot=0;
+}
+
+void appHDMISdvVideoBitRateSet(void)
+{
+
+	UINT8 nWifiOpen=0;
+	nWifiOpen=appWiFiConnection_UtilityStateGet() > WIFI_UTILITY_CLOSE;
+	UINT8 qualityRatio[UI_SCDV_VIDEO_SIZE_MAX][3] = 	{	//Super	Fine		Normal
+																{13,		9,		7},               //UI_SCDV_VIDEO_SIZE_1080P30
+																{13,		9,		7},               //UI_SCDV_VIDEO_SIZE_960P30
+																{17/2,	8,	11/2},	      	//UI_SCDV_VIDEO_SIZE_720P60
+																{17*2/3,	8,	11*2/3},   	//UI_SCDV_VIDEO_SIZE_720P30
+																{17/2,	14/2,	11/2},	      	//UI_SCDV_VIDEO_SIZE_WVGAP60
+																{17*2/3,	14*2/3,	11*2/3},   	//UI_SCDV_VIDEO_SIZE_WVGAP30
+																{17/3,	14/3,	11/3},         	//UI_SCDV_VIDEO_SIZE_VGAP90
+																{17/4,	14/4,	11/4},         	//UI_SCDV_VIDEO_SIZE_QVGAP240 
+															};
+
+
+	
+	if (nWifiOpen)
+	{
+			qualityRatio[0][1]=8;
+			qualityRatio[1][1]=8;
+			qualityRatio[2][1]=8;
+			qualityRatio[3][1]=8;
+			
+
+	}
+	else
+	{
+			qualityRatio[0][1]=9;
+			qualityRatio[1][1]=9;
+			qualityRatio[2][1]=8;
+			qualityRatio[3][1]=8;
+
+	}
+	
+	
+	UINT32 mjpgQualityRatio[UI_SCDV_VIDEO_SIZE_MAX] = {150, 110, 130, 50, 30, 30, 30, 30};
+	uiPara_t* puiPara = appUiParaGet();
+
+	UINT32 size_idx = puiPara->SdvVideoNormalSize;
+	UINT32 quality_idx = 1;
+	
+	switch(size_idx) 
+	{
+		default:					
+		case UI_SCDV_VIDEO_SIZE_1080P30:
+		case UI_SCDV_VIDEO_SIZE_960P30:
+			if(puiPara->VideoFormat == VIDEO_FORMAT_H264)
+			{
+				gVideoCB.streamBytesPerSec = qualityRatio[size_idx][quality_idx] * 1000000 / 8;
+			}
+			else
+			{
+				gVideoCB.streamBytesPerSec = mjpgQualityRatio[size_idx] * 30 * 1024;
+			}
+			
+			if(nWifiOpen)
+			{
+				if(puiPara->Seamless != UI_VIDEO_SEAMLESS_OFF)
+				{
+						sp5kMediaRecCfgSet(SP5K_MEDIA_REC_VIDEO_FIFO_BUF_NO,512);
+						sp5kMediaRecCfgSet(SP5K_MEDIA_REC_AUDIO_FIFO_BUF_NO,512);
+				}
+					
+					sp5kMediaRecCfgSet(SP5K_MEDIA_REC_VLC_BUF_SIZE,2*1024*1024);
+					sp5kMediaRecCfgSet(SP5K_MEDIA_REC_VLC_BUF_CNT,24);
+			}
+			else
+			{
+				if(puiPara->Seamless != UI_VIDEO_SEAMLESS_OFF)
+				{
+					sp5kMediaRecCfgSet(SP5K_MEDIA_REC_VIDEO_FIFO_BUF_NO,256);
+					sp5kMediaRecCfgSet(SP5K_MEDIA_REC_AUDIO_FIFO_BUF_NO,256);
+				}
+			
+				sp5kMediaRecCfgSet(SP5K_MEDIA_REC_VLC_BUF_SIZE,2*1024*1024);
+				sp5kMediaRecCfgSet(SP5K_MEDIA_REC_VLC_BUF_CNT,12);
+
+			}
+			
+			if(nWifiOpen)
+			{
+				sp5kAwbCfgSet(SP5K_AWB_ACCUM_PERIOD,4);
+				sp5kAeCfgSet(SP5K_AE_ACCUM_PERIOD, 4); 
+			}
+			else
+			{
+
+				sp5kAwbCfgSet(SP5K_AWB_ACCUM_PERIOD,1);
+				sp5kAeCfgSet(SP5K_AE_ACCUM_PERIOD, 1); 
+
+			}
+			sp5kMediaRecCfgSet(SP5K_MEDIA_REC_VIDEO_MSGQ_NO,100);
+			sp5kMediaRecCfgSet(SP5K_MEDIA_REC_AUDIO_MSGQ_NO,64);
+			break;
+			
+		case UI_SCDV_VIDEO_SIZE_720P30:
+		case UI_SCDV_VIDEO_SIZE_WVGAP30:
+			if(puiPara->VideoFormat == VIDEO_FORMAT_H264)
+			{
+				gVideoCB.streamBytesPerSec =  qualityRatio[size_idx][quality_idx]*1000000/8;
+			}
+			else
+			{
+				gVideoCB.streamBytesPerSec = mjpgQualityRatio[size_idx] * 30 * 1024;
+			}
+
+			if(puiPara->Seamless != UI_VIDEO_SEAMLESS_OFF)
+			{
+				sp5kMediaRecCfgSet(SP5K_MEDIA_REC_VIDEO_FIFO_BUF_NO,256);
+				sp5kMediaRecCfgSet(SP5K_MEDIA_REC_AUDIO_FIFO_BUF_NO,256);
+			}
+		
+			sp5kMediaRecCfgSet(SP5K_MEDIA_REC_VLC_BUF_SIZE,0);
+			sp5kMediaRecCfgSet(SP5K_MEDIA_REC_VLC_BUF_CNT,0);
+			sp5kAwbCfgSet(SP5K_AWB_ACCUM_PERIOD,1);
+			sp5kAeCfgSet(SP5K_AE_ACCUM_PERIOD, 1);
+			sp5kMediaRecCfgSet(SP5K_MEDIA_REC_VIDEO_MSGQ_NO,100);
+			sp5kMediaRecCfgSet(SP5K_MEDIA_REC_AUDIO_MSGQ_NO,64);
+			break;
+		
+		case UI_SCDV_VIDEO_SIZE_720P60:
+		case UI_SCDV_VIDEO_SIZE_WVGAP60:
+			if(puiPara->VideoFormat == VIDEO_FORMAT_H264)
+			{
+				gVideoCB.streamBytesPerSec =  qualityRatio[size_idx][quality_idx]*1000000/8;
+			}
+			else
+			{
+				gVideoCB.streamBytesPerSec = mjpgQualityRatio[size_idx] * 30 * 1024;
+			}
+
+			if(nWifiOpen)
+			{
+
+				if(puiPara->Seamless != UI_VIDEO_SEAMLESS_OFF)
+				{
+					sp5kMediaRecCfgSet(SP5K_MEDIA_REC_VIDEO_FIFO_BUF_NO,512);
+					sp5kMediaRecCfgSet(SP5K_MEDIA_REC_AUDIO_FIFO_BUF_NO,512);
+				}
+				
+				sp5kMediaRecCfgSet(SP5K_MEDIA_REC_VLC_BUF_SIZE,2*1024*1024);
+				sp5kMediaRecCfgSet(SP5K_MEDIA_REC_VLC_BUF_CNT,24);
+			}
+			else
+			{
+				if(puiPara->Seamless != UI_VIDEO_SEAMLESS_OFF)
+				{
+					sp5kMediaRecCfgSet(SP5K_MEDIA_REC_VIDEO_FIFO_BUF_NO,420);
+					sp5kMediaRecCfgSet(SP5K_MEDIA_REC_AUDIO_FIFO_BUF_NO,210);
+				}
+			
+				sp5kMediaRecCfgSet(SP5K_MEDIA_REC_VLC_BUF_SIZE,2*1024*1024);
+				sp5kMediaRecCfgSet(SP5K_MEDIA_REC_VLC_BUF_CNT,18);
+
+			}
+			
+			if(nWifiOpen)
+			{
+
+				sp5kAwbCfgSet(SP5K_AWB_ACCUM_PERIOD,4);
+				sp5kAeCfgSet(SP5K_AE_ACCUM_PERIOD, 4); 
+			}
+			else
+			{
+				sp5kAwbCfgSet(SP5K_AWB_ACCUM_PERIOD,2);
+				sp5kAeCfgSet(SP5K_AE_ACCUM_PERIOD, 2);
+			}
+			sp5kMediaRecCfgSet(SP5K_MEDIA_REC_VIDEO_MSGQ_NO,0);
+			sp5kMediaRecCfgSet(SP5K_MEDIA_REC_AUDIO_MSGQ_NO,0);
+			break;
+			
+		case UI_SCDV_VIDEO_SIZE_VGAP90:
+			if(puiPara->VideoFormat == VIDEO_FORMAT_H264)
+			{
+				gVideoCB.streamBytesPerSec =  qualityRatio[size_idx][quality_idx]*1000000/8;
+			}
+			else
+			{
+				gVideoCB.streamBytesPerSec = mjpgQualityRatio[size_idx] * 30 * 1024;
+			}
+
+			if(puiPara->Seamless != UI_VIDEO_SEAMLESS_OFF)
+			{
+				sp5kMediaRecCfgSet(SP5K_MEDIA_REC_VIDEO_FIFO_BUF_NO,256);
+				sp5kMediaRecCfgSet(SP5K_MEDIA_REC_AUDIO_FIFO_BUF_NO,256);
+			}
+			
+			sp5kMediaRecCfgSet(SP5K_MEDIA_REC_VLC_BUF_SIZE,600*1024);
+			sp5kMediaRecCfgSet(SP5K_MEDIA_REC_VLC_BUF_CNT,40);
+			sp5kAwbCfgSet(SP5K_AWB_ACCUM_PERIOD,4);
+			sp5kAeCfgSet(SP5K_AE_ACCUM_PERIOD, 4);
+			sp5kMediaRecCfgSet(SP5K_MEDIA_REC_VIDEO_MSGQ_NO,100);
+			sp5kMediaRecCfgSet(SP5K_MEDIA_REC_AUDIO_MSGQ_NO,64);
+			break;
+			
+		case UI_SCDV_VIDEO_SIZE_QVGAP240:
+			if(puiPara->VideoFormat == VIDEO_FORMAT_H264)
+			{
+				gVideoCB.streamBytesPerSec =  qualityRatio[size_idx][quality_idx]*1000000/8;
+			}
+			else
+			{
+				gVideoCB.streamBytesPerSec = mjpgQualityRatio[size_idx] * 30 * 1024;
+			}
+
+			if(puiPara->Seamless != UI_VIDEO_SEAMLESS_OFF)
+			{
+				sp5kMediaRecCfgSet(SP5K_MEDIA_REC_VIDEO_FIFO_BUF_NO,256);
+				sp5kMediaRecCfgSet(SP5K_MEDIA_REC_AUDIO_FIFO_BUF_NO,256);
+			}
+			
+			sp5kMediaRecCfgSet(SP5K_MEDIA_REC_VLC_BUF_SIZE,600*1024);
+			sp5kMediaRecCfgSet(SP5K_MEDIA_REC_VLC_BUF_CNT,40);
+			sp5kAwbCfgSet(SP5K_AWB_ACCUM_PERIOD,4);
+			sp5kAeCfgSet(SP5K_AE_ACCUM_PERIOD, 4);
+			sp5kMediaRecCfgSet(SP5K_MEDIA_REC_VIDEO_MSGQ_NO,100);
+			sp5kMediaRecCfgSet(SP5K_MEDIA_REC_AUDIO_MSGQ_NO,64);
+			break;
+			
+		
+	}
+	
+	HLPrintf1("\n streamBytesPerSec=%d\n",gVideoCB.streamBytesPerSec);
+	sp5kMediaRecAttrSet(SP5K_MEDIA_ATTR_VIDEO_BRC_TYPE, SP5K_MEDIA_CBR);
+	sp5kMediaRecAttrSet(SP5K_MEDIA_ATTR_VIDEO_AVG_BITRATE, gVideoCB.streamBytesPerSec<<3);
+	/*if(appWiFiConnection_UtilityStateGet() > WIFI_UTILITY_CLOSE)
+	{
+		sp5kMediaRecAttrSet(MEDIA_ATTR_H264_GOP_STRUCTURE, 0x10);
+	}
+	else
+	{
+		sp5kMediaRecAttrSet(MEDIA_ATTR_H264_GOP_STRUCTURE, 0x00);
+	}*/
+
+	if(puiPara->VideoFormat == VIDEO_FORMAT_H264)
+	{
+		gVideoCB.aviKbPerSec = 	(gVideoCB.streamBytesPerSec /* video data */
+								+ (gVideoCB.framePerSec)*(16+8) /* video hdr */
+								+ VIDEO_AUDIO_SAMPLE_RATE*(VIDEO_AUDIO_SAMPLE_BIT/8)*(VIDEO_AUDIO_CHANNEL) /* audio data */
+								+ 1024)>>10; /* other overhead (audio hdr, index, fat... */
+	}
+	else
+	{
+		gVideoCB.aviKbPerSec = 	(gVideoCB.streamBytesPerSec /* video data */
+								+ (gVideoCB.framePerSec)*616 /* video hdr */
+								+ VIDEO_AUDIO_SAMPLE_RATE*(VIDEO_AUDIO_SAMPLE_BIT/8)*(VIDEO_AUDIO_CHANNEL) /* audio data */
+								+ 1024)>>10; /* other overhead (audio hdr, index, fat... */
+	}
+}
+void appHDMISdvVideoSizeSet(void)
+{
+	uiPara_t* puiPara = appUiParaGet();	
+	switch(puiPara->SdvVideoNormalSize)	
+	{
+		case UI_SCDV_VIDEO_SIZE_1080P30:	
+			sp5kSensorModeCfgSet(SP5K_MODE_VIDEO_PLAYBACK , SENSOR_MODE_1080P);
+			sp5kMediaRecAttrSet(SP5K_MEDIA_ATTR_WIDTH, 1920);
+			sp5kMediaRecAttrSet(SP5K_MEDIA_ATTR_HEIGHT, 1080);	
+			gVideoCB.framePerSec =30;
+			break;
+		
+	}   
+
+	sp5kMediaRecAttrSet(SP5K_MEDIA_ATTR_VIDEO_FRAME_RATE, gVideoCB.framePerSec); 
+	sp5kMediaRecCfgSet( SP5K_MEDIA_REC_SAVED_FRAME_RATE, gVideoCB.framePerSec);
+	//sp5kMediaRecCfgSet( SP5K_MEDIA_REC_FRAME_RATE_CLIP, gVideoCB.framePerSec);	
+	appAeFrameRateSet(gVideoCB.framePerSec);
+}
+void appHDMISdvVideoSettingInit(void)
+{
+	
+	appHDMISdvVideoSizeSet();
+	appHDMISdvVideoBitRateSet();	
+}	
+void appHDMISdvVideoPvStateInit(UINT32 preState)
+{
+
+	sp5kModeSet(SP5K_MODE_STANDBY);
+	sp5kModeWait(SP5K_MODE_STANDBY);
+	
+	appHDMISdvVideoSettingInit();
+	
+	sp5kModeSet(SP5K_MODE_VIDEO_PREVIEW);
+	sp5kModeWait(SP5K_MODE_VIDEO_PREVIEW);
+	//sp5kModeCfgSet(SP5K_MODE_CFG_PV_FREEZE, 2);
+}
+void appSdvVideoPvStateOnMsg(UINT32 msg, UINT32 param)
+{
+	UINT32 sTime;
+	UINT32 tmpU32;
+	uiPara_t* puiPara = appUiParaGet();
+	
+	switch(msg) 
+	{
+
+		case APP_UI_MSG_RF_RCWD01_REC_OK:				
+			if(appDiskStatusGet() == APP_DISK_STATUS_MOUNTED_OK)
+			{
+				switch(puiPara->SdvVideoMode)
+				{
+					case UI_SCDV_VIDEO_MODE_NORMAL:						
+						appBtnDisable(BTN_OK);
+						appMsgFlush(APP_MSG_KEY_QUE);
+						appStateChange(APP_STATE_SPORTDV_VIDEO_REC, STATE_PARAM_NORMAL_INIT);
+						break;
+					case UI_SCDV_VIDEO_MODE_SLOW:						
+						appStateChange(APP_STATE_SPORTDV_VIDEO_REC_SLOW, STATE_PARAM_NORMAL_INIT);
+						break;
+				}
+			}
+			else
+			{
+				appBuzzerStop(TRUE);
+				appBuzzerPlay(BUZZER_WARNING);
+			}
+			break;
+		case SP5K_MSG_MODE_READY:
+			if(param == SP5K_MODE_VIDEO_PREVIEW)
+			{
+
+			}
+			break;
+		case APP_UI_MSG_VIEW_WAIT_DISK:
+			if(appScdvWaitForDiskReady() == TRUE)
+			{
+				appCdfsFileFolderSet(CDFS_FILE_FOLDER_VIDEO);
+				appCdfsFolderInit(CDFS_FILE_FOLDER_VIDEO);
+
+			}
+			break;
+		case SP5K_MSG_DISK_MOUNT_COMPLETE:
+		case SP5K_MSG_DISK_MOUNT_FAIL:			
+			appScdvWaitForDiskReady();
+			appSdvVideoPvOsdShow();
+			break;
+		case SP5K_MSG_AE_READY:
+			
+			break;
+		case SP5K_MSG_AWB_READY:
+
+			break;	
+		case SP5K_MSG_TIMER:
+			
+			break;
+		case APP_UI_MSG_GSENSOR_FLIP:
+			if(puiPara->SCdvSensorFlip == UI_SCDV_SENSOR_FLIP_AUTO)
+			{
+				appSensorFlipSet();
+			}
+			break;
+		default:
+			break;
+	}
+}
+
+void appSdvVideoPvStateOnKey(UINT32 msg, UINT32 param)
+{
+	uiPara_t* puiPara = appUiParaGet();
+	UINT32 Remainsize;
+	
+	switch (msg) 
+	{
+		case APP_KEY_PRESS_POWER:
+			appModeChangeFlow();
+			break;
+		case APP_KEY_PRESS_OK:
+		//case APP_UI_MSG_RF_RCWD01_REC_OK:	
+			
+			if(appDiskStatusGet() == APP_DISK_STATUS_MOUNTED_OK)
+			{
+				switch(puiPara->SdvVideoMode)
+				{
+					case UI_SCDV_VIDEO_MODE_NORMAL:						
+						appBtnDisable(BTN_OK);
+						appMsgFlush(APP_MSG_KEY_QUE);
+						appStateChange(APP_STATE_SPORTDV_VIDEO_REC, STATE_PARAM_NORMAL_INIT);
+						break;
+					case UI_SCDV_VIDEO_MODE_SLOW:						
+						appStateChange(APP_STATE_SPORTDV_VIDEO_REC_SLOW, STATE_PARAM_NORMAL_INIT);
+						break;
+				}
+			}
+			else
+			{
+				appBuzzerStop(TRUE);
+				appBuzzerPlay(BUZZER_WARNING);
+			}
+			break;
+		default:
+			break;
+	}
+}
+
+void appSdvVideoPvState(UINT32 msg, UINT32 param)
+{
+	uiPara_t* puiPara = appUiParaGet();
+	
+	switch (msg) 
+	{
+		case APP_STATE_MSG_INIT:
+			appSdvVideoPvStateInit(appPreviousStateGet());
+			appMsgFlush(APP_MSG_KEY_QUE);
+			///appBtnEnable(BTN_OK);
+			break;
+		case APP_STATE_MSG_CLOSE:
+			appStateCloseDone();
+			break;
+		default:
+			if (IS_APP_KEY_MSG(msg)) 
+			{
+				appSdvVideoPvStateOnKey(msg,param);
+			}
+			else
+			{
+				appSdvVideoPvStateOnMsg(msg,param);
+			}
+			break;
+		}
+}
+
+void cmdSdvVideoView(UINT32 argc, UINT8 *arg[], UINT32 v[])
+{
+	uiPara_t* puiPara = appUiParaGet();
+	
+	if (argc==1) 
+	{
+		printf(	"SdvVideoView usage:\n"
+				" video size [0|1|2] 		: 640/169/320\n"
+				" video metering [0|1|2] 	: ??\n"
+				" video wb[0|1|2] 			: ??\n");
+	} 
+	else if (strcmp(arg[1], "size")==0) 
+	{
+		appVidSizeSet(v[2]);
+	} 
+	else if (strcmp(arg[1], "metering")==0)
+	{
+		puiPara->AEMetering = v[2];
+	} 
+	else if (strcmp(arg[1], "wb")==0) 
+	{
+		puiPara->WBMode = v[2];
+	}	
+}
+

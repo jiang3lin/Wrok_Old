@@ -1,0 +1,517 @@
+/**************************************************************************
+ *
+ *        Copyright (c) 2006-2008 by Sunplus mMedia Inc., Ltd.
+ *
+ *  This software is copyrighted by and is the property of Sunplus
+ *  mMedia Inc., Ltd. All rights are reserved by Sunplus mMedia
+ *  Inc., Ltd. This software may only be used in accordance with the
+ *  corresponding license agreement. Any unauthorized use, duplication,
+ *  distribution, or disclosure of this software is expressly forbidden.
+ *
+ *  This Copyright notice MUST not be removed or modified without prior
+ *  written consent of Sunplus mMedia Inc., Ltd.
+ *
+ *  Sunplus mMedia Inc., Ltd. reserves the right to modify this
+ *  software without notice.
+ *
+ *  Sunplus mMedia Inc., Ltd.
+ *  19-1, Innovation First Road, Science-Based Industrial Park,
+ *  Hsin-Chu, Taiwan, R.O.C. 
+ *
+ **************************************************************************/
+#include "common.h"
+#include <stdio.h>
+#include <string.h>
+#include <math.h>
+#include "api/sp5k_utility_api.h"
+#include "api/sp5k_global_api.h"
+#include "api/sp5k_media_api.h"
+#include "app_gSensor.h"
+#include "app_gSensor_def.h"
+#include "app_timer.h"
+#include "app_com_api.h"
+
+#include "app_ui_para.h"
+#include "app_scdv_ui_para_def.h"
+#include "app_ui_msg.h"
+#include "sp5k_os_api.h"
+
+
+/**************************************************************************
+ *                          D A T A    T Y P E S                          *
+ **************************************************************************/
+#define GSENSOR_THRESHOLD_VAL    		20
+#define GSENSOR_DEBUG					0
+#define GSENSOR_RANGER					2.0
+#define GSENSOR_FLIP_BUFFER_SIZE		10
+
+
+/**************************************************************************
+ *                         G L O B A L    D A T A                         *
+ **************************************************************************/
+SINT16 X_InitOffset = 0;
+SINT16 Y_InitOffset = 0;
+SINT16 Z_InitOffset = 0;
+UINT8 VideoRecStampGsensorBuf[25];
+
+static TX_THREAD *pThreadGSensor = NULL;
+static float X_Threshold, Y_Threshold, Z_Threshold;
+static BOOL gGSensorFlip = FALSE;
+static float gAccelerateX, gAccelerateY, gAccelerateZ;
+
+/**************************************************************************
+ *                 E X T E R N A L    R E F E R E N C E S                 *
+ **************************************************************************/
+extern SINT16 GSensorInfo[GSENSOR_DATA_CNT][3];
+/**************************************************************************
+ *               F U N C T I O N    D E C L A R A T I O N S               *
+ **************************************************************************/
+ 
+void appGsensorInit(UINT8 mode)
+{
+	printf("appGsensorInit Begain:%d\n", mode);
+	if(mode == GSENSOR_NORMAL_INIT)
+	{
+		gSensorDriverInit(mode);
+		appGsensorSensortivitySet();
+		//sp5kGpioIsrReg(GSENSOR_INTRRUP_PIN, SP5K_TRIG_LVL_RISE, appGSensorIsrSvrFunc);
+		if(pThreadGSensor == NULL)
+		{
+			pThreadGSensor = sp5kOsThreadCreate("GSensor", appGSensorThread, 0, 16, 16, 3, TX_AUTO_START);
+		}
+	}
+	else		//GSENSOR_COLLISIONDET_INIT
+	{
+		if(pThreadGSensor != NULL)
+		{
+			sp5kOsThreadTerminate(pThreadGSensor);
+			sp5kOsThreadDelete(pThreadGSensor);
+			pThreadGSensor = NULL;
+		}
+		gSensorDriverInit(mode);
+		appGsensorSensortivitySet();
+		//sp5kGpioIsrUnreg(GSENSOR_INTRRUP_PIN, SP5K_TRIG_LVL_RISE);
+	}	
+	printf("appGsensorInit End:%d\n", mode);
+}
+
+void appGSensorIsrSvrFunc(void)
+{
+	sp5kHostMsgSend(APP_UI_MSG_GSENSOR_TRIGGER, 0);
+}
+
+static void appGSensorThread(UINT32 parm)
+{
+	float AccelerateX, AccelerateY, AccelerateZ;
+	float AccelerateXSum, AccelerateYSum, AccelerateZSum;
+	float AccelerateXBuffer[GSENSOR_FLIP_BUFFER_SIZE], AccelerateYBuffer[GSENSOR_FLIP_BUFFER_SIZE], AccelerateZBuffer[GSENSOR_FLIP_BUFFER_SIZE];
+	UINT8 index = 0;
+
+	appGSensorAccelerateRead(&AccelerateX, &AccelerateY, &AccelerateZ);
+	for(index = 0; index < GSENSOR_FLIP_BUFFER_SIZE; index ++)
+	{
+		AccelerateXBuffer[index] = AccelerateX;
+		AccelerateYBuffer[index] = AccelerateY;
+		AccelerateZBuffer[index] = AccelerateZ;
+	}
+
+	while(1)
+	{
+		sp5kTimeDelay(SP5K_TIME_DELAY_1MS, 100);
+		appGSensorAccelerateRead(&AccelerateX, &AccelerateY, &AccelerateZ);
+
+		//Shift Buffer
+		for(index = 0; index < GSENSOR_FLIP_BUFFER_SIZE - 1; index ++)
+		{
+			AccelerateXBuffer[index] = AccelerateXBuffer[index + 1];
+			AccelerateYBuffer[index] = AccelerateYBuffer[index + 1];
+			AccelerateZBuffer[index] = AccelerateZBuffer[index + 1];
+		}
+		AccelerateXBuffer[index] = AccelerateX;
+		AccelerateYBuffer[index] = AccelerateY;
+		AccelerateZBuffer[index] = AccelerateZ;
+
+		//Get Average
+		AccelerateXSum = AccelerateYSum = AccelerateZSum = 0;
+		for(index = 0; index < GSENSOR_FLIP_BUFFER_SIZE; index ++)
+		{
+			AccelerateXSum += AccelerateXBuffer[index];
+			AccelerateYSum += AccelerateYBuffer[index];
+			AccelerateZSum += AccelerateZBuffer[index];
+		}
+		gAccelerateX = AccelerateXSum / GSENSOR_FLIP_BUFFER_SIZE;
+		gAccelerateY = AccelerateYSum / GSENSOR_FLIP_BUFFER_SIZE;
+		gAccelerateZ = AccelerateZSum / GSENSOR_FLIP_BUFFER_SIZE;
+
+		#if GSENSOR_DEBUG
+		printf("X:%f,	Y:%f,	Z:%f\n", gAccelerateX, gAccelerateY, gAccelerateZ);
+		#endif
+		
+		//Trigger Lock
+		if(	fabs(AccelerateX - gAccelerateX) > X_Threshold 
+			|| fabs(AccelerateY - gAccelerateY) > Y_Threshold 
+			|| fabs(AccelerateZ - gAccelerateZ) > Z_Threshold )
+		{
+			sp5kHostMsgSend(APP_UI_MSG_GSENSOR_TRIGGER, 0);
+		}
+		
+		//Send Flip Message
+		if(gAccelerateZ > 0.5 && gGSensorFlip == TRUE)
+		{
+			gGSensorFlip = FALSE;
+			sp5kHostMsgSend(APP_UI_MSG_GSENSOR_FLIP, gGSensorFlip);
+		}
+		else if(gAccelerateZ < -0.5 && gGSensorFlip == FALSE)
+		{
+			gGSensorFlip = TRUE;
+			sp5kHostMsgSend(APP_UI_MSG_GSENSOR_FLIP, gGSensorFlip);
+		}
+	}
+}
+
+BOOL appGSensorFlipGet(void)
+{
+	return gGSensorFlip;
+}
+
+void appGSensorAccelerateRead(float *pAccelerateX, float *pAccelerateY, float *pAccelerateZ)
+{
+	SINT16 x_data, y_data, z_data;
+	appGsensorXYZRead(&x_data, &y_data, &z_data);
+
+	*pAccelerateX = GSENSOR_RANGER * x_data / 2048;
+	*pAccelerateY = GSENSOR_RANGER * y_data / 2048;
+	*pAccelerateZ = GSENSOR_RANGER * z_data / 2048;
+
+	//change direction
+	*pAccelerateZ = -*pAccelerateZ;
+
+	#if GSENSOR_DEBUG
+	//printf("X:%5.2f, Y:%5.2f, Z:%5.2f\n",*pAccelerateX,*pAccelerateY,*pAccelerateZ);
+	#endif
+}
+
+void appGSensorAccelerateGet(float *pAccelerateX, float *pAccelerateY, float *pAccelerateZ)
+{
+	*pAccelerateX = gAccelerateX;
+	*pAccelerateY = gAccelerateY;
+	*pAccelerateZ = gAccelerateZ;
+}
+
+void
+appGsensorXYZRead(
+	SINT16 *x_data,
+	SINT16 *y_data,
+	SINT16 *z_data
+)
+{
+	UINT32 x_tmp;
+	UINT32 y_tmp;
+	UINT32 z_tmp;
+
+	gSensorDriverRead(GSENSOR_VAL_X, &x_tmp);
+	*x_data = (SINT16)((x_tmp >= 2048) ? (x_tmp - 4096) : (x_tmp)) - X_InitOffset;
+	
+	gSensorDriverRead(GSENSOR_VAL_Y, &y_tmp);
+	*y_data = (SINT16)((y_tmp >= 2048) ? (y_tmp - 4096) : (y_tmp)) - Y_InitOffset;
+	
+	gSensorDriverRead(GSENSOR_VAL_Z, &z_tmp);
+	*z_data = (SINT16)((z_tmp >= 2048) ? (z_tmp - 4096) : (z_tmp)) - Z_InitOffset;
+}
+
+void appGsensorSensortivitySet(void)
+{
+	uiPara_t* puiPara = appUiParaGet();
+
+	switch(puiPara->CdvGsensorSensitivity)
+	{
+		case UI_SCDV_GSENSOR_SENSITIVITY_HIGH:
+			//for int power on
+			gSensorDriverSet(GSENSOR_SENSITIVITY, GSENSOR_SENSITIVITY_HIGHT);
+
+			//for trigger lock video
+			X_Threshold = 0.6;
+			Y_Threshold = 0.6;
+			Z_Threshold = 0.6;
+			break;
+		case UI_SCDV_GSENSOR_SENSITIVITY_MIDDLE:
+			//for int power on
+			gSensorDriverSet(GSENSOR_SENSITIVITY, GSENSOR_SENSITIVITY_MIDDLE);
+
+			//for trigger lock video
+			X_Threshold = 0.9;
+			Y_Threshold = 0.9;
+			Z_Threshold = 0.9;
+			break;
+		case UI_SCDV_GSENSOR_SENSITIVITY_LOW:
+			//for int power on
+			gSensorDriverSet(GSENSOR_SENSITIVITY, GSENSOR_SENSITIVITY_LOW);
+
+			//for trigger lock video
+			X_Threshold = 1.2;
+			Y_Threshold = 1.2;
+			Z_Threshold = 1.2;
+			break;
+	}
+}
+
+void
+appGsensorBasePointGet(
+	void
+)
+{
+	UINT8 i;
+	SINT16 tmp16_x, tmp16_y, tmp16_z;
+	SINT16 xoffset, yoffset, zoffset;
+	UINT32 tmp32;
+
+	tmp32 = tmrMsTimeGet();
+	while(tmrMsTimeGet() - tmp32 < 50){}  /* wait for stable */
+
+	X_InitOffset = Y_InitOffset = Z_InitOffset = 0;
+	xoffset = yoffset = zoffset = 0;
+	
+	for(i = 0; i < 3; i++){
+		appGsensorXYZRead(&tmp16_x, &tmp16_y, &tmp16_z);
+		xoffset += tmp16_x;
+		yoffset += tmp16_y;
+		zoffset += tmp16_z;
+	}
+
+	X_InitOffset = xoffset;
+	Y_InitOffset = yoffset;
+	Z_InitOffset = zoffset;
+
+	if(X_InitOffset & 0x8000){
+		X_InitOffset = (-X_InitOffset) / 3;
+		X_InitOffset = -X_InitOffset;
+	}
+	else{
+		X_InitOffset /= 3;
+	}
+
+	if(Y_InitOffset & 0x8000){
+		Y_InitOffset = (-Y_InitOffset) / 3;
+		Y_InitOffset = -Y_InitOffset;
+	}
+	else{
+		Y_InitOffset /= 3;
+	}
+
+	if(Z_InitOffset & 0x8000){
+		Z_InitOffset = (-Z_InitOffset) / 3;
+		Z_InitOffset = -Z_InitOffset;
+	}
+	else{
+		Z_InitOffset /= 3;
+	}
+
+	#if GSENSOR_DEBUG
+	printf("Init offset:%d,%d,%d\n",X_InitOffset,Y_InitOffset,Z_InitOffset);
+	#endif
+}
+
+void  
+appGsensorStatusGet(
+	UINT8   sel,
+	UINT32 *param
+)
+{
+	gSensorDriverRead(sel, param);
+}
+
+UINT8
+appGsensorIntrStatusGet(
+	void
+)
+{
+	static UINT32 preValue = 0;
+	UINT32 curValue = 0xff;
+	UINT8 ret = FALSE;
+
+	/* WARNING: according the HW layout to select the correct pin */
+	/* EVB use GPIO13 to connect the Gsensor Interrupt pin currently */
+	sp5kGpioPullSet(SP5K_GPIO_GRP_GEN,1<<13, 0);
+	sp5kGpioCfgSet(SP5K_GPIO_GRP_GEN, 1<<13, 0);
+	sp5kGpioRead(SP5K_GPIO_GRP_GEN, 1<<13,&curValue);
+
+	if(curValue)
+		curValue = 1;
+	else
+		curValue = 0;
+
+	if(curValue == 1 && preValue == 0)
+	{
+		printf("G-sensor Interrupt Trigger\n");
+		ret = TRUE;
+	}
+	else if(curValue == 0 && preValue == 1)
+	{
+		printf("G-sensor Interrupt Clear\n");
+		ret = FALSE;
+	}
+
+	preValue = curValue;
+
+	return ret;
+}
+
+void appGsensorInfoWrite2Mov(
+	void
+)
+{
+	UINT8 vtagstr[12 * GSENSOR_DATA_CNT + 3];
+	UINT8 str[25];
+	UINT8 i;
+	UINT32 len;
+
+	memset(vtagstr, 0 , sizeof(vtagstr));
+	for(i = 0; i < GSENSOR_DATA_CNT; i++){
+		/* X axis */
+		if(GSensorInfo[i][0] & 0x8000)//¸º
+		{
+			GSensorInfo[i][0] = (-GSensorInfo[i][0]);
+			vtagstr[0+(i*12)]='-';
+		}
+		else
+		{
+			vtagstr[0+(i*12)]='+';
+		}
+		vtagstr[1+(i*12)]=GSensorInfo[i][0]/100+'0';
+		vtagstr[2+(i*12)]=(GSensorInfo[i][0]/10)%10+'0';
+		vtagstr[3+(i*12)]=GSensorInfo[i][0]%10+'0';
+
+		/* Y axis */
+		if(GSensorInfo[i][1] & 0x8000)//¸º
+		{
+			vtagstr[4+(i*12)]='-';
+			GSensorInfo[i][1] = (-GSensorInfo[i][1]);
+		}
+		else
+		{
+			vtagstr[4+(i*12)]='+';
+		}
+		vtagstr[5+(i*12)]=GSensorInfo[i][1]/100+'0';
+		vtagstr[6+(i*12)]=(GSensorInfo[i][1]/10)%10+'0';
+		vtagstr[7+(i*12)]=GSensorInfo[i][1]%10+'0';
+
+		/* Z axis */
+		if(GSensorInfo[i][2] & 0x8000)//¸º
+		{
+			vtagstr[8+(i*12)]='-';
+			GSensorInfo[i][2] = (-GSensorInfo[i][2]);
+		}
+		else
+		{
+			vtagstr[8+(i*12)]='+';
+		}
+		vtagstr[9+(i*12)]=GSensorInfo[i][2]/100+'0';
+		vtagstr[10+(i*12)]=(GSensorInfo[i][2]/10)%10+'0';
+		vtagstr[11+(i*12)]=GSensorInfo[i][2]%10+'0';
+	}
+
+	memset(str, 0 , sizeof(str));
+	memset(str, 0x0C , 1);
+	strcat(vtagstr,str);
+
+	#if GSENSOR_DEBUG
+	printf("Gsensor_videotag:%s\n",vtagstr);
+	#endif
+	len = strlen(vtagstr);
+	sp5kMediaRecUserDataUpdate(vtagstr, len, 0, 1);
+
+	memset(str, 0, sizeof(str));
+	memset(VideoRecStampGsensorBuf, 0, sizeof(VideoRecStampGsensorBuf));
+
+	str[0]='X';
+	str[1]=':';
+	str[2]=vtagstr[0];//'+';
+	str[3]=vtagstr[1];//]GSensorInfo[i][0]/100+'0';
+	str[4]=0x2e;//".";
+	str[5]=vtagstr[2];//(GSensorInfo[i][0]/10)%10+'0';
+	str[6]=vtagstr[3];//GSensorInfo[i][0]%10+'0';
+
+	str[7]='Y';
+	str[8]=':';
+	str[9]=vtagstr[4];//'+';
+	str[10]=vtagstr[5];//GSensorInfo[i][1]/100+'0';
+	str[11]=0x2e;//".";
+	str[12]=vtagstr[6];//(GSensorInfo[i][1]/10)%10+'0';
+	str[13]=vtagstr[7];//GSensorInfo[i][1]%10+'0';
+
+	str[14]='Z';
+	str[15]=':';
+	str[16]=vtagstr[8];//'+';
+	str[17]=vtagstr[9];//GSensorInfo[i][2]/100+'0';
+	str[18]=0x2e;//".";
+	str[19]=vtagstr[10];//(GSensorInfo[i][2]/10)%10+'0';
+	str[20]=vtagstr[11];//GSensorInfo[i][2]%10+'0';
+
+	sprintf(VideoRecStampGsensorBuf, "%s", str);
+	#if GSENSOR_DEBUG
+	printf("Gsensor_Datestamp:%s\n",VideoRecStampGsensorBuf);
+	#endif
+}
+
+UINT8
+appGsensorInfoGet(
+	UINT8 *buf, 
+	UINT32 size
+)
+{
+	if(buf == NULL || size <= 0)
+		return 0;
+
+	UINT8  strBuf[128];
+	UINT8  datBuf[16];
+	SINT32 dat = 0;
+	UINT8  count = 0;
+	
+	memset(strBuf, 0 ,sizeof(strBuf));
+	memset(buf, 0 ,size);
+
+	strcat(strBuf, "G-Sensor:");
+	
+	gSensorDriverRead(GSENSOR_VAL_X, (UINT32 *)&dat);  /* Get X val */
+	if((dat & 0x80))
+		sprintf(datBuf,"-%03d ", (0xff ^ dat) + 1);
+	else
+		sprintf(datBuf,"+%03d ", dat);
+	strcat(strBuf, datBuf);
+
+	gSensorDriverRead(GSENSOR_VAL_Y, &dat);  /* Get Y val */
+	if((dat & 0x80))
+		sprintf(datBuf,"-%03d ", (0xff ^ dat) + 1);
+	else
+		sprintf(datBuf,"+%03d ", dat);
+	strcat(strBuf, datBuf);
+
+	gSensorDriverRead(GSENSOR_VAL_Z, &dat);  /* Get Z val */
+	if((dat & 0x80))
+		sprintf(datBuf,"-%03d ", (0xff ^ dat) + 1);
+	else
+		sprintf(datBuf,"+%03d ", dat);
+	strcat(strBuf, datBuf);
+
+	gSensorDriverRead(GSENSOR_SHAKE_STATUS, &dat);  /* Get shake status val */
+	if(dat == GSENSOR_SHAKE_LEFT)
+		sprintf(datBuf,"Shake Left\n");
+	else if(dat == GSENSOR_SHAKE_RIGHT)
+		sprintf(datBuf,"Shake Right\n");
+	else if(dat == GSENSOR_SHAKE_NONE)
+		sprintf(datBuf,"No Shake\n");
+	else if(dat == GSENSOR_SHAKE_UNDEF)
+		sprintf(datBuf,"Unknow Shake\n");
+	strcat(strBuf, datBuf);
+
+	count = strlen(strBuf);
+	if(count > size){
+		printf("Buffer is too small to get the G-Sensor info!");
+		return 0;
+	}
+	
+	strcpy(buf, strBuf);
+
+	return count;		
+}
+

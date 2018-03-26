@@ -1,0 +1,539 @@
+/**************************************************************************
+ *                                                                        *
+ *         Copyright (c) 2010 by DXG Technology Co., Ltd.             *
+ *                                                                        *
+ *  This software is copyrighted by and is the property of DXG        *
+ *  Technology Co., Ltd. All rights are reserved by DXG Technology    *
+ *  Co., Ltd. This software may only be used in accordance with the       *
+ *  corresponding license agreement. Any unauthorized use, duplication,   *
+ *  distribution, or disclosure of this software is expressly forbidden.  *
+ *                                                                        *
+ *  This Copyright notice MUST not be removed or modified without prior   *
+ *  written consent of DXG Technology Co., Ltd.                       *
+ *                                                                        *
+ *  DXG Technology Co., Ltd. reserves the right to modify this        *
+ *  software without notice.                                              *
+ *                                                                        *
+ *  DXG Technology Co., Ltd.                                          *
+ *  MIN ZHI IND., PARK,					            *
+ *  LONG HUA,BAOAN,SHEN ZHEN,P.R.O.C.                                           *
+ *                                                                        *
+ *  Author: Wujf                                                  *
+ *                                                                         *
+ **************************************************************************/
+#define HOST_DBG 0
+
+#include "app_com_def.h"
+#include "app_com_api.h"
+
+#include "sp5k_global_api.h"
+#include "sp5k_ae_api.h"
+#include "sp5k_capture_api.h"
+#include "sp5k_disp_api.h"
+#include "sp5k_otrack_api.h"
+#include "sp5k_usb_api.h"
+#include "sp5k_rsvblk_api.h"
+#include "sp5k_disk_api.h"
+#include "sp5k_cdsp_api.h"
+#include "sp5k_gfx_api.h"
+#include "sp5k_media_api.h"
+#include "sp5k_af_api.h"
+#include "Sp5k_usb_api.h"
+
+#include "app_pal.h"
+#include "app_icon.h"
+#include "app_icon_def.h"
+#include "app_zoom_api.h"
+#include "app_lens_api.h"
+#include "app_menu.h"
+#include "app_still.h"
+#include "app_sound.h"
+#include "app_exif.h"
+#include "app_view_param.h"
+#include "app_strobe.h"
+#include "app_led.h"
+#include "app_view_osd.h"
+#include "app_error_msg.h"
+#include "app_osd.h"
+#include "app_res_def.h"
+#include "app_osd_api.h"
+#include "app_osdfont.h"
+#include "app_face_detect_ex.h"
+#include "app_video.h"
+#include "app_calib_api.h"
+#include "app_errorosd.h"
+#include "app_3aalg.h"
+#include "app_ui_para.h" 
+#include "app_cdfs_api.h"
+#include "app_key_def.h"
+#include "app_wifi_utility.h"
+#include "app_ptp.h"
+#include "app_wifi_connection.h"
+#include "app_md.h"
+#include "app_pal.h"
+#include "app_still_timelapse.h"
+#include "app_awbalg_api.h"  
+#include "app_view_param_def.h"
+
+#include "app_scdv_global.h"
+#include "app_scdv_ui_para_def.h"
+#include "app_osd_api_lcm.h"
+#include "app_osd_draw_lcm.h"
+#include "app_gSensor.h"
+#include "app_msg.h"
+extern UINT8 appSdvVideoDiskCheckMemeoryFull(void);
+extern UINT8 appSdvStillDiskCheckMemeoryFull(void);
+extern UINT8 appCdvVideoDiskCheckMemeoryFull(void);
+
+appGlobal_t appGlobal;
+
+void appGlobalDump(void)
+{
+	printf("appGlobal.appCdfsCount = %d\n", appGlobal.appCdfsCount);
+ 	printf("appGlobal.appDcInFlag = %d\n", appGlobal.appDcInFlag);
+ 	printf("appGlobal.appAutoRecordTimerIsr = %d\n", appGlobal.appAutoRecordTimerIsr);
+ 	printf("appGlobal.appGTriggerPowerOff = %d\n", appGlobal.appGTriggerPowerOff);
+}
+
+void appGlobalInit(void)
+{
+	appGlobal.appCdfsCount = 0;
+	appGlobal.appDcInFlag = FALSE;
+ 	appGlobal.appAutoRecordTimerIsr = TIMER_NULL;
+ 	appGlobal.appGTriggerPowerOff = FALSE;
+}
+
+UINT8 appScdvDiskCheckMemoryFull(void)
+{
+	switch(appActiveStateGet())
+	{
+		case APP_STATE_SPORTDV_VIDEO_PREVIEW:
+		case APP_STATE_SPORTDV_VIDEO_REC:
+		case APP_STATE_SPORTDV_VIDEO_REC_SLOW:
+			return appSdvVideoDiskCheckMemeoryFull();			
+			break;
+		case APP_STATE_SPORTDV_STILL_PREVIEW:
+		case APP_STATE_SPORTDV_STILL_CAPTURE:
+		case APP_STATE_SPORTDV_STILL_CAP_LAPSE:
+		case APP_STATE_SPORTDV_STILL_CAP_BURST:
+		case APP_STATE_SPORTDV_STILL_CAP_SELF_TIMER:
+			return appSdvStillDiskCheckMemeoryFull();			
+			break;
+		case APP_STATE_CARDV_VIDEO_PREVIEW:
+		case APP_STATE_CARDV_VIDEO_REC:
+		case APP_STATE_CARDV_VIDEO_REC_LAPSE:
+			return appCdvVideoDiskCheckMemeoryFull();			
+			break;
+		default:
+			return FALSE;
+			break;
+	}
+}
+
+UINT8 appScdvWaitForDiskReady(void)
+{
+	//disk
+	if(IS_CARD_EXIST)	//IS_DISK_NAND_MOUNT
+	{
+		if(IS_DISK_MOUNT_READY == FALSE) 
+		{
+			appDiskStatusSet(APP_DISK_STATUS_MOUNTING);
+			APP_SLEEP_MS(20);
+			sp5kHostMsgSend(APP_UI_MSG_VIEW_WAIT_DISK, 0);
+		}					
+		else  if(IS_DISK_MOUNT_FAIL == FALSE)
+		{
+			if(IS_CARD_LOCK)
+			{
+				appDiskStatusSet(APP_DISK_STATUS_CARD_LOCKED);
+			}
+			else if(appScdvDiskCheckMemoryFull() == TRUE)
+			{
+				appDiskStatusSet(APP_DISK_STATUS_MEMORY_FULL);
+			}
+			else
+			{
+				appDiskStatusSet(APP_DISK_STATUS_MOUNTED_OK);
+			}
+			return TRUE;
+		}
+		else
+		{
+			appDiskStatusSet(APP_DISK_STATUS_MOUNTED_FAIL);
+		}
+	}
+	else
+	{
+		appDiskStatusSet(APP_DISK_STATUS_NO_CARD);
+	}
+
+	return FALSE;
+}
+
+void appModeChangeFlow(void)
+{
+	appMsgFlush(APP_MSG_KEY_QUE);	
+	switch(appActiveStateGet())
+	{
+		//SPORT DV Mode
+		case APP_STATE_SPORTDV_VIDEO_PREVIEW:
+			appStateChange(APP_STATE_SPORTDV_STILL_PREVIEW, STATE_PARAM_NORMAL_INIT);
+			break;
+		case APP_STATE_SPORTDV_STILL_PREVIEW:
+			#ifdef USE_DVS5M2_HW
+			appStateChange(APP_STATE_SPORTDV_PB_DELETE, STATE_PARAM_NORMAL_INIT);
+			#elif defined 	USE_DVS5M9_HW
+			appStateChange(APP_STATE_SPORTDV_WIFI_MODE, STATE_PARAM_NORMAL_INIT);
+			#endif
+			break;
+		case APP_STATE_SPORTDV_WIFI_MODE:
+			appStateChange(APP_STATE_SPORTDV_PB_DELETE, STATE_PARAM_NORMAL_INIT);
+			break;
+		case APP_STATE_SPORTDV_PB_DELETE:
+			appStateChange(APP_STATE_SPORTDV_SYSTEM, STATE_PARAM_NORMAL_INIT);
+			break;
+		case APP_STATE_SPORTDV_SYSTEM:
+			appStateChange(APP_STATE_SPORTDV_VIDEO_PREVIEW, STATE_PARAM_NORMAL_INIT);
+			break;
+			
+		//CAR DV Mode
+		case APP_STATE_CARDV_VIDEO_PREVIEW:
+			#ifdef USE_DVS5M2_HW
+			appStateChange(APP_STATE_CARDV_PB_DELETE_LOOPING, STATE_PARAM_NORMAL_INIT);
+			#elif defined USE_DVS5M9_HW
+			appStateChange(APP_STATE_CARDV_WIFI_MODE, STATE_PARAM_NORMAL_INIT);
+			#endif
+			break;
+		case APP_STATE_CARDV_WIFI_MODE:
+			appStateChange(APP_STATE_CARDV_PB_DELETE_LOOPING, STATE_PARAM_NORMAL_INIT);
+			break;
+		case APP_STATE_CARDV_PB_DELETE_LOOPING:
+			appStateChange(APP_STATE_CARDV_PB_DELETE_EVENT, STATE_PARAM_NORMAL_INIT);
+			break;
+		case APP_STATE_CARDV_PB_DELETE_EVENT:
+			appStateChange(APP_STATE_CARDV_SYSTEM, STATE_PARAM_NORMAL_INIT);
+			break;
+		default:
+		case APP_STATE_CARDV_SYSTEM:
+			appStateChange(APP_STATE_CARDV_VIDEO_PREVIEW, STATE_PARAM_NORMAL_INIT);
+			break;
+	}
+}
+
+void appOsDelayMsEx(UINT32 delayTime, UINT8* strFunction, UINT32 line)
+{
+	printf("%s(%d) Delay: %d ms\n", strFunction, line, delayTime);
+	sp5kTimeDelay(SP5K_TIME_DELAY_1MS, delayTime);
+}
+
+BOOL appCheckFocusMode(void)
+{
+	UINT32 fd;
+	fd = sp5kFsFileOpen("D:\\FOCUS.TXT", SP5K_FS_OPEN_RDONLY);
+	if (fd) 
+	{
+		sp5kFsFileClose(fd);
+		printf("appCheckFocusMode Success!\n");
+		return TRUE;
+	}
+	else
+	{
+		printf("appCheckFocusMode Failed!\n");
+		return FALSE;
+	}
+}
+
+void appOsdFlipSet(void)
+{
+	uiPara_t* puiPara = appUiParaGet();
+	
+	switch(puiPara->SystemOsdFlip)
+	{
+		case UI_SCDV_SYSTEM_OSD_FLIP_ON:
+			appLcmFlip(TRUE);
+			//sp5kDispDevAttrSet(SP5K_DISP_OSD_FLIP, 1, 1, 0, 0);
+			break;
+		case UI_SCDV_SYSTEM_OSD_FLIP_OFF:
+			appLcmFlip(FALSE);
+			//sp5kDispDevAttrSet(SP5K_DISP_OSD_FLIP, 0, 0, 0, 0);
+			break;
+	}
+}
+
+void appOsdBrightnessSet(void)
+{
+	uiPara_t* puiPara = appUiParaGet();
+	
+	switch(puiPara->SystemOsdBrightness)
+	{
+		case UI_SCDV_SYSTEM_OSD_BRIGHTNESS_100:
+			appLcmBrightness(100);
+			break;
+		case UI_SCDV_SYSTEM_OSD_BRIGHTNESS_60:
+			appLcmBrightness(80);
+			break;
+		case UI_SCDV_SYSTEM_OSD_BRIGHTNESS_30:
+			appLcmBrightness(60);
+			break;
+	}
+}
+
+void appCdspFlipSet(BOOL bFlip, BOOL Immediate)
+{
+	#define FLIP_OFF 0
+	#define FLIP_H 1
+	#define FLIP_V1 2
+	#define FLIP_HV 3
+	
+	if(bFlip)/*backward*/
+	{
+		/*WRITE8(0xb00021d0,0x1c);*/
+		 sp5kSystemCfgSet(SP5K_CDSP_FLIP_CFG,FLIP_HV, Immediate);/* 1:right now 0:next mode*/
+		 sp5kSystemCfgSet(SP5K_CDSP_AEAF_SW_FLIP_CFG,SP5K_AA_SW_FLIP_CFG_AEWIN,FLIP_HV); 
+		 sp5kSystemCfgSet(SP5K_CDSP_AEAF_SW_FLIP_CFG,SP5K_AA_SW_FLIP_CFG_AFWIN,FLIP_HV);
+	}
+	else/*forward*/
+	{
+		/*WRITE8(0xb00021d0,0x10);*/
+		 sp5kSystemCfgSet(SP5K_CDSP_FLIP_CFG,FLIP_OFF, Immediate);/* 1:right now 0:next mode*/
+		 sp5kSystemCfgSet(SP5K_CDSP_AEAF_SW_FLIP_CFG,SP5K_AA_SW_FLIP_CFG_AEWIN,FLIP_OFF); 
+		 sp5kSystemCfgSet(SP5K_CDSP_AEAF_SW_FLIP_CFG,SP5K_AA_SW_FLIP_CFG_AFWIN,FLIP_OFF);
+	}
+}
+
+void appSensorFlipSet(void)
+{
+	uiPara_t* puiPara = appUiParaGet();
+	UINT32 mode = 0;
+	BOOL Immediate = FALSE;
+	
+	sp5kModeGet(&mode);
+	if(mode == SP5K_MODE_STILL_PREVIEW || mode == SP5K_MODE_VIDEO_PREVIEW || mode == SP5K_MODE_VIDEO_RECORD)
+	{
+		Immediate = TRUE;
+	}
+
+	switch(puiPara->SCdvSensorFlip)
+	{
+		case UI_SCDV_SENSOR_FLIP_ON:
+			appCdspFlipSet(TRUE, Immediate);
+			break;
+		case UI_SCDV_SENSOR_FLIP_OFF:
+			appCdspFlipSet(FALSE, Immediate);
+			break;
+		case UI_SCDV_SENSOR_FLIP_AUTO:
+			appCdspFlipSet(appGSensorFlipGet(), Immediate);
+			break;
+	}
+}
+
+void appLedIndicatorSet(void)
+{
+	uiPara_t* puiPara = appUiParaGet();
+
+	switch(puiPara->SystemLedIndicator)
+	{
+		case UI_SCDV_SYSTEM_LED_INDICATOR_ON:
+			appLedIndicatorEnable(TRUE);
+			break;
+		case UI_SCDV_SYSTEM_LED_INDICATOR_OFF:
+			appLedIndicatorEnable(FALSE);
+			break;
+	}
+}
+
+void appBuzzerEnableSet(void)
+{
+	uiPara_t* puiPara = appUiParaGet();
+
+	switch(puiPara->SystemBeepVolume)
+	{
+		case UI_SCDV_SYSTEM_BEEP_VOLUME_100:
+			appBuzzerEnable(TRUE, 60);
+			break;
+		case UI_SCDV_SYSTEM_BEEP_VOLUME_60:
+			appBuzzerEnable(TRUE, 10);
+			break;
+		case UI_SCDV_SYSTEM_BEEP_VOLUME_OFF:
+			appBuzzerEnable(FALSE, 0);
+			break;
+	}
+}
+
+void appWifiSsidPasswordSet(void)
+{
+	UINT32 fd;
+	UINT8 strWifiPassword[OSD_STRING_SIZE], strWifiSsid[OSD_STRING_SIZE], strWifiMac[OSD_STRING_SIZE];
+	uiPara_t* puiPara = appUiParaGet();
+
+	if(appMacAddressGet(strWifiMac) == TRUE)
+	{
+		sprintf(strWifiSsid, "%s_%s\r\n", APP_WIFI_SSID, strWifiMac + strlen(strWifiMac) - 6);
+	}
+	else
+	{
+		sprintf(strWifiSsid, "%s_XXXX\r\n", APP_WIFI_SSID);
+	}
+	
+	sprintf(	strWifiPassword, "%d%d%d%d%d%d%d%d%d%d\r\n", 
+			puiPara->SystemWifiPassword00, puiPara->SystemWifiPassword01, 
+			puiPara->SystemWifiPassword02, puiPara->SystemWifiPassword03, 
+			puiPara->SystemWifiPassword04, puiPara->SystemWifiPassword05, 
+			puiPara->SystemWifiPassword06, puiPara->SystemWifiPassword07, 
+			puiPara->SystemWifiPassword08, puiPara->SystemWifiPassword09);
+
+	fd = sp5kFsFileOpen("B:/UDF/SSID_PW.CFG", SP5K_FS_OPEN_CREATE|SP5K_FS_OPEN_RDWR);
+	sp5kFsFileWrite(fd, strWifiSsid, strlen(strWifiSsid));
+	sp5kFsFileWrite(fd, strWifiPassword,strlen(strWifiPassword));
+	sp5kFsFileClose(fd);
+}
+
+BOOL appCheckSdvMainMode(void)
+{
+	uiPara_t* puiPara = appUiParaGet();
+	BOOL RetureValue = TRUE;
+
+	if(puiPara->ScdvMainMode == UI_SCDV_MAIN_MODE_SPORT)
+	{
+		RetureValue = TRUE;
+	}
+	else if(puiPara->ScdvMainMode == UI_SCDV_MAIN_MODE_CAR)
+	{
+		RetureValue = FALSE;
+	}
+
+	return RetureValue;
+}
+
+void appPathSlashReplace(UINT8* pathString)
+{
+	UINT strIndex = 0;
+	while(pathString[strIndex] != '\0')
+	{
+		if(pathString[strIndex] == '/')
+		{
+			pathString[strIndex] = '\\';
+		}
+		else if(pathString[strIndex] == '\\')
+		{
+			pathString[strIndex] = '/';
+		}
+		strIndex ++;
+	}
+}
+
+BOOL appVideoRecordStateGet(void)
+{
+	UINT32 state = appActiveStateGet();
+
+	if(	state == APP_STATE_SPORTDV_VIDEO_REC || state == APP_STATE_SPORTDV_VIDEO_REC_SLOW
+		||state == APP_STATE_CARDV_VIDEO_REC || state == APP_STATE_CARDV_VIDEO_REC_LAPSE)
+	{
+		return TRUE;
+	}
+	else
+	{
+		return FALSE;
+	}
+}
+UINT8 appSdvVideoRecordRatioGet(void)
+{
+	UINT8 nRecRatio=4;
+	uiPara_t* puiPara = appUiParaGet();
+
+	if(puiPara->ScdvMainMode == UI_SCDV_MAIN_MODE_SPORT)
+	{
+		//Mode Icon
+		if(puiPara->SdvVideoMode == UI_SCDV_VIDEO_MODE_NORMAL ||puiPara->SdvVideoMode ==UI_SCDV_VIDEO_MODE_SLOW)
+		{
+			switch(puiPara->SdvVideoNormalSize)
+			{
+				case UI_SCDV_VIDEO_SIZE_1080P30:											
+				case UI_SCDV_VIDEO_SIZE_720P60:				
+				case UI_SCDV_VIDEO_SIZE_720P30:							
+				case UI_SCDV_VIDEO_SIZE_WVGAP60:								
+				case UI_SCDV_VIDEO_SIZE_WVGAP30:
+					nRecRatio=9;
+					printf("--sp9\n");
+					break;
+				case UI_SCDV_VIDEO_SIZE_960P30:									
+				case UI_SCDV_VIDEO_SIZE_VGAP90:
+					nRecRatio=4;
+					printf("--sp4\n");
+					break;			
+			}
+		}
+	}
+	else if(puiPara->ScdvMainMode == UI_SCDV_MAIN_MODE_CAR)
+	{
+
+		if(puiPara->CdvVideoMode == UI_SCDV_VIDEO_MODE_NORMAL ||puiPara->CdvVideoMode ==UI_SCDV_VIDEO_MODE_LAPSE)
+		{
+			switch(puiPara->CdvVideoNormalSize)
+			{
+				case UI_SCDV_VIDEO_SIZE_1080P30:											
+				case UI_SCDV_VIDEO_SIZE_720P60:				
+				case UI_SCDV_VIDEO_SIZE_720P30:							
+				case UI_SCDV_VIDEO_SIZE_WVGAP60:								
+				case UI_SCDV_VIDEO_SIZE_WVGAP30:
+					nRecRatio=9;
+					printf("--car9\n");
+					break;
+				case UI_SCDV_VIDEO_SIZE_960P30:									
+				case UI_SCDV_VIDEO_SIZE_VGAP90:
+					nRecRatio=4;
+					printf("--car4\n");
+					break;			
+			}
+
+		}
+	}
+	else
+	{
+		switch(puiPara->SdvVideoSlowTime)
+		{
+			case UI_SCDV_VIDEO_SLOW_1_2:				
+				break;
+			case UI_SCDV_VIDEO_SLOW_1_3:				
+				break;
+			case UI_SCDV_VIDEO_SLOW_1_4:
+				break;				
+		}
+	}
+	return nRecRatio;
+	
+}
+
+void appGetViewSize(UINT32* pWidth, UINT32* pHeight)
+{
+	UINT32 mode;
+	uiPara_t* puiPara = appUiParaGet();
+	
+	sp5kModeGet(&mode);
+	switch(mode)
+	{
+		case SP5K_MODE_VIDEO_PREVIEW:
+		case SP5K_MODE_VIDEO_RECORD:
+			sp5kMediaRecAttrGet(SP5K_MEDIA_ATTR_WIDTH, pWidth);
+			sp5kMediaRecAttrGet(SP5K_MEDIA_ATTR_HEIGHT, pHeight);
+			break;
+		case SP5K_MODE_STILL_PREVIEW:
+		case 0x112:
+		case 0x113:
+		case 0x114:
+		case 0x115:		
+			if(puiPara->SdvPhotoNormalSize == UI_SCDV_PHOTO_NORMAL_SIZE_2M_16X9)
+			{
+				*pWidth = 16;
+				*pHeight = 9;
+			}
+			else
+			{
+				*pWidth = 4;
+				*pHeight = 3;
+			}
+			break;	 
+		default :
+			break;
+	}
+}

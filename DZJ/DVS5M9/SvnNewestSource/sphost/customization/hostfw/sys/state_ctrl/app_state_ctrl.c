@@ -1,0 +1,680 @@
+/**************************************************************************
+ *
+ *        Copyright (c) 2006-2008 by Sunplus mMedia Inc., Ltd.
+ *
+ *  This software is copyrighted by and is the property of Sunplus
+ *  mMedia Inc., Ltd. All rights are reserved by Sunplus mMedia
+ *  Inc., Ltd. This software may only be used in accordance with the
+ *  corresponding license agreement. Any unauthorized use, duplication,
+ *  distribution, or disclosure of this software is expressly forbidden.
+ *
+ *  This Copyright notice MUST not be removed or modified without prior
+ *  written consent of Sunplus mMedia Inc., Ltd.
+ *
+ *  Sunplus mMedia Inc., Ltd. reserves the right to modify this
+ *  software without notice.
+ *
+ *  Sunplus mMedia Inc., Ltd.
+ *  19-1, Innovation First Road, Science-Based Industrial Park,
+ *  Hsin-Chu, Taiwan, R.O.C. 
+ *
+ **************************************************************************/
+#define HOST_DBG 1
+#include "app_com_def.h"
+#include "app_com_api.h"
+#include "app_state_private.h"
+#include "app_dev_plug.h"
+#include "app_still.h"
+#include "app_state_ctrl.h"
+#include "App_view_param_def.h"
+#include"App_view_param.h"
+#include "app_osd_api.h"
+#include "app_sys_def.h"
+#include "app_ts_api.h"
+#include "app_ts_cal.h"
+#include "app_ui_para.h"//ll@add
+/**************************************************************************
+ *                          D A T A    T Y P E S                          *
+ **************************************************************************/
+typedef struct appState_s {
+	pfpSATATE   pfpState;	 
+	UINT32 hotPlugCfg;
+	char *name;	
+} appState_t;
+/**************************************************************************
+ *               F U N C T I O N    D E C L A R A T I O N S               *
+ **************************************************************************/
+void appNullState(UINT32 msg,UINT32 param);
+void appPowerOnState(UINT32 msg,	UINT32 param);
+void appPowerOffState(UINT32 msg,	UINT32 param);
+void appBatteryChargingState(UINT32 msg,UINT32 param);
+void appStillPvState(UINT32 msg,UINT32 param);
+void appStillCapState(UINT32 msg,UINT32 param);
+void appStillBurstState(UINT32 msg,UINT32 param);
+void appStillPanoramaState(UINT32 msg,UINT32 param);
+#if CAM_TYPE_CVR
+void appSystemState(UINT32 msg,UINT32 param);
+#endif
+void appStillAaaState(UINT32 msg,UINT32 param);
+/*s Add by Aries 09/10/30*/
+void appStillBlinkState(UINT32 msg,UINT32 param);
+/*e Add by Aries 09/10/30*/
+void appStillSelfTimerState(UINT32 msg, UINT32 param);
+void appVideoPvState(UINT32 msg, UINT32 param);
+void appVideoRecState(UINT32 msg, UINT32 param);
+ void appPbMainState(UINT32 msg,	UINT32 param);
+void appPbZoomPanState(UINT32 msg, UINT32 param);
+void appPbMPlayState(UINT32 msg, UINT32 param);
+void appPbImgProtState(UINT32 msg, UINT32 param);
+void appPbImgDelState(UINT32 msg, UINT32 param);
+void appPbEffectState(UINT32 msg, UINT32 param);
+
+void appPbC2CState(UINT32 msg, UINT32 param);
+void appPbSlideState(UINT32 msg, UINT32 param);
+void appPbVideoState(UINT32 msg, UINT32 param);
+void appPbTrimVideoState(UINT32 msg, UINT32 param);
+void appPbAudioState(UINT32 msg, UINT32 param);
+void appPbMemoRecState(UINT32 msg, UINT32 param);
+void appPbStartImgState(UINT32 msg, UINT32 param);
+void appPbRotateState(UINT32 msg, UINT32 param);
+void appPbDpofState(UINT32 msg, UINT32 param);
+void appAudioRecState(UINT32 msg, UINT32 param);
+void appMenuState(UINT32 msg, UINT32 param);
+ void appUsbCreateState(UINT32 msg,	UINT32 param);
+void appUsbMsdcState(UINT32 msg,	UINT32 param);
+void appUsbPccamState(UINT32 msg,UINT32 param);
+void appUsbDpsState(UINT32 msg,UINT32 param);
+void appUsbDpsImageSelState(UINT32 msg,UINT32 param);
+void appUsbDps2ndMenuState(UINT32 msg,	UINT32 param);
+void appUsbDpsPrintState(UINT32 msg,UINT32 param);
+void appTvPlugState(UINT32 msg,UINT32 param);
+#if (KIT_WITH_HDMI)
+void appHDMIPlugState(UINT32 msg,UINT32 param);
+#endif
+#if SPCA6330
+void appCecCapabilityCtrlState(UINT32 msg,UINT32 param);
+#endif
+void appCardPlugState(UINT32 msg,	UINT32 param);
+void appCalibState(UINT32 msg,UINT32 param);
+void appStillBusyState(UINT32 msg,UINT32 param);
+ void appStillCwbState(UINT32 msg,UINT32 param);
+ void appStillSmileState(UINT32 msg,	UINT32 param);
+ void appStillStrobeTestState(UINT32 msg,	UINT32 param);
+void appCalibFlashState(UINT32 msg,	UINT32 param);
+void appCalibZoomLensState(UINT32 msg,	UINT32 param);
+
+void appTBMain_State(UINT32 msg,	UINT32 param);
+void appCcMain_State(UINT32 msg,	UINT32 param);
+void appTbFlashState(UINT32 msg,	UINT32 param);
+void appTbAFState(UINT32 msg, UINT32 param);
+void appTbBat_CurveState(UINT32 msg, UINT32 param);
+void TB_SensorTest_StateMain(UINT32 msg,	UINT32 param);
+void appCalibAwbState(UINT32 msg, UINT32 param);
+void appPowerOnSetLanguageState(UINT32 msg, UINT32 param);
+#if ICAT_WIFI==1
+void appWiFiConnectionState(UINT32 msg, UINT32 param);
+#endif
+
+extern void appSdvVideoPvState(UINT32 msg, UINT32 param);
+extern void appSdvVideoRecState(UINT32 msg, UINT32 param);
+extern void appSdvVideoRecSlowState(UINT32 msg, UINT32 param);
+extern void appSdvStillPvState(UINT32 msg, UINT32 param);
+extern void appSdvStillCapState(UINT32 msg, UINT32 param);
+extern void appSdvStillCapLapseState(UINT32 msg, UINT32 param);
+extern void appSdvStillCapBurstState(UINT32 msg, UINT32 param);
+extern void appSdvStillCapSelfTimerState(UINT32 msg, UINT32 param);
+extern void appSdvWifiModeState(UINT32 msg, UINT32 param);
+extern void appSdvPbDeleteState(UINT32 msg, UINT32 param);
+extern void appSdvSystemState(UINT32 msg, UINT32 param);
+
+extern void appCdvVideoPvState(UINT32 msg, UINT32 param);
+extern void appCdvVideoRecState(UINT32 msg, UINT32 param);
+extern void appCdvVideoRecLapseState(UINT32 msg, UINT32 param);
+extern void appSdvVideoRecLapseState(UINT32 msg, UINT32 param);
+extern void appCdvWifiModeState(UINT32 msg, UINT32 param);
+extern void appCdvPbDeleteLoopState(UINT32 msg, UINT32 param);
+extern void appCdvPbDeleteEventState(UINT32 msg, UINT32 param);
+extern void appCdvSystemState(UINT32 msg, UINT32 param);
+
+extern void appScdvCardIspState(UINT32 msg,UINT32 param);
+extern void appScdvMenuState(UINT32 msg,UINT32 param);
+
+extern void appScdvPbMainState(UINT32 msg,UINT32 param);
+extern void appScdvPbVideoState(UINT32 msg,UINT32 param);
+
+extern void appScdvRfPairingState(UINT32 msg,UINT32 param);
+
+
+/**************************************************************************
+ *                         L O C A L    D A T A                         *
+ **************************************************************************/
+/* state process table */ 
+static appState_t    appStateTbl[] = 
+{    
+	/* sys */
+	[APP_STATE_NULL]			= {appNullState, ALL_PLUG_DO_PROC, "Null"},               					    
+	[APP_STATE_POWER_ON]	= {appPowerOnState, PWR_ON_PLUG_CFG, "Pwr On"}, 
+	[APP_STATE_POWER_OFF]	= {appPowerOffState, PWR_OFF_PLUG_CFG, "Pwr Off"},
+
+	///////////////////////////////////////////////////////////////////////////////////////////////////////
+	/* sportdv sys group*/
+	[APP_STATE_SPORTDV_SYSTEM]					= {appSdvSystemState, ALL_PLUG_DO_PROC, "sport dv system"},	
+	/* cardv sys group*/
+	[APP_STATE_CARDV_SYSTEM]					= {appCdvSystemState, ALL_PLUG_DO_PROC, "car dv system"},	
+	/* scdv sys group*/
+	[APP_STATE_SCDV_CARD_ISP]					= {appScdvCardIspState, ALL_PLUG_DO_PROC, "scdv card isp"},	
+	/* scdv rf pairing*/
+	[APP_STATE_SCDV_RF_PAIRING]					= {appScdvRfPairingState, ALL_PLUG_DO_PROC, "scdv rf pairing"},	
+	///////////////////////////////////////////////////////////////////////////////////////////////////////
+	
+ 	/* still  */
+	[APP_STATE_STILL_PREVIEW] = {appStillPvState, STILL_PV_PLUG_CFG, "Still PV"},    				
+	[APP_STATE_STILL_CAPTURE] 	= {appStillCapState, STILL_CAP_PLUG_CFG, "Capture"},
+	[APP_STATE_BURST_CAPTURE] 	= {appStillBurstState, STILL_BURST_PLUG_CFG, "Burst"},						
+	[APP_STATE_STILL_AAA] 	= {appStillAaaState, STILL_AAA_PLUG_CFG, "S1 Hold"},
+	[APP_STATE_STILL_SELF_TIMER] = {appStillSelfTimerState, SELF_COUNTING_PLUG_CFG, "Self snap counting"},	
+	[APP_STATE_STILL_BUSY]      = {appStillBusyState, STILL_BUSY_PLUG_CFG, "Still Busy"},
+	 #if PANORAMA_MODE
+	[APP_STATE_STILL_PAN0RAMA] 	= {appStillPanoramaState, STILL_BURST_PLUG_CFG, "Panorama"},	
+	#endif
+	[APP_STATE_STILL_CWB] = {appStillCwbState, STILL_VIEW_MENU_PLUG_CFG , "Still CWB Menu"},
+	#if !CAM_TYPE_CVR
+	[APP_STATE_STILL_SMILE_DETECT] = {appStillSmileState, STILL_SMILE_PLUG_CFG , "Smile Detect"},
+	#endif
+	[APP_STATE_STILL_STROB_TEST] = {appStillStrobeTestState, STILL_PV_PLUG_CFG, "Strob test"},
+	#if !CAM_TYPE_CVR
+	[APP_STATE_STILL_BLINK_DETECT] = {appStillBlinkState, STILL_PV_PLUG_CFG, "Blink Detect"},
+	#endif
+
+	///////////////////////////////////////////////////////////////////////////////////////////////////////
+	/* sportdv still view group*/
+	[APP_STATE_SPORTDV_STILL_PREVIEW]			= {appSdvStillPvState, ALL_PLUG_DO_PROC, "sport dv still preview"},	
+	[APP_STATE_SPORTDV_STILL_CAPTURE]			= {appSdvStillCapState, ALL_PLUG_DO_PROC, "sport dv still capture"},	
+	[APP_STATE_SPORTDV_STILL_CAP_LAPSE]		= {appSdvStillCapLapseState, ALL_PLUG_DO_PROC, "sport dv still lapse"},	
+	[APP_STATE_SPORTDV_STILL_CAP_BURST]		= {appSdvStillCapBurstState, ALL_PLUG_DO_PROC, "sport dv still burst"},	
+	[APP_STATE_SPORTDV_STILL_CAP_SELF_TIMER]	= {appSdvStillCapSelfTimerState, ALL_PLUG_DO_PROC, "sport dv still self timer"},	
+	///////////////////////////////////////////////////////////////////////////////////////////////////////
+	
+	/* video */
+	[APP_STATE_VIDEO_PREVIEW]	= {appVideoPvState, VIDEO_PV_PLUG_CFG, "Video PV"},  
+	[APP_STATE_VIDEO_REC] 	= {appVideoRecState, VIDEO_REC_PLUG_CFG, "Video Rec"},  
+	[APP_STATE_VIDEO_CWB] = {appStillCwbState, STILL_VIEW_MENU_PLUG_CFG , "Video CWB Menu"}, 
+	[APP_STATE_VIDEO_AAA] 	= {appStillAaaState, STILL_AAA_PLUG_CFG, "S1 Hold"},
+	#if CAM_TYPE_CVR
+	[APP_STATE_VIDEO_SYSTEM] = {appSystemState,ALL_PLUG_DO_PROC,"Syetem"},
+	#endif
+    	#if ICAT_WIFI==1
+	[APP_STATE_WIFI_CONNECTION] = {appWiFiConnectionState,ALL_PLUG_IGNORE,"WiFi Connection"},
+	#endif
+
+	///////////////////////////////////////////////////////////////////////////////////////////////////////
+	/* sportdv video group */
+	[APP_STATE_SPORTDV_VIDEO_PREVIEW]			= {appSdvVideoPvState, ALL_PLUG_DO_PROC, "sport dv video preview"},
+	[APP_STATE_SPORTDV_VIDEO_REC]				= {appSdvVideoRecState, ALL_PLUG_DO_PROC, "sport dv video rec"},
+	[APP_STATE_SPORTDV_VIDEO_REC_SLOW]		= {appSdvVideoRecSlowState, ALL_PLUG_DO_PROC, "sport dv video slow motion"},
+	//[APP_STATE_SPORTDV_VIDEO_REC_LAPSE]		= {appSdvVideoRecLapseState, ALL_PLUG_DO_PROC, "sport dv video lapse"},
+	[APP_STATE_SPORTDV_WIFI_MODE]				= {appSdvWifiModeState, ALL_PLUG_DO_PROC, "sport dv wifi mode"},
+	/* cardv video group */
+	[APP_STATE_CARDV_VIDEO_PREVIEW]			= {appCdvVideoPvState, ALL_PLUG_DO_PROC, "car dv video preview"},
+	[APP_STATE_CARDV_VIDEO_REC]				= {appCdvVideoRecState, ALL_PLUG_DO_PROC, "car dv video rec"},
+	[APP_STATE_CARDV_VIDEO_REC_LAPSE]			= {appCdvVideoRecLapseState, ALL_PLUG_DO_PROC, "car dv video lapse"},
+	[APP_STATE_CARDV_WIFI_MODE]				= {appCdvWifiModeState, ALL_PLUG_DO_PROC, "car dv wifi mode"},
+	///////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	#if !CAM_TYPE_CVR
+	/* audio */
+	[APP_STATE_AUDIO_REC] 	= {appAudioRecState, AUDIO_REC_PLUG_CFG, "Audio Rec"},   
+	#endif
+	
+	/* playback */
+	[APP_STATE_PB_MAIN] 		= {appPbMainState, PB_MAIN_PLUG_CFG, "PB Main"}, 
+	#if !CAM_TYPE_CVR
+	[APP_STATE_PB_MPLAY] 	= {appPbMPlayState, MULTI_PB_PLUG_CFG, "Multi PB"}, 
+	#endif
+	[APP_STATE_PB_VIDEO] 	= {appPbVideoState, VIDEO_PLAYING_PLUG_CFG, "PB VIDEO"},
+	[APP_STATE_PB_TRIMVIDEO] 	= {appPbTrimVideoState, VIDEO_PLAYING_PLUG_CFG, "PB TRIM VIDEO "},
+	#if !CAM_TYPE_CVR
+	[APP_STATE_PB_AUDIO] 	= {appPbAudioState, AUDIO_PLAYING_PLUG_CFG, "PB AUDIO"},
+	[APP_STATE_PB_ZOOM]	=  {appPbZoomPanState, PB_ZOOM_PLUG_CFG, "PB ZM"}, 
+	#endif
+	[APP_STATE_PB_IMG_PROT]	=  {appPbImgProtState, PB_PROT_PLUG_CFG, "PB PROTECT"}, 
+	[APP_STATE_PB_C2C]	=  {appPbC2CState, PB_C2C_PLUG_CFG, "PB C2C"}, 
+	[APP_STATE_PB_IMG_DEL]	=  {appPbImgDelState, PB_DEL_PLUG_CFG, "PB DEL"},
+	#if !CAM_TYPE_CVR
+	[APP_STATE_PB_SLIDE_SHOW]	=  {appPbSlideState, PB_SLIDE_SHOW_PLUG_CFG, "PB SLIDE"},
+	[APP_STATE_PB_PHOTOFRAME]	=  {appNullState, PB_PHOTOFRAME_PLUG_CFG, "PB PFRAME"},
+	[APP_STATE_PB_MEMO_REC]	=  {appPbMemoRecState, PB_MEMO_REC_PLUG_CFG, "PB MEMO_REC"},
+	[APP_STATE_PB_START_IMG]	=  {appPbStartImgState, PB_MEMO_REC_PLUG_CFG, "PB SIMG"},
+	[APP_STATE_PB_IMG_ROTATE]	=  {appPbRotateState, PB_MEMO_REC_PLUG_CFG, "PB_IMG_ROTATE"},
+	[APP_STATE_PB_DPOF]	=  {appPbDpofState, PB_MEMO_REC_PLUG_CFG, "PB_IMG_DPOF"},
+	[APP_STATE_PB_EFFECT]	=  {appPbEffectState, PB_MEMO_REC_PLUG_CFG, "PB_IMG_EFFECT"},
+	#endif
+
+	///////////////////////////////////////////////////////////////////////////////////////////////////////
+	/* sportdv playback group */
+	[APP_STATE_SPORTDV_PB_DELETE]				= {appSdvPbDeleteState, ALL_PLUG_DO_PROC, "sport dv pb delete"},
+	/* cardv playback group */
+	[APP_STATE_CARDV_PB_DELETE_LOOPING]		= {appCdvPbDeleteLoopState, ALL_PLUG_DO_PROC, "car dv pb delete looping"},
+	[APP_STATE_CARDV_PB_DELETE_EVENT]			= {appCdvPbDeleteEventState, ALL_PLUG_DO_PROC, "car dv pb delete event"},
+	/* HDMI playback group */
+	[APP_STATE_HDMI_PB_MAIN]					= {appPbMainState, ALL_PLUG_DO_PROC, "hdmi pb main list"},
+	[APP_STATE_HDMI_PB_VIDEO]					= {appScdvPbVideoState, ALL_PLUG_DO_PROC, "hdmi pb video/event"},
+	///////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	/* Menu */
+	[APP_STATE_MENU] 	= {appMenuState, MENU_PLUG_CFG, "Main Menu"},
+	
+	///////////////////////////////////////////////////////////////////////////////////////////////////////
+	/* scdv menu group*/
+	[APP_STATE_SCDV_MENU] 	= {appScdvMenuState, MENU_PLUG_CFG, "Main Scdv Menu"},
+	///////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	/* usb */
+	[APP_STATE_USB_CREATE]	=  {appUsbCreateState, USB_MSDC_PLUG_CFG, "Usb Create"}, 
+	[APP_STATE_USB_MSDC]	=  {appUsbMsdcState, USB_MSDC_PLUG_CFG, "Usb MSDC"}, 
+	[APP_STATE_USB_PCCAM]	=  {appUsbPccamState,USB_MSDC_PLUG_CFG, "Usb PCCAM"},
+	#if !CAM_TYPE_CVR
+	[APP_STATE_USB_PRNT]	=  {appUsbDpsState, USB_MSDC_PLUG_CFG, "Usb DPS"}, 
+	[APP_STATE_USB_PRINTIMAGESEL]	=  {appUsbDpsImageSelState, USB_MSDC_PLUG_CFG, "Usb DPSImageSel"},
+	[APP_STATE_USB_PRINTING]	=  {appUsbDpsPrintState, USB_MSDC_PLUG_CFG, "Usb DPSPrinting"}, 
+	[APP_STATE_USB_PRINT2NDMENU]	=  {appUsbDps2ndMenuState, USB_MSDC_PLUG_CFG, "Usb DPS2ubMenu"},
+	#endif
+	[APP_STATE_USB_BATTERY_CHARGING] = {appBatteryChargingState, USB_MSDC_PLUG_CFG, "Usb Battery Charging"}, 
+
+	/* TV plug*/
+	[APP_STATE_TV_PLUG]	=  {appTvPlugState, TVPLUG_STATE_PLUG_CFG, "TV plug"}, 
+	
+	#if SPCA6330
+	/* HDMI plug*/
+	[APP_STATE_HDMI_PLUG]	=  {appHDMIPlugState, HDMIPLUG_STATE_PLUG_CFG, "HDMI plug"}, 
+	[APP_STATE_CEC_CAPABILITY_CTRL]	=  {appCecCapabilityCtrlState, CEC_CAPABILITY_CTRL_STATE_PLUG_CFG, "Cec Capability Control"}, 
+	#endif
+	
+	/* card plug */
+	[APP_STATE_CARD_PLUG]	=  {appCardPlugState, CARDPLUG_STATE_PLUG_CFG, "CARD plug"}, 
+	
+	/* Calib */
+	[APP_STATE_CALIBRATION]	=  {appCalibState, CALIBRATION_STATE_PLUG_CFG, "CALIBRATION"}, 
+	[APP_STATE_CALIB_FLASH]	=  {appCalibFlashState, CALIBRATION_STATE_PLUG_CFG, "CALIB_FLASH"},
+	[APP_STATE_CALIB_ZOOM]	=  {appCalibZoomLensState, CALIBRATION_STATE_PLUG_CFG, "CALIB_ZMLENS"},
+	[APP_STATE_CALIB_AWB]	=  {appCalibAwbState, CALIBRATION_STATE_PLUG_CFG, "CALIB_AWB"},
+	[APP_STATE_CALIB_TS]	=  {appTsCalState, CALIBRATION_STATE_PLUG_CFG, "TS_CAL"},
+
+	/* TEST */
+	[APP_STATE_TEST_MAIN]	=  {appTBMain_State, ALL_PLUG_DO_PROC, "TEST_MAIN"},
+	[APP_STATE_TEST_SENSOR]	=  {TB_SensorTest_StateMain, ALL_PLUG_DO_PROC, "TEST_SENSOR"},
+	[APP_STATE_TEST_CAMCFG]	=  {appCcMain_State, ALL_PLUG_DO_PROC, "CAM_CFG"},
+	[APP_STATE_TEST_FLASH]	=  {appTbFlashState, ALL_PLUG_DO_PROC, "TEST_FLASH"},
+	[APP_STATE_TEST_AF]		=  {appTbAFState, ALL_PLUG_DO_PROC, "TEST_AF"},
+	[APP_STATE_TEST_BAT_CURVE]		=  {appTbBat_CurveState, ALL_PLUG_DO_PROC, "TEST_BAT_CURVE"},
+};	
+
+
+
+static appStateInfo_t stAppStateInfo = 
+{
+	APP_STATE_NULL, /* previous 2 state */
+	APP_STATE_NULL, /* previous state */
+	APP_STATE_NULL, /* active state */
+	APP_STATE_NULL, /* next state */
+	APP_STATE_NULL, /* next dial state */
+	APP_STATE_PHASE_CLOSE, /* state phase */				
+	STATE_PARAM_NORMAL_INIT, /*state msg Param */
+	{0,0}
+};   /* state param */    
+
+
+static pfpSATATE pActiveState = NULL;
+
+void _stateController(UINT32 msg,UINT32 param);
+void _stateInitial(UINT32 nextState,UINT32 param);
+void _stateClose(UINT32 nextState,UINT32 param);
+/**************************************************************************
+ *                                                 *
+ **************************************************************************/
+
+void
+_stateInitial (
+ 	UINT32 nextState,
+ 	UINT32 param
+)
+{
+	DBG_PRINT("%s : [0x%x] [0x%x]\n",__FUNCTION__,nextState,param);
+
+ 	stAppStateInfo.statePhase = APP_STATE_PHASE_INIT; 
+ 	pActiveState = appStateTbl[nextState].pfpState;
+
+	#if HOST_DBG
+	//appStateCtrlInfoPrint("_stateInitial");
+	#endif
+	 		
+	stAppStateInfo.activeState = nextState;  
+	stAppStateInfo.nextState = APP_STATE_NULL;
+ 	stAppStateInfo.statePhase = APP_STATE_PHASE_READY;
+	pActiveState(APP_STATE_MSG_INIT,param);  
+
+	#if HOST_DBG
+	appStateCtrlInfoPrint("_stateInitial - done");
+	#endif
+
+	/* process device plug change*/
+	/* check state phase is ready, state may call appStateChange() right after receive APP_STATE_MSG_INIT*/
+	if (stAppStateInfo.statePhase == APP_STATE_PHASE_READY)
+	{
+		appDevPlugStatusChange();
+	}
+
+} 
+
+
+void
+_stateClose (
+ 	UINT32 nextState,
+ 	UINT32 param
+)
+{	DBG_PRINT("%s : [0x%x] [0x%x]\n",__FUNCTION__,nextState,param);
+	stAppStateInfo.nextState =  nextState;
+	stAppStateInfo.statePhase = APP_STATE_PHASE_CLOSE;	
+	stAppStateInfo.stateMsgParam = param;
+	#if HOST_DBG
+	appStateCtrlInfoPrint("_stateClose");
+	#endif
+	appBtnDisable(BTN_ALL);
+	pActiveState(APP_STATE_MSG_CLOSE,param);	
+}
+
+void
+_stateController(
+	UINT32 msg,
+ 	UINT32 param
+)
+{
+	DBG_PRINT("%s : [0x%x] [0x%x]\n",__FUNCTION__,msg,param);
+	stAppStateInfo.stateMsgParam = STATE_PARAM_NORMAL_INIT;		
+ 	if (msg == APP_STATE_MSG_INIT) 
+ 	{
+ 		if ( stAppStateInfo.nextDialState != APP_STATE_NULL )
+ 		{ 					
+ 			stAppStateInfo.nextState = stAppStateInfo.nextDialState;
+ 			stAppStateInfo.nextDialState = APP_STATE_NULL;
+ 		} 
+		DBG_ASSERT(stAppStateInfo.nextState < COUNT_OF(appStateTbl));
+ 		_stateInitial(stAppStateInfo.nextState,param);
+ 	}
+ 	else if (msg == APP_STATE_MSG_CLOSE)
+ 	{  	 
+		DBG_ASSERT(stAppStateInfo.nextState < COUNT_OF(appStateTbl));
+ 		_stateClose(stAppStateInfo.nextState,param);				 				
+ 	}
+	else
+	{
+		DBG_ASSERT(1);
+	}
+}
+
+
+void
+_stateChangeRequest(
+ 	UINT32 newState,
+ 	UINT32 param
+)
+{
+ 	UINT32 cmd;
+
+	DBG_PRINT("%s : [0x%x] [0x%x]\n",__FUNCTION__,newState,param);
+
+
+	#if HOST_DBG
+	//appStateCtrlInfoPrint("_stateChangeRequest - prior");
+	#endif
+
+ 	stAppStateInfo.statePhase = APP_STATE_PHASE_CLOSE; 
+	stAppStateInfo.prev2State = stAppStateInfo.prevState; /*nan.yang for mantis 0046632*/
+ 	stAppStateInfo.prevState = stAppStateInfo.activeState;
+ 	stAppStateInfo.activeState = APP_STATE_NULL; 
+ 	stAppStateInfo.nextState = newState; 
+ 	
+ 	if ( (stAppStateInfo.nextDialState == APP_STATE_NULL ) 
+ 		|| (stAppStateInfo.nextState == stAppStateInfo.nextDialState))
+ 	{ 	 		
+ 		cmd = APP_STATE_MSG_INIT;
+ 	}				 	
+ 	else 
+ 	{ /* in case dial mode changed */ 		
+		DBG_PRINT("----- %s :  APP_STATE_MSG_CLOSE (Dial is changed) ... \n", __FUNCTION__);
+ 		cmd = APP_STATE_MSG_CLOSE;	
+ 	}
+
+	#if HOST_DBG
+	//appStateCtrlInfoPrint("_stateChangeRequest");
+	#endif
+	
+ 	pActiveState = _stateController;
+ 	pActiveState(cmd,param);	
+ 	
+}
+
+
+
+void
+_stateChange_AdcModeDial(	
+	UINT32 msg,
+	UINT32 param
+)
+{
+
+}
+
+void
+_stateChange_HotKey(
+	void
+)
+{
+	switch(gStillCB.cap.CurViewMode) 
+	{
+		case PASM_PROGRAM:
+		case PASM_APERTURE:
+		case PASM_SHUTTER:			
+		case PASM_MANUAL:	
+		case SCENE_MODE:
+			appStateChange(APP_STATE_STILL_PREVIEW,STATE_PARAM_NORMAL_INIT);
+			break;
+		case VIDEO_MODE:
+			appStateChange(APP_STATE_VIDEO_PREVIEW,STATE_PARAM_NORMAL_INIT);
+			break;
+		case AUDIO_MODE:
+			appStateChange(APP_STATE_AUDIO_REC,STATE_PARAM_NORMAL_INIT);			
+			break;
+		default :
+			break;
+	}
+}
+	
+
+void
+appStateCloseDone (
+ 	void 	
+)
+{ 	
+	if(STATE_GROUP(stAppStateInfo.activeState) != STATE_GROUP(stAppStateInfo.nextState))
+	{
+		appStateGroupCloseProc();
+	}
+
+ 	stAppStateInfo.prevState = stAppStateInfo.activeState;
+ 	stAppStateInfo.activeState = APP_STATE_NULL; 
+	
+	#if HOST_DBG
+	appStateCtrlInfoPrint("appStateCloseDone - done");
+	#endif
+
+	if(appPreviousStateGet() != APP_STATE_POWER_ON){
+		appBtnEnable(BTN_ALL);
+	}
+ 	pActiveState =  _stateController;
+ 	pActiveState(APP_STATE_MSG_INIT,stAppStateInfo.stateMsgParam);			
+}
+
+
+UINT32
+appPreviousStateGet (
+ 	void
+)
+{
+ 	return (stAppStateInfo.prevState);  	
+}
+
+/*Temporary solution for mantis 0046632*/
+UINT32
+appPrevious2StateGet (
+ 	void
+)
+{
+ 	return (stAppStateInfo.prev2State);  	
+}	
+
+UINT32
+appActiveStateGet (
+ 	void
+)
+{ 	
+	return (stAppStateInfo.activeState);
+}
+
+UINT32
+appNextStateGet(
+ 	void
+)
+{ 	
+	return (stAppStateInfo.nextState);
+}
+
+UINT32
+appNextDialStateGet (
+ 	void
+)
+{ 	
+	return (stAppStateInfo.nextDialState);
+} 
+
+UINT32
+appActiveStateHotPlugCfgGet (
+ 	void
+)
+{ 	
+	return (appStateTbl[stAppStateInfo.activeState].hotPlugCfg);
+} 
+
+void
+appStateCtrlInitial (
+ 	void
+)
+{
+	DBG_PRINT("appStateCtrlInitial() start...");
+
+	stAppStateInfo.prevState = APP_STATE_NULL;
+ 	stAppStateInfo.nextState = APP_STATE_POWER_ON;
+ 	stAppStateInfo.nextDialState = APP_STATE_NULL;
+ 	stAppStateInfo.statePhase = APP_STATE_PHASE_INIT;
+ 	/* initialize active state to state controller */
+	pActiveState = _stateController;
+	pActiveState(APP_STATE_MSG_INIT,STATE_PARAM_NORMAL_INIT);
+} 
+
+
+void
+appStateOnProc(
+	UINT32 msg,
+ 	UINT32 param
+)
+{
+	DBG_ASSERT(pActiveState != NULL);
+	pActiveState(msg,param);
+}
+
+/* 
+Please note the state will be changeed immediately after call appStateChange(), 
+therefor, please make sure no anyother instruction behind state all appStateChange()!!
+*/
+void 
+appStateChange(
+	UINT32 newState,
+	UINT32 param
+)
+{			
+	DBG_PRINT("appStateChange[0x%x (0x%x)(0x%x)]\n",newState,param,stAppStateInfo.activeState);
+	
+	#if SOUND_PLAY_NEW_PROC
+	if(appWaitSoundQueEmpty() == FAIL){
+		return;
+	}
+	#endif
+	
+	if ((STATE_GROUP(stAppStateInfo.activeState) == STATE_GROUP(newState))    /* normal state change */
+		||(IS_TV_PLUG_GROUP(stAppStateInfo.activeState)) 
+		||(IS_HDMI_PLUG_GROUP(stAppStateInfo.activeState))
+		||(IS_MENU_STATE(newState)) 
+		|| (IS_CARD_PLUG_GROUP(stAppStateInfo.activeState)) ) 
+	{ /* back to original state form Card plug state */
+		_stateChangeRequest(newState,param);
+	}
+	else 
+	{ /* state change cause by dial mode */		
+		DBG_PRINT("State Group change [0x%x] >> [0x%x], close active state now!\n",STATE_GROUP(stAppStateInfo.activeState),STATE_GROUP(newState));
+		_stateClose(newState,param);/*Closing the previous state, open a new state*/		
+	}
+
+}
+
+void
+appUiModeChange(void)
+{
+
+	if(IS_PLAYBACK_GROUP(stAppStateInfo.activeState)) 
+	{
+		_stateChange_HotKey();
+	}
+	else 
+	{
+		appStateChange(APP_STATE_PB_MAIN,STATE_PARAM_NORMAL_INIT);
+	}
+
+}
+
+void appUiModeSel(void)
+{
+	if(IS_PLAYBACK_GROUP(stAppStateInfo.activeState)) 
+	{
+		appStateChange(APP_STATE_PB_MAIN,STATE_PARAM_NORMAL_INIT);
+	}
+	else
+	{
+		_stateChange_HotKey();
+	}
+}
+UINT32 ReturnSetting=0x10;
+void 
+appStateCtrlInfoPrint(
+	char *title
+)
+{
+
+	uiPara_t* puiPara = appUiParaGet();//ll@add
+         if(stAppStateInfo.prevState==0x10&&stAppStateInfo.activeState==0x501&&stAppStateInfo.nextState==0x0)
+         puiPara->ReturnSetting = 0x10;
+         if(stAppStateInfo.prevState==0x11&&stAppStateInfo.activeState==0x501&&stAppStateInfo.nextState==0x0)
+         puiPara->ReturnSetting = 0x11;
+
+
+
+	printf("\n-------------[%s]-----------------------\n",title);
+ 	printf("        Previous State =0x%x (%s)\n",stAppStateInfo.prevState, appStateTbl[stAppStateInfo.prevState].name);
+	printf("        Active State   =0x%x (%s)\n",stAppStateInfo.activeState, appStateTbl[stAppStateInfo.activeState].name);
+	printf("        Next State     =0x%x (%s)\n",stAppStateInfo.nextState, appStateTbl[stAppStateInfo.nextState].name);
+	printf("        Next DialState =0x%x (%s)\n",stAppStateInfo.nextDialState, appStateTbl[stAppStateInfo.nextDialState].name);
+ 	printf("        State Phase    =%d (0-init, 1-ready, 2: close)\n",stAppStateInfo.statePhase);
+	printf("        Device Cfg     =0x%x (%s)\n",appStateTbl[stAppStateInfo.activeState].hotPlugCfg, appStateTbl[stAppStateInfo.activeState].name);
+ 	printf("--------------------------------------------------------\n\n");
+
+}
+ 

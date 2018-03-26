@@ -1,0 +1,95 @@
+/**************************************************************************
+ *
+ *       Copyright (c) 2008-2012 by iCatch Technology, Inc.
+ *
+ *  This software is copyrighted by and is the property of iCatch
+ *  Technology, Inc.. All rights are reserved by iCatch Technology, Inc..
+ *  This software may only be used in accordance with the corresponding
+ *  license agreement. Any unauthorized use, duplication, distribution,
+ *  or disclosure of this software is expressly forbidden.
+ *
+ *  This Copyright notice MUST not be removed or modified without prior
+ *  written consent of iCatch Technology, Inc..
+ *
+ *  iCatch Technology, Inc. reserves the right to modify this software
+ *  without notice.
+ *
+ *  iCatch Technology, Inc.
+ *  19-1, Innovation First Road, Science-Based Industrial Park,
+ *  Hsin-Chu, Taiwan, R.O.C.
+ *
+ *  Author: Anmin Deng
+ *
+ **************************************************************************/
+#ifndef _SP5K_CVR_WARNING_SYSTEM_API_H_
+#define _SP5K_CVR_WARNING_SYSTEM_API_H_
+
+#if 0
+#ifdef __cplusplus
+extern "C" {
+#endif
+#endif
+
+#include "common.h"
+#include "middleware/lanedetect_def.h"
+#include "api/sp5k_global_api.h"
+
+
+/*-- Task */
+typedef void (*LANE_TASK_PROC)(UINT32 a);
+#define cvrWarningSystemOsTaskCreate(label, proc, priority, tm_slice) \
+			sp5kOsThreadCreate((char *)label, (LANE_TASK_PROC)proc, 0, priority, priority, tm_slice, TX_AUTO_START)
+
+/*-- Event */
+#define cvrWarningSystemOsEventCreate(pev, label) \
+			sp5kOsEventFlagsCreate((TX_EVENT_FLAGS_GROUP *)pev, (char *)label)
+#define cvrWarningSystemOsEventGet(pev, wait_flag, pret_flag) \
+			sp5kOsEventFlagsGet((TX_EVENT_FLAGS_GROUP *)pev, (ULONG)wait_flag, TX_OR_CLEAR, (ULONG *)pret_flag, TX_WAIT_FOREVER)
+
+#define cvrWarningSystemOsEventCheck(pev, wait_flag, pret_flag) \
+			sp5kOsEventFlagsGet((TX_EVENT_FLAGS_GROUP *)pev, (ULONG)wait_flag, TX_OR_CLEAR, (ULONG *)pret_flag, TX_NO_WAIT)
+
+#define cvrWarningSystemOsEventSet(pev, flag)	\
+			sp5kOsEventFlagsSet((TX_EVENT_FLAGS_GROUP *)pev, (ULONG)flag, TX_OR)
+
+#define LANE_SLEEP(ms)	do { if (((UINT32)ms)>0) sp5kTimeDelay(SP5K_TIME_DELAY_1MS, (UINT32)ms); } while(0)
+#define memcpy(x, y, z) halDmaMemcpy(x, y, z);
+#define LANE_TASK_PRIORITY			25
+#define LANE_TASK_TIME_SLICE		0
+#define LOGI_CACH_BADDR_TO_LOGI_UNCACH_BADDR(addr) \
+	((void *)((UINT32)(addr) | 0x20000000))
+
+
+typedef enum cvrWarningSystemTaskEventBitOrder_e {
+	BO_EVENT_CVR_TASK_PROC=0,
+	BO_EVENT_CVR_CLOSE,
+} cvrWarningSystemTaskEventBitOrder_t;
+
+typedef enum cvrWarningSystemTaskEventDef_s {
+	EVENT_CVR_WARNING_SYSTEM_TASK_PROC		= (((UINT32)1)<<BO_EVENT_CVR_TASK_PROC),
+	EVENT_CVR_WARNING_SYSTEM_CLOSE			= (((UINT32)1)<<BO_EVENT_CVR_CLOSE),
+} cvrWarningSystemTaskEventDef_t;
+
+typedef enum {
+	SP5K_LANE_DEPARTURE_WARNING_THRESHOLD_SET,
+	SP5K_LANE_DEPARTURE_COORD_INFOR_GET,
+	SP5K_CVR_WARNING_SYSTEM_CENTRAL_POINT_SET,
+} sp5kCvrWarningSystemControl_e;
+
+/**< frame buffer addr must align to 16 byte and width must be mutiple of 8 */
+typedef modeswFrameBuf_t cvrWarningSystemFrameBuf_t;
+
+
+UINT32 sp5kCvrWarningSystemCfgSet(UINT32 selector, ...);
+UINT32 sp5kCvrWarningSystemCfgGet(UINT32 selector, ...);
+void cvrWarningSystemInit(UINT32 FunFlag);
+UINT32 sp5kCvrWarningSystem(UINT8 *addr, UINT32 width, UINT32 height);
+void sp5kCvrWarningSystemFunDo(UINT8 *addr, UINT32 width, UINT32 height);
+
+#if 0
+#ifdef __cplusplus
+}
+#endif
+#endif
+
+#endif /* _SP5K_CVR_WARNING_SYSTEM_API_H_ */

@@ -1,0 +1,719 @@
+/**************************************************************************
+ *
+ *        Copyright (c) 2004-2008 by Sunplus mMedia Inc., Ltd.
+ *
+ *  This software is copyrighted by and is the property of Sunplus
+ *  mMedia Inc., Ltd. All rights are reserved by Sunplus mMedia
+ *  Inc., Ltd. This software may only be used in accordance with the
+ *  corresponding license agreement. Any unauthorized use, duplication,
+ *  distribution, or disclosure of this software is expressly forbidden.
+ *
+ *  This Copyright notice MUST not be removed or modified without prior
+ *  written consent of Sunplus mMedia Inc., Ltd.
+ *
+ *  Sunplus mMedia Inc., Ltd. reserves the right to modify this
+ *  software without notice.
+ *
+ *  Sunplus mMedia Inc., Ltd.
+ *  19, Innovation First Road, Science-Based Industrial Park,
+ *  Hsin-Chu, Taiwan.
+ *
+ *  Author: Anmin Deng
+ *
+ **************************************************************************/
+#ifndef _SENSOR_MODEL_H_
+#define _SENSOR_MODEL_H_
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#include "common.h"
+#include "sensor_def.h"
+#include "gpio_def.h"
+
+#define DUAL_SENSOR_AE_EN 1 /*new feature for dual sensor control (e.g. SZ3010 brige IC) , only handle exp and agc*/
+
+/*>>sensor Sync Sig Gen config*/
+typedef struct {
+	UINT32 linetotal       : 16;
+	UINT32 lineblank       : 16;
+	UINT32 frametotal      : 16;
+	UINT32 frameblank      : 16;
+	UINT32 hreshape_fall   : 16;
+	UINT32 hreshape_rise   : 16;
+	UINT32 vreshape_fall   : 16;
+	UINT32 vreshape_rise   : 16;
+	UINT16 hoffset;
+	UINT16 voffset;
+	UINT16 hsize;
+	UINT16 vsize;
+	UINT32 lastlinepix     : 16;
+	UINT32 hdvdopos        : 16;
+	UINT16 conf_hdpol      : 1; /*hd 0:active low, 1:active hi*/
+	UINT16 conf_vdpol      : 1; /*vd 0:active low, 1:active hi*/
+	UINT16 conf_totalsync  : 1; /*Xtotal/blank sync 0:reshape,1:orig vd*/
+	UINT16 conf_hdpclkedge : 1; /*hd output at pclk 0: pos, 1: neg edge*/
+	UINT16 conf_hvldbypass : 1;
+	UINT16 conf_vvldbypass : 1;
+	UINT16 frameblank_base : 1; /*0:hd, 1:pixel*/ /*revoked, always in hd*/
+	UINT16 vreshape_base   : 1; /*0:hd, 1:pixel*/
+#if SPCA5210
+	UINT16 conf_yuvhdpol   : 1; /*yuvhd just before hdres 0:active low*/
+	UINT16 conf_yuvvdpol   : 1; /*yuvvd just before vdres 0:active low*/
+	UINT16                 : 6;
+#else
+	UINT16                 : 8;
+#endif
+	UINT16 hdnum_frame_start;
+	UINT16 hdnum_frame_end;
+	UINT16 hdnum_cmdport;
+} sensorSyncSigCfg_t;
+typedef struct {
+	UINT32 hoffset         : 16;
+	UINT32 voffset         : 16;
+	UINT32 hsize           : 16;
+	UINT32 vsize           : 16;
+} sensorSyncSigSizeCfg_t;
+
+typedef struct {
+	UINT16 hblank;
+	UINT16 htotal;
+	UINT16 vblank;
+	UINT16 vtotal;
+} sensorSyncSigGenSizeCfg_t;
+
+typedef struct {
+	UINT16 hdnum_frame_start;
+	UINT16 hdnum_frame_end;
+	UINT16 hdnum_cmdport;
+} sensorSyncSigHdnumCfg_t;
+
+typedef struct {
+	UINT16 mipi_nockrsten  ;
+	UINT16 wordcntsel      ;
+	UINT16 Lvdsmode        ;
+	UINT16 Lvdslanenum	   ;
+	UINT16 Lvdslanemode	   ;
+	UINT16 Lvdslaneswap	   ;
+	UINT16 Lvdsraw	   	   ;
+	UINT16 Lvdsoutsel  	   ;
+	UINT16 Lvdseofsel  	   ;
+	UINT16 Lvdseolsel  	   ;
+	UINT16 vmode           ;
+	UINT16 lvdsvdsrc       ;
+	UINT16 lvds_dphy_sel   ;
+	UINT16 S2pphase        ;
+	UINT16 tsettle         ;
+	UINT16 teot            ;
+	UINT16 r_con           ;
+	UINT16 c_con           ;
+	UINT16 Ctrlword_sol    ;
+	UINT16 Ctrlword_sof    ;
+	UINT16 Ctrlword_eol    ;
+	UINT16 Ctrlword_eof    ;
+	UINT16 syncwrod0       ;
+	UINT16 syncwrod1       ;
+	UINT16 syncwrod2       ;
+	UINT16 HDextend	       ;
+	UINT16 Exthd_num	   ;
+	UINT16 Exthd_pol	   ;
+	UINT16 Exthd_mode	   ;
+#if SPCA6330
+    UINT16 cropenable      ;
+#endif
+} sensorLVDSCfg_t;
+
+typedef enum {
+	SENSOR_MODE_CCIR601,
+	SENSOR_MODE_CCIR656,
+	SENSOR_MODE_TOTAL,
+} sensorYUVmode_t;
+
+/*UVSel*/
+typedef enum {
+	SENSOR_UVSEL_CB,
+	SENSOR_UVSEL_Y1,
+	SENSOR_UVSEL_CR,
+	SENSOR_UVSEL_Y2,
+	SENSOR_UVSEL_TOTAL,
+} sensorUVsel_t;
+
+typedef UINT32 (*fpReloadCallback)(UINT32 mode); /* */
+typedef UINT32 (*fpSuspendCallback)(void);		/* */
+typedef UINT32 (*fpResumeCallback)(void);		/* */
+
+/*YUVrange*/
+#define YS128 1
+#define US128 2
+#define VS128 4
+
+
+void sensorSyncSigInit(const sensorSyncSigCfg_t *pcfg);
+void sensorSyncSigSet(const sensorSyncSigCfg_t *pcfg);
+const sensorSyncSigCfg_t *sensorSyncSigGet();
+void sensorSyncSigSizeSet(const sensorSyncSigSizeCfg_t *pcfg);
+void sensorSyncSigHdnumSet(const sensorSyncSigHdnumCfg_t *pcfg);
+void sensorSyncSigHdnumFrameEndCustomSet(	UINT32 frame_end_hdmun);
+void sensorSyncSigReshapeModeSet(UINT32 mode);
+void sensorLVDSCfgSet(const sensorLVDSCfg_t *pcfg);
+void sensorLVDSEnSet(UINT32 enable);
+/*MODE:  MODE_CCIR601 / MODE_CCIR656 */
+/*UVSEL:  UVSEL_CB / UVSEL_Y1 / UVSEL_CR/ UVSEL_Y2 */
+/*YUVrange(128~-128): If range is 0~255, turn on YS128|US128|VS128 or US128|VS128 or .....*/
+void sensorYUVCfgSet(UINT32 YUVmode, UINT32 UVsel, UINT32 YUVrange);
+void sensorYUVEnSet(UINT32 enable);
+
+
+void sensorSnapFldSelSet(UINT32 fldsel);
+
+
+UINT32 sensorMclkSrcCfgGet(void);
+UINT32 sensorSyncSigMasterCfgGet(void);
+/*<<sensor Sync Sig Gen config*/
+
+
+/*>>sensor TG config*/
+typedef enum {
+	SENSORMODEL_0, SENSORMODEL_1, SENSORMODEL_2, SENSORMODEL_3,
+	SENSORMODEL_4, SENSORMODEL_5, SENSORMODEL_6, SENSORMODEL_7,
+	SENSORMODEL_8, SENSORMODEL_9,
+} sensorModelType_t;
+
+typedef enum {
+	TYPE_CMOS          = SENSORMODEL_0,
+	TYPE_SHARPCCD      = SENSORMODEL_0,
+	TYPE_SONYCCD       = SENSORMODEL_0,
+	TYPE_PANACCD       = SENSORMODEL_0,
+	TYPE_SONYNEWCCD    = SENSORMODEL_1, /*Z-TYPE*/
+	TYPE_SHARPNEWCCD   = SENSORMODEL_1, /*Z-TYPE*/
+	TYPE_PANANEWCCD    = SENSORMODEL_3, /*PANA VGA -TYPE*/
+	TYPE_SONY2DIVCCD   = SENSORMODEL_7,
+	TYPE_SONY3DIVCCD   = SENSORMODEL_4,
+	TYPE_SONY4DIVCCD   = SENSORMODEL_5,
+	TYPE_PANASMEARCCD0 = SENSORMODEL_6,
+	TYPE_PANASMEARCCD1 = SENSORMODEL_8,
+	TYPE_PANASMEARCCD2 = SENSORMODEL_9,
+	TYPE_SONY4DIVNEWCCD= SENSORMODEL_2,/*SONY NEW  4-DIV TYPE ICX 682*/
+    /*Unused???*/
+	TYPE_TVIN_DEC	   = SENSORMODEL_7,
+	#if SPCA6330
+	TYPE_HSCMOS	   = SENSORMODEL_9,
+	#endif
+} sensorModel_t;
+
+typedef enum {
+	SENSORMODEL_UNKNOWN, /*unknow type for backward compatible */
+	SENSORMODEL_RAW, 
+	SENSORMODEL_YUV,	
+	SENSORMODEL_MIPI_RAW, 
+	SENSORMODEL_MIPI_YUV, 
+	SENSORMODEL_TOTAL
+} sensorModelInfo_t;
+
+
+typedef enum {
+	BAYER_GRBG, BAYER_RGGB, BAYER_BGGR, BAYER_GBRG,
+	BAYER_TOTAL,
+} sensorCfaPattern_t;
+
+
+/*already in hal_front.h but not opened to api*/
+#ifndef _HAL_FRONT_H_
+
+typedef enum {
+	FRONT_IMG_SRC_SENSOR, /* sensor with normal AFE */
+	FRONT_IMG_SRC_SENSOR_GRAY,
+	FRONT_IMG_SRC_SENSOR_DIFF,
+	FRONT_IMG_SRC_SENSOR_DIFF_GRAY,
+	FRONT_IMG_SRC_TV = 0x08,
+} frontSensorSrc_t;
+
+/* when front image src is TV decoder in (FRONT_IMG_SRC_TV),
+ * add these bitmap to subtract 128 from Y, U, V values.
+ * for example,
+ * .img_src_type = FRONT_IMG_SRC_TV + TV_LEVEL_SHIFT_U + TV_LEVEL_SHIFT_V
+ */
+#define  TV_LEVEL_SHIFT_Y  1
+#define  TV_LEVEL_SHIFT_U  2
+#define  TV_LEVEL_SHIFT_V  4
+
+
+typedef enum {
+	FRONT_IMG_SENSOR_BIT_14,
+	FRONT_IMG_SENSOR_BIT_10,
+	FRONT_IMG_SENSOR_BIT_12,
+} frontSensorBit_t;
+
+
+#define TG_CMOS_SP5K_SLAVE      0
+#define TG_CMOS_SP5K_MASTER     1
+#define TG_CCD_EXT_SP5K_SLAVE   2
+#define TG_CCD_EXT_SP5K_MASTER  3
+#define TG_TVIN_DEC             8
+
+#define TG_BMAP_SP5K_MASTER  0x01
+#define TG_BMAP_CCD_EXT      0x02
+#define TG_BMAP_TVIN_DEC     0x08
+
+#endif
+
+#define FRONT_RESHAPE_AUTO_MODE   0
+#define FRONT_RESHAPE_MANUAL_MODE 1
+
+
+#ifndef FRONT_SSC_RESTART_ON
+#define FRONT_SSC_RESTART_ON        2
+#define FRONT_SSC_RESTART_OFF       0
+#define FRONT_SSC_READ_NO_SUBADDR   0
+#define FRONT_SSC_READ_HAS_SUBADDR  1
+
+typedef enum {   /* CPU clock = 48MHz */
+FRONT_SSC_CLK_24K = 0,
+FRONT_SSC_CLK_48K,
+FRONT_SSC_CLK_96K,
+FRONT_SSC_CLK_192K,
+FRONT_SSC_CLK_384K,
+FRONT_SSC_CLK_768K,
+FRONT_SSC_CLK_1500K,
+FRONT_SSC_CLK_3M
+} sensorSerialSscClk_t;
+#endif
+
+
+typedef struct {
+	UINT8 tg_type; /*CMOS/CCD + ITG/ XTG_SSG_TG/ XTG_SSG_DSP*/
+	UINT8 n_preview_submode; /*preview, af, and other front digi zoom*/
+	UINT8 n_snap_submode; /*snap front digi zoom*/
+	UINT8 vshutter_need_resend; /*sony FALSE;panasonic/ITG TRUE*/
+	/*how many evset sync exp takes to effect at readout*/
+	/*0=always valid (post wb);1=effect at next readout;...*/
+	UINT8 exp_effect_frame_count; /*CCD typically 2*/
+	UINT8 cmdportid_xtg; /*ITG == undefined*/
+	UINT8 cmdportid_exp; /*ITG == undefined*/
+	/*anmin-20090514 some CMOS must have preview frames between snap*/
+	UINT8 n_snap_pv_delay;
+	UINT8 conf_has_abort; /*if TG supports stream off*/
+    UINT8 conf_has_Gsen4EIS;
+} sensorTgCfg_t;
+
+typedef struct {
+	void (*resload)(void);
+	void (*resstop)(void);
+	void (*init)(void);
+	void (*stop)(void);
+	void (*pwrsave)(UINT32 mode);
+	void (*expwrite)(UINT32 nreg,const UINT8 *pdata);
+	void (*exp2write)(UINT32 nreg,const UINT8 *pdata);
+	void (*expvtbldo)(UINT32 vtype,UINT32 vcount);
+	void (*expwriteRedo)(UINT32 smode,SINT32 *expIdx,UINT32 *vcount,UINT8 *vtbl_type,UINT32 *int_us);
+	void (*crop)(UINT32 hoff,UINT32 voff,UINT32 hsize,UINT32 vsize);
+	UINT32 (*devcfg)(UINT32 cfg,UINT32 val);
+	/** \param abort: 1=auto, 2=manual */
+	void (*streamoff)(UINT32 abort);
+	void (*streamon)(UINT32 abort);
+    void (*EIStrig)(void);
+	void (*frmwrite)(UINT32 smode,UINT32 kfps_max,UINT32 kfps_min,UINT32 nreg,const UINT8 *pdata);
+} sensorTgSvc_t;
+
+typedef void (*sensorDoFunc_t)(void);
+
+typedef struct {
+	sensorDoFunc_t previewBegin;
+	sensorDoFunc_t previewShortExp;
+	sensorDoFunc_t previewLongExpBegin;
+	sensorDoFunc_t previewLongExpFollow;
+	sensorDoFunc_t previewLongExpEnd;
+	sensorDoFunc_t previewExpEnd;
+} sensorPreviewDo_t;
+
+typedef struct {
+	sensorDoFunc_t *psnapEarly;
+	sensorDoFunc_t snapExpBegin;
+	sensorDoFunc_t snapShortExp;
+	sensorDoFunc_t snapBshutterBegin;
+	sensorDoFunc_t snapBshutterFollow;
+	sensorDoFunc_t snapBshutterEnd;
+	sensorDoFunc_t snapLongExpBegin;
+	sensorDoFunc_t snapLongExpFollow;
+	sensorDoFunc_t snapLongExpEnd;
+	sensorDoFunc_t snapExpEnd;
+	sensorDoFunc_t *psnapDummy;
+	sensorDoFunc_t *psnapReadoutField;
+	sensorDoFunc_t snapFieldEnd;
+	sensorDoFunc_t snapReadoutEnd;
+	void (*snapNext)(UINT32 next_mode);
+} sensorSnapDo_t;
+
+/*if crop_type is 0, supporting dims (for hoff,voff,hsize,vsize) are..
+ * supporting dim = dim_scale x N + dim_offset;
+ * where N = dim_min .. dim_max;
+ *else if crop_type is 1, supporting dims are listed in the series
+ */
+typedef struct {
+	UINT16 crop_type : 8; /*0:this struct;1:series of supporting numbers*/
+	UINT16 n_entry   : 8; /*crop_type==1,how many numbers in the series*/
+	UINT16 dim_scale;
+	UINT16 dim_offset;
+	UINT16 dim_idxmin;
+	UINT16 dim_idxmax;
+} sensorTgCropDim_t;
+typedef struct {
+	const UINT16 xOffset; 
+	const UINT16 yOffset;
+	const UINT16 xSize;
+	const UINT16 ySize;
+	const UINT16 hratio;
+	const UINT16 vratio;
+	const UINT16 yuvW;
+	const UINT16 yuvH;
+} sensorTgCrop_t;
+
+typedef struct {
+	const sensorPreviewDo_t *fpdo;
+	const sensorTgCrop_t *crop;
+	UINT16 hsize;
+	UINT16 vsize;
+	UINT8  sensor_model; /*CMOS,Sony,FFM,SonyVGA,etc*/
+	UINT8  cfa_pattern; /*bayer rggb, grbg,..., ffm honey, strip, etc*/
+#if SPCA5330
+	UINT8  model_info;/*SPCA5330 add */
+	UINT8  fhscale;/*SPCA5330 add */
+#else
+	UINT16 rsv[1];
+#endif
+	UINT16 pix_100khz;
+
+	UINT16 hratio;
+	UINT16 vratio;
+	const sensorTgDummy_t *pdummy; /* FIXME: is it okay here? */
+	const sensorTgWin_t *pobwin; /* FIXME: is it okay here? */
+	UINT32 fps_mhz; /* fps * 1000000 */
+	UINT32 sensor_pclk;  /*Unit:Hz , sensor pixel clock for auto banding caculation*/
+	UINT32 sensor_htotal;/* sensor pixel clock per line  for auto banding caculation*/
+	UINT8  max_view_flag;/*flag to check if it is max view size*/
+
+} sensorTgPreviewCfg_t;
+
+typedef struct {
+	const sensorSnapDo_t *fpdo;
+	const sensorTgCrop_t *crop;
+	UINT16 hsize;
+	UINT16 vsize;
+	UINT8  sensor_model; /*CMOS,Sony,FFM,SonyVGA,etc*/
+	UINT8  cfa_pattern; /*bayer rggb, grbg,..., ffm honey, strip, etc*/
+	UINT8  n_dummy;
+	UINT8  n_readout;
+	UINT8  n_capvd; /*obsolete, left for backward compatible*/
+	UINT8  n_snap_early;
+	/** \member .skip_snap_readout_vd:
+	 * 0: typical snap flow with early,exp,dummy,ro frames, all have VDs;
+	 * 1: CMOS frame snap, no VD btwn exp to ro, has VD after exp GPIO trg;
+	 * 2: CMOS frame snap, no VD btwn exp to ro, no VD after exp trg;
+	 * 3: CMOS rolling consecutive snap (snap readout->snap readout)
+	 * 4: CMOS no hd in snap exp frame
+	 */
+	UINT8  skip_snap_readout_vd;
+	UINT8  fldsel_start;
+	UINT8  fldsel_end;
+#if SPCA5330
+	UINT8  rsv[1];
+	UINT8  op_mode; /*Normal mode.  Hispeed mode. 6330 MODE9 */
+	UINT8  model_info;/*SPCA5330 add */
+	UINT8  fhscale;/*SPCA5330 add */
+#else
+	UINT16 rsv[1];
+#endif
+	UINT16 pix_100khz;
+	UINT16 hratio;
+	UINT16 vratio;
+	const sensorTgFieldSel_t *pfieldsel;
+} sensorTgSnapCfg_t;
+
+typedef struct {
+	sensorTgCfg_t *tgCfg;
+	const sensorTgSvc_t *tgSvc;
+	const sensorTgPreviewCfg_t **previewCfg;
+	const sensorTgSnapCfg_t **snapCfg;
+	const sensorSyncSigCfg_t *defSyncSigCfg;
+	UINT32 rsv[2];
+	const UINT8 *verStr;
+} sensorTgDev_t;
+
+void sensorTgDevInstall(UINT32 devid,const sensorTgDev_t *pdev);
+/*<<sensor TG config*/
+
+
+/*>>sensor AFE config*/
+/**
+ * \a .img_src_type:  one of frontSensorSrc_t,
+ *     in case of FRONT_IMG_SRC_TV, adds on bitmaps TV_LEVEL_SHIFT_Y/_U/_V;
+ * \a .img_src_cfg:   config img src according to .img_src_type,
+ *     if .img_src_type is FRONT_IMG_SRC_TV, .img_src_cfg bits defined as
+ *     bit[1:0] uvsel: 0=Cb, 1=Y1, 2=Cr, 3=Y2;
+ *     bit[2]   selffielden: to generate 601 mode field signal (5110 revoked)
+ *     bit[3]   fieldpol:  invert field signal to CDSP (5210 revoked)
+ *     bit[4]   bt656en:   0=601 mode, 1=656 mode;
+ *     bit[6:5] tvsyncen:  0=TV decoding v:hvalid, 3=SSG v:hvalid;
+ *     bit[7]   fldsvden:  field signal transition sync to VD; (5110 revoked)
+ */
+typedef struct {
+	/******TODO*****/
+	UINT8 img_src_type; /*sensor:normal,gray,diff:int;siggen;tv:yuvS*/
+	UINT8 img_src_cfg; /*cfg for gray,diff,tv*/
+	UINT8 nbit_rgb; /**< one of frontSensorBit_t */
+	/*how many evset sync afe takes to effect at readout*/
+	/*0=always valid (post wb);1=effect at next readout;...*/
+	UINT8 afe_effect_frame_count; /*CCD typically 1*/
+	/*agc range*/
+	/*dcoffset range*/
+	UINT8 cmdportid_afe;
+	UINT8 cmdportid_agc;
+	UINT8 cmdportid_dcoffset;
+	UINT32 rsv[2];
+} sensorAfeCfg_t;
+
+typedef struct {
+	void (*resload)(void);
+	void (*resstop)(void);
+	void (*init)(void);
+	void (*stop)(void);
+	void (*pwrsave)(UINT32 mode);
+	void (*agcwrite)(UINT32 nreg,const UINT8 *pdata);
+	void (*agc2write)(UINT32 nreg,const UINT8 *pdata);
+	void (*dcoffsetwrite)(UINT32 idx);
+	UINT32 (*devcfg)(UINT32 cfg,UINT32 val);
+} sensorAfeSvc_t;
+
+typedef struct {
+	/******TODO*****/
+	/*analog separate channel gain, range*/
+	/*analog separate channel dcoffset, range*/
+	/*cfa pattern matching with sensor cfa if separate channel available*/
+} sensorAfeRGGB_t;
+
+typedef struct {
+	sensorAfeCfg_t *afeCfg;
+	const sensorAfeSvc_t *afeSvc;
+	const sensorAfeRGGB_t *afeRGGB; /*NULL if not supporting RGGB afe*/
+	UINT32 rsv[4];
+	const UINT8 *verStr;
+} sensorAfeDev_t;
+
+void sensorAfeDevInstall(UINT32 devid,const sensorAfeDev_t *pdev);
+
+/*<<sensor AFE config*/
+
+
+/*>>sensor timer shutter config*/
+/*MUST call before sensor_exptbl_init(); if device supports bshut*/
+void sensor_bshut_init(void);
+void sensor_bshut_delete(void);
+void sensor_bshut_vcount_offset_set(UINT32 us);	
+UINT32 sensor_bshut_vcount_offset_get(void);
+
+/*<<sensor timer shutter config*/
+
+/*>>sensor ev table config*/
+UINT32 sensor_exptbl_init(void);
+UINT32 sensor_agctbl_init(void);
+void sensor_exptbl_delete(void);
+void sensor_agctbl_delete(void);
+/*for testing only*/
+UINT32 sensor_exptbl_create(const UINT8 *pbuf,UINT32 fsize);
+UINT32 sensor_agctbl_create(const UINT8 *pbuf,UINT32 fsize);
+/*<<sensor ev table config*/
+
+void sensorPreGainEnSet( UINT32 on);
+void sensorPreGainCfg( UINT32 gain);
+void sensorSnapPreGainCfg( UINT32 gain);
+UINT32 sensorPreGainEnGet(void);
+UINT32 sensorPreGainGet(void);
+UINT32 sensorSnapPreGainGet(void);
+
+
+/*<<sensor pre-gain setting*/
+
+/* \brief if stream off, sensor model driver to call this API to
+ * turn on streaming after mode serial code sent */
+void sensor_mode_abort_stream_on(void);
+
+
+/*cmdport and serial port>>>*/
+#define SENSOR_CMDPORTID_UNDEFINED 0xff
+
+#define SENSOR_SERIAL_MODE_SPI_SENSEL 0x80 /********TODO********/
+#define SENSOR_SERIAL_MODE_SPI_SENGPIO 0x40 /********TODO********/
+#define SENSOR_SERIAL_MODE_SPI_MODE_MASK 0x30 /********TODO********/
+#define SENSOR_SERIAL_MODE_SPI_MODE0 0x00 /********TODO********/
+#define SENSOR_SERIAL_MODE_SPI_MODE1 0x10 /********TODO********/
+#define SENSOR_SERIAL_MODE_SPI_MODE2 0x20 /********TODO********/
+#define SENSOR_SERIAL_MODE_SPI_MODE3 0x30 /********TODO********/
+#define SENSOR_SERIAL_MODE_SPI 0x01 /********TODO********/
+#define SENSOR_CMDPORTID_OP_SEQ 0x40 /********TODO********/
+#define SENSOR_CMDPORTID_OP_BURST 0x80 /********TODO********/
+
+#define SENSOR_SERIAL_FORMAT_SPI_SENIDLE   0x80 /********TODO********/
+#define SENSOR_SERIAL_FORMAT_SPI_SENOPEN   0x40 /********TODO********/
+#define SENSOR_SERIAL_FORMAT_SPI_SENACTIVE 0x20 /********TODO********/
+#define SENSOR_SERIAL_FORMAT_SPI_SENCLOSE  0x10 /********TODO********/
+
+#if SPCA5110
+#define SENSOR_SERIAL_FORMAT_SSC_SIF2      0x80 /********TODO********/
+#if SPCA5210
+#define SENSOR_SERIAL_FORMAT3_SPI_SIF2     0x80 /********TODO********/
+#define SENSOR_SERIAL_FORMAT2_SSC_SIF2_LMI 0x40 /********TODO********/
+#else
+#define SENSOR_SERIAL_FORMAT_SSC_SLAVE16   0x40 /********TODO********/
+#endif
+#define SENSOR_SERIAL_FORMAT3_SPI_SCK_IDLE_HI 0x40 /********TODO********/
+#endif
+#define SENSOR_SERIAL_FORMAT_SSC_RESTART   0x02 /********TODO********/
+#define SENSOR_SERIAL_FORMAT_SSC_RDSUB     0x01 /********TODO********/
+
+/*UINT8 port_id is dynamic allocated by sensor_serial.c::sensorSerialCreate()
+ * as SENSOR_CMDPORTID_XTG,XTG_SEQ,AFE,AFE_SEQ,MOTOR,LCD,AUDIO,UCON,etc
+ * were actually in sensor{Tg/Afe}Cfg.cmdportid_{xtg,exp,afe,agc,dcoffset}
+ */
+/*structure of physical definitions
+ * mode:[0]H spi/L ssc
+ *   ssc [7:1]slave addr
+ *   spi [7]sensel;[6]sengpio;[5:4]spi type;[3:1]cdsini(*5110*reserved 0*);
+ *     ([7:6]==LL:sensel1,HL:sensel2,LH:sengpio,HH:no sen pin)
+ * ssc (mode[0]==L)
+ *   format2:[1:0]readCtr(no [4] go)
+ *     [5,4,3,2] reserved 0 for hal front sif config usage;
+ *     (*5110*[0]rdSubEn;[1]restart;[6]slaveaddr 16b*5210 revoked*;[7]sif1/2*)
+ *     (*5210*if [7]==H, sif2 only, [6]L:SIF2 on TG, H:SIF2 on LMI)
+ *   format3:(stopdelay and clkien??)(*5110*slaveaddr hi*, 5210 revoked)
+ * spi (mode[0]==H)
+ *   format2:(mode[6]==H)
+ *     sensel gpio [7:4]sensel H/L(idle,open,active,close);[3:0]gpio_grp
+ *   format3:
+ *     [7]sif1/2;
+ *     \limit when format3[7]==H, ie SIF2, SPI on SIF2 must use LMI pins;
+ *     [6]idle level of SCK;
+ *     [5:0](mode[6]==H only)sensel gpio gpio_pin
+ * priority
+ *   0 exclusive, flush any specific time and predefined sync time (tg,afe)
+ *   1 (msh lens)
+ *   2 delay flush when sensor active, flush any specific time otherwise
+ */
+typedef struct { /*ITG has this struct NULL*/
+	UINT8 mode;
+	UINT8 format2;
+	UINT8 format3;
+	UINT8 speed;
+	UINT8 priority; /*always 0 for sensor(TG,AFE)*/
+	UINT8 nbit_regdata;
+	UINT8 nbit_regaddr;
+} sensorCmdport_t;
+
+#define D_CACHE_LINE_SIZE   16
+
+/** \note to support SIF1DMA:
+ * . using this new SIF1DMA supporting libsensor.a revision;
+ * . adding this macro for all the serial command data in sensor model driver;
+ * . using new linker script;
+ */
+/* all sif1dma bufs used in serial APIs attaching through this macro */
+#define SENSOR_SIF1DMA_BUF   __attribute__ (( \
+			__aligned__ (D_CACHE_LINE_SIZE), \
+			__section__ (".rodata.sif1dma") ))
+
+#define SENSOR_SIF1DMA_VARBUF   __attribute__ (( \
+			__aligned__ (D_CACHE_LINE_SIZE), \
+			__section__ (".data.sif1dma.var") ))
+
+/** \brief always calls this after CPU manipulating serial command buffer
+ * when SIF1DMA is supported */
+void sensorSerialDirectBufSnoop(UINT8 *pdata, UINT32 size);
+
+UINT32 sensorSerialCreate(const sensorCmdport_t *pcmdport);
+void sensorSerialDelete(UINT32 cmdportid);
+void sensorSerialFlush(UINT32 cmdportid);
+UINT32 sensorSerialAsyncWrite(UINT32 cmdportid,UINT32 nreg,const UINT8 *pdata);
+UINT32 sensorSerialAsyncRead(UINT32 cmdportid,UINT32 nreg,UINT8 *pdata);
+UINT32 sensorSerialBulkWrite(UINT32 cmdportid,UINT32 nreg,const UINT8 *pdata,UINT32 sync);
+UINT32 sensorSerialBlockRead(UINT32 cmdportid,UINT32 nreg,UINT8 *pdata,UINT32 sync);
+void sensorSerialDoneForceWaitAll(UINT32 cmdportid);
+
+typedef enum {
+	SENSOR_CMDPORTID_SEL_XTG,
+	SENSOR_CMDPORTID_SEL_EXP,
+	SENSOR_CMDPORTID_SEL_AFE = 0x10,
+	SENSOR_CMDPORTID_SEL_AGC,
+	SENSOR_CMDPORTID_SEL_DCOFFSET,
+} sensorCmdportIdSel_t;
+UINT32 sensorCmdportIdGet(UINT32 port);
+/*cmdport and serial port<<<*/
+
+
+/*sensor tggpio config>>>*/
+#if SPCA5110
+#define sensorTGGpioCfg(mask,dir)     TGGPIO_MASK_CFG(mask,dir)
+#define sensorTGGpioWrite(mask,out)   TGGPIO_MASK_WRITE(mask,out)
+#define sensorTGGpioRead(mask)        TGGPIO_MASK_READ(mask)
+
+#else
+#define sensorTGLGpioCfg(mask,dir)    TGGPIOL_MASK_CFG(mask,dir)
+#define sensorTGHGpioCfg(mask,dir)    TGGPIOH_MASK_CFG(mask,dir)
+#define sensorTGLGpioWrite(mask,out)  TGGPIOL_MASK_WRITE(mask,out)
+#define sensorTGHGpioWrite(mask,out)  TGGPIOH_MASK_WRITE(mask,out)
+#define sensorTGLGpioRead(mask)       TGGPIOL_MASK_READ(mask)
+#define sensorTGHGpioRead(mask)       TGGPIOH_MASK_READ(mask)
+
+#endif
+
+#define sensorTgGpioPinCfg(pin,dir)   TGGPIO_PIN_CFG(pin,dir)
+#define sensorTgGpioPinWrite(pin,out) TGGPIO_PIN_WRITE(pin,out)
+#define sensorTgGpioPinRead(pin)      TGGPIO_PIN_READ(pin)
+
+/*sensor tggpio config<<<*/
+
+/*sensor event services>>>*/
+void sensorEventVdWait(UINT32 times);
+void sensorEventVvalidWait(UINT32 times);
+void sensorEventNewFrameWait(UINT32 times);
+void sensor_frame_end_cb_reg(void *f, UINT32 param);
+void sensor_frame_vd_cb_reg(void *f, UINT32 param);
+void sensor_frame_orig_vd_neg_cb_reg(void *f, UINT32 param);
+
+void tmrUsWait(UINT32 us);
+/*sensor event services<<<*/
+
+/*front probe<<<*/
+/*probemode: -1=disable,bit4(1:sen=>[0x91e4],0:sif=>[0x90e0])*/
+void sensorProbeSet(UINT32 probemode);
+
+UINT8 sensorSuspendStateGet(void);
+
+void sensorReloadInstall(fpReloadCallback f); 
+UINT32 sensorReloadExecute(UINT32 mode);
+
+void sensorSuspendInstall(fpSuspendCallback f);
+UINT32 sensorSuspendExecute();
+void sensorResumeInstall(fpResumeCallback f);
+UINT32 sensorResumeExecute();
+
+/*Convert AeAgc  base on current sensor mode */
+extern void ae_preview_evset_write();
+
+
+/*Dual sensor selection  */
+#define SP5K_DUAL_SENOR_DISABLE 	0x00
+#define SP5K_DUAL_SENOR_PRI  		0x01
+#define SP5K_DUAL_SENOR_SEC  		0x10
+#define SP5K_DUAL_SENOR_BOTH		0x11
+void sensorSyncSigDualSelSet(UINT32 sel);
+UINT32 sensorSyncSigDualSelGet(void);
+
+
+/*front probe<<<*/
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /*_SENSOR_MODEL_H_*/
+

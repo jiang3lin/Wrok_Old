@@ -1,0 +1,958 @@
+/**************************************************************************
+ *                                                                        *
+ *         Copyright (c) 2005-2009 by Sunplus Technology Co., Ltd.        *
+ *                                                                        *
+ *  This software is copyrighted by and is the property of Sunplus        *
+ *  Technology Co., Ltd. All rights are reserved by Sunplus Technology    *
+ *  Co., Ltd. This software may only be used in accordance with the       *
+ *  corresponding license agreement. Any unauthorized use, duplication,   *
+ *  distribution, or disclosure of this software is expressly forbidden.  *
+ *                                                                        *
+ *  This Copyright notice MUST not be removed or modified without prior   *
+ *  written consent of Sunplus Technology Co., Ltd.                       *
+ *                                                                        *
+ *  Sunplus Technology Co., Ltd. reserves the right to modify this        *
+ *  software without notice.                                              *
+ *                                                                        *
+ *  Sunplus Technology Co., Ltd.                                          *
+ *  19, Innovation First Road, Science-Based Industrial Park,             *
+ *  Hsin-Chu, Taiwan, R.O.C.                                              *
+ *                                                                        *
+ *                                                                        *
+ **************************************************************************/
+#ifndef __SP5K_CDSP_API_H__
+#define __SP5K_CDSP_API_H__
+
+#include "middleware/cdsp_def.h"
+
+/**************************************************************************
+ *                           C O N S T A N T S                            *
+ **************************************************************************/
+/* Error code */
+#define SP5K_ERR_SUCCESS                        0x00000000
+#define SP5K_ERR_CDSP_CFG                    	0x00000001
+
+#if 1 /* to be removed */
+/* Enum */
+typedef enum sp5kObMode_e {
+	SP5K_OB_MANUAL = 0x00000000,
+	SP5K_OB_AUTO,
+} sp5kObMode_t;
+
+typedef enum sp5kColorFeatureSelector_e {
+	SP5K_IMAGE_EFFECT = 0x00000000,
+	/* SP5K_COLOR_SKIN_ENHANCE, */ /* obsolete */
+	SP5K_BRIGHTNESS_LEVEL=2,
+	SP5K_CONTRAST_LEVEL,
+	SP5K_HUE,
+	SP5K_UV_OFFSET,
+	SP5K_UV_EFFECT,
+	SP5K_RB_CLAMP = 0x00000012 /* obsolete */
+} sp5kColorFeatureSelector_t;
+
+typedef enum sp5kImgEffect_e {
+	EFFECT_NORMAL = 0,
+	EFFECT_NEGATIVE,
+	EFFECT_NEGATIVE_Y,
+	/* EFFECT_EMBOSSMENT, *//* obsolete */
+	EFFECT_BINARIES = 4,
+	EFFECT_SEPIA,
+	EFFECT_BLACKWHITE
+} sp5kImgEffect_t;
+
+typedef enum sp5kCdspValueSelector_e {
+	SP5K_AE_WINDOW_VALUE = 0x00000000,
+	SP5K_AWB_WINDOW_VALUE,
+	SP5K_AF_WINDOW_VALUE,
+	SP5K_HISTOGRAM_VALUE,
+	SP5K_EDGE_CNT_VALUE,			/* Internal usage only */
+	SP5K_AF_2D_WINDOW_VALUE		/* Internal usage only */
+} sp5kCdspValueSelector_t;
+
+typedef enum sp5kCdspBlocklSelector_e {
+	SP5K_CDSP_OB 				= 0x00000001,
+	SP5K_CDSP_LSC 				= 0x00000002,
+	SP5K_CDSP_BP 				= 0x00000004,
+	SP5K_CDSP_COLORMATRIX 		= 0x00000008,
+	SP5K_CDSP_ARD				= 0x00000010, /* new for 5310 */
+	SP5K_CDSP_RGB_GAMMA 		= 0x00000020,
+	SP5K_CDSP_Y_GAMMA 			= 0x00000040,
+	SP5K_CDSP_CA				= 0x00000080, /* new for 5310 */
+	SP5K_CDSP_WB_GAIN 			= 0x00000100,
+	SP5K_CDSP_WB_OFFSET 		= 0x00000200,
+	SP5K_CDSP_DEPEAK			= 0x00000400, /* new for 5310 */
+	SP5K_CDSP_3D_LUT			= 0x00000800, /* new for 5310 */
+	SP5K_CDSP_EDGE_LPF 			= 0x00001000,
+	SP5K_CDSP_Y_CORING			= 0x00002000, SP5K_CDSP_DENOISE = SP5K_CDSP_Y_CORING,
+	SP5K_CDSP_UV_LPF			= 0x00004000, /* add for 5310 */
+	SP5K_CDSP_AHD_AA			= 0x00008000, /* new for 5310 */
+	SP5K_CDSP_GLOBAL_GAIN 		= 0x00010000,
+	SP5K_CDSP_TEMPORAL_DN		= 0x00020000, /* new for 5310 */
+	SP5K_CDSP_AA				= 0x00040000, SP5K_CDSP_ANTI_ALIAS = SP5K_CDSP_AA,
+	SP5K_CDSP_HUE				= 0x00080000,
+	SP5K_CDSP_RGB_DENOISE		= 0x00100000, /* should move to sp5kDenoiseCfgSet? */
+	SP5K_CDSP_AHD				= 0x00200000,
+	SP5K_CDSP_LDC				= 0x00400000,
+	SP5K_CDSP_AHD_Y_CORING		= 0x00800000,
+	SP5K_CDSP_WDR		        = 0x01000000,
+	/* SP5K_CDSP_WB2_GAIN 			= 0x02000000, */ /* obsolete, no need to open */
+	SP5K_CDSP_SMEAR_REDUCTION   = 0x04000000,
+	SP5K_CDSP_2ND_3A			= 0x08000000,
+	SP5K_CDSP_MAX				= 0x08000000,
+} sp5kCdspBlocklSelector_t;
+
+typedef enum sp5kDenoiseSelector_e {
+	/* raw stage */
+	SP5K_DN_RAW_LOW_THR				= 0x00000000,	/* old:SP5K_DN_PIX_CROSS_TALK */
+	SP5K_DN_RAW_EDGE_THR,
+	SP5K_DN_RAW_SLANT_THR,
+	SP5K_DN_RAW_MODE,								/* old:SP5K_DN_MODE */
+	SP5K_DN_RAW_HIGH_FREQ_THR,						/* old:SP5K_DN_Y_HI_FREQ_THR */
+	SP5K_DN_RAW_PEAK_NOISE,							/* val1=enable, same as sp5kImgCdspBlockEnable(SP5K_CDSP_DEPEAK)*/
+	SP5K_DN_RAW_PEAK_PARAM,							/* val1=(sp5kPeakThr_t*), val2=(sp5kPeakParam_t*) */
+	/* raw ard */
+	SP5K_DN_RAW_ARD_SPK_OPT_ENABLE	= 0x00000100,	/* val1=level val2=(ChormaOpt3<<3)|(ChormaOpt2<<2)|(LumaOpt3<<1)|LumaOpt2 */
+	SP5K_DN_RAW_ARD_VAR_SCALE,						/* val1 = (Y<<16) | (U<<8) | V */
+	SP5K_DN_RAW_ARD_VAR_THR,						/* val1 = (Y<<16) | (U<<8) | V */
+	SP5K_DN_RAW_ARD_CONTRAST_GAIN,					/* val1 = (Y<<16) | (U<<8) | V */
+	SP5K_DN_RAW_ARD_MODE,							/* val1 = mode */
+	/* rgb stage */
+	SP5K_DN_RGB_HIGH_FREQ_WEIGHT	= 0x00001000,
+	/* yuv stage */
+	SP5K_DN_YUV_Y_CORING_COEF		= 0x00002000,	/* old:SP5K_DN_Y_CORING_COEF */
+	SP5K_DN_YUV_UV_AA_CLAMP,						/* old:SP5K_DN_AA_CLAMP */
+	SP5K_DN_YUV_UV_LPF_PARAM,						/* val1 = iir<<1 | median */
+	SP5K_DN_YUV_UV_LPF,								/* val1 = enable, same as sp5kImgCdspBlockEnable(SP5K_CDSP_UV_LPF) */
+	SP5K_DN_YUV_CO_FILTER,							/* cofilter: obsolete from 5310 */
+	SP5K_DN_YUV_UV_XDN,								/* obsolete from 5310 */
+	SP5K_DN_YUV_UV_XDN_THR,							/* obsolete from 5310, val1 = (uthr<<8) | vthr */
+	SP5K_DN_YUV_UV_CORING_COEF,						/* obsolete from 5310 */
+	SP5K_DN_YUV_Y_CORING_WEIGHT,					/* val1 = weight 0-7 */
+	/* AHD */
+	SP5K_DN_YUV_AHD_SPK_OPT_ENABLE	= 0x00002100,	/* val1=level val2=(ChormaOpt3<<3)|(ChormaOpt2<<2)|(LumaOpt3<<1)|LumaOpt2 */
+	SP5K_DN_YUV_AHD_VAR_SCALE,						/* val1 = (Y<<16) | (U<<8) | V, val2=level */
+	SP5K_DN_YUV_AHD_VAR_THR,						/* val1 = (Y<<16) | (U<<8) | V, val2=level */
+	SP5K_DN_YUV_AHD_CONTRAST_GAIN,					/* val1 = (Y<<16) | (U<<8) | V, val2=level */
+	SP5K_DN_YUV_AHD_HF_THR_GAIN,					/* val1 = (Ythr<<24) | (UVthr<<16) | (Ygain<<8) | UVgain */
+	SP5K_DN_YUV_AHD_LEVEL,							/* val1 = level, 1-4 */
+	SP5K_DN_YUV_AHD_EDGE_MODE,						/* val1 = mode, 0:edge then AHD, 1:AHD then edge */
+	SP5K_DN_YUV_AHD_AA,								/* val1 = enable, same as sp5kImgCdspBlockEnable(SP5K_CDSP_AHD_AA) */
+	SP5K_DN_YUV_AHD_AA_SUBSAMPLE,					/* val1 = hsub, val2 = vsub */
+	SP5K_DN_YUV_AHD_Y_CORING_COEF,
+	SP5K_DN_YUV_AHD_Y_CORING_WEIGHT,
+	SP5K_DN_YUV_AHD_FQV_LEVEL,                      /* val1 = level, 1-5 */
+	SP5K_DN_YUV_AHD_UV_LPF,                         /* val1 = enable */
+
+	/* Temporal */
+	SP5K_DN_TEMPORAL                = 0x00003000,   /* val1 = enable, same as sp5kImgCdspBlockEnable(SP5K_CDSP_TEMPORAL_DN) */
+	SP5K_DN_TEMPORAL_CFG,							/* val1 = (yWeightLow<<24) |(yWeightHigh<<16) |(yThresholdLow<<8) | yThrWidth */
+													/* val2 = (uvWeightLow<<24)|(uvWeightHigh<<16)|(uvThresholdLow<<8)|uvThrWidth */
+} sp5kDenoiseSelector_t ;
+
+/* for sp5kImgEdgeCfgSetEx */
+typedef enum sp5kEdgeSelector_e {
+	SP5K_EDGE_MODE,									/* obsolete from 5310 */
+	SP5K_EDGE_HL_THR,								/* val1/val2 = lowthr/highthr, range=-256 ~ 255 */
+	SP5K_EDGE_CORNER,								/* val1 = enable */
+	SP5K_EDGE_YH_HL_THR,							/* val1/val2 = lowthr/highthr, range=-256 ~ 255 */
+	SP5K_EDGE_Y_GAIN_LUT,							/* val1 = yindxdiv (0-3), val2 = pointer to UINT8 ygain[16] */
+} sp5kEdgeSelector_t;
+
+/* for sp5kImgLscCfgSet  */
+typedef enum sp5kLscSelector_e {
+	SP5K_LSC_RATIO,									/* val1:LSC weighting in %, val2:base channel */
+	/*SP5K_LSC_ACTIVE_ENTRY,*/						/* obsolete: val1/val2/val3:active entry for R/G/B channel, range=0~255 */
+	SP5K_LSC_ONE_LUT=1,								/* val1:acive lut channel, set 3 to back to 3 lut mode */
+	SP5K_LSC_CFG_APPLY,								/* cfg is not active till this */
+} sp5kLscSelector_t;
+
+#endif /* to be removed */
+
+#define SP5K_IQ_CFG_REDO_POS_AFTER 		IQ_CFG_REDO_POS_AFTER
+#define SP5K_IQ_CFG_REDO_POS_BEFORE 	IQ_CFG_REDO_POS_BEFORE
+
+/*************************************************/
+/*                5330 new api                   */
+/*************************************************/
+
+typedef enum sp5kIqBlocklSelector_e {
+	SP5K_IQ_BLOCK_SMEAR_REDUCTION	= 0,
+	SP5K_IQ_BLOCK_OB,
+	SP5K_IQ_BLOCK_WB_OFS,
+	SP5K_IQ_BLOCK_BP,
+	SP5K_IQ_BLOCK_LSC,
+
+	SP5K_IQ_BLOCK_ARD,
+	SP5K_IQ_BLOCK_ARD_DN_Y_THR,
+	SP5K_IQ_BLOCK_CA,
+	SP5K_IQ_BLOCK_DEPEAK_R,
+	SP5K_IQ_BLOCK_DEPEAK_G,
+	SP5K_IQ_BLOCK_DEPEAK_B,
+	SP5K_IQ_BLOCK_WB_GAIN,
+	SP5K_IQ_BLOCK_GLOBAL_GAIN,
+
+	SP5K_IQ_BLOCK_RGB_DENOISE_R,
+	SP5K_IQ_BLOCK_RGB_DENOISE_G,
+	SP5K_IQ_BLOCK_RGB_DENOISE_B,
+	SP5K_IQ_BLOCK_WHITE_CLIP1,
+	SP5K_IQ_BLOCK_DARK_CLIP1,
+	SP5K_IQ_BLOCK_WDR,
+	SP5K_IQ_BLOCK_CM,
+	SP5K_IQ_BLOCK_RGB_GAMMA,
+#if SPCA6330
+	SP5K_IQ_BLOCK_CM2,
+#endif
+	SP5K_IQ_BLOCK_3D_LUT,
+	SP5K_IQ_BLOCK_WHITE_CLIP2,
+	SP5K_IQ_BLOCK_DARK_CLIP2,
+
+	SP5K_IQ_BLOCK_HUE,
+	SP5K_IQ_BLOCK_Y_GAMMA,
+	SP5K_IQ_BLOCK_AA,
+	SP5K_IQ_BLOCK_YEF,
+	SP5K_IQ_BLOCK_YNF,
+	SP5K_IQ_BLOCK_Y_EDGE,
+	SP5K_IQ_BLOCK_Y_CORNER_EDGE,
+	SP5K_IQ_BLOCK_UV_LPF_EDGE,
+	SP5K_IQ_BLOCK_UV_LPF_AREA,
+	SP5K_IQ_BLOCK_YBYC,
+	SP5K_IQ_BLOCK_SKETCH,
+	SP5K_IQ_BLOCK_Y_THR,
+	SP5K_IQ_BLOCK_UV_SAT_HUE,
+	SP5K_IQ_BLOCK_AHD,
+	SP5K_IQ_BLOCK_AHD_DWT,
+
+	SP5K_IQ_BLOCK_TEMPORAL_DN,
+	SP5K_IQ_BLOCK_LDC,
+
+	SP5K_IQ_BLOCK_PRE_AHD_HUE,
+	SP5K_IQ_BLOCK_PRE_AHD_Y_GAMMA,
+	SP5K_IQ_BLOCK_PRE_AHD_AA,
+	SP5K_IQ_BLOCK_PRE_AHD_YEF,
+	SP5K_IQ_BLOCK_PRE_AHD_YNF,
+	SP5K_IQ_BLOCK_PRE_AHD_Y_EDGE,
+	SP5K_IQ_BLOCK_PRE_AHD_Y_CORNER_EDGE,
+	SP5K_IQ_BLOCK_PRE_AHD_UV_LPF_EDGE,
+	SP5K_IQ_BLOCK_PRE_AHD_UV_LPF_AREA,
+	SP5K_IQ_BLOCK_PRE_AHD_YBYC,
+
+	SP5K_IQ_BLOCK_PRE_AHD_SKETCH,
+	SP5K_IQ_BLOCK_PRE_AHD_Y_THR,
+	SP5K_IQ_BLOCK_PRE_AHD_UV_SAT_HUE,
+
+	SP5K_IQ_BLOCK_AHD_AA,
+	SP5K_IQ_BLOCK_AHD_UV_LPF_EDGE,
+	SP5K_IQ_BLOCK_AHD_UV_LPF_AREA,
+
+	SP5K_IQ_BLOCK_AHD_DN_Y_THR,
+
+	SP5K_IQ_BLOCK_REDO_HUE,
+	SP5K_IQ_BLOCK_REDO_Y_GAMMA,
+	SP5K_IQ_BLOCK_REDO_AA,
+	SP5K_IQ_BLOCK_REDO_YEF,
+	SP5K_IQ_BLOCK_REDO_YNF,
+	SP5K_IQ_BLOCK_REDO_Y_EDGE,
+	SP5K_IQ_BLOCK_REDO_Y_CORNER_EDGE,
+	SP5K_IQ_BLOCK_REDO_UV_LPF_EDGE,
+	SP5K_IQ_BLOCK_REDO_UV_LPF_AREA,
+	SP5K_IQ_BLOCK_REDO_YBYC,
+
+	SP5K_IQ_BLOCK_REDO_SKETCH,
+
+	SP5K_IQ_BLOCK_REDO_Y_THR,
+	SP5K_IQ_BLOCK_REDO_UV_SAT_HUE,
+
+	SP5K_IQ_BLOCK_MAX
+} sp5kIqBlocklSelector_t;
+
+#if (SP5K_IQ_BLOCK_MAX != IQ_BLK_MAX)
+	#error	"IQ_BLK_MAX is too small"
+#endif
+
+#ifdef _T
+	#error "Macro Confliction: _T has defined"
+#endif
+
+#define _T(S) S /* for IQ CFG Testing */
+typedef enum sp5kIqCfgSelector_e {
+	/* smear */
+	SP5K_IQ_CFG_SMEAR_MODE					_T(= IQ_CFG_SMEAR_MODE),
+	SP5K_IQ_CFG_SMEAR_DUMMY_START,
+	SP5K_IQ_CFG_SMEAR_DUMMY_END,
+	SP5K_IQ_CFG_SMEAR_DIV,
+	SP5K_IQ_CFG_SMEAR_OB_OFFSET,
+	SP5K_IQ_CFG_SMEAR_R_GAIN,
+	SP5K_IQ_CFG_SMEAR_GR_GAIN,
+	SP5K_IQ_CFG_SMEAR_B_GAIN,
+	SP5K_IQ_CFG_SMEAR_GB_GAIN,
+	SP5K_IQ_CFG_SMEAR_GAIN_RATIO,
+	SP5K_IQ_CFG_SMEAR_GAIN_THR,
+	SP5K_IQ_CFG_SMEAR_HIGH_THR,
+	SP5K_IQ_CFG_SMEAR_LOW_THR,
+	/* dark sub */
+	SP5K_IQ_CFG_DARK_SUB_HIGH_THR			_T(= IQ_CFG_DARK_SUB_HIGH_THR),
+	SP5K_IQ_CFG_DARK_SUB_LOW_THR,
+	/* ob */
+	SP5K_IQ_CFG_OB_MODE						_T(= IQ_CFG_OB_MODE),
+	SP5K_IQ_CFG_OB_WIN_X_OFFSET,
+	SP5K_IQ_CFG_OB_WIN_Y_OFFSET,
+	SP5K_IQ_CFG_OB_WIN_X_SIZE,
+	SP5K_IQ_CFG_OB_WIN_Y_SIZE,
+	SP5K_IQ_CFG_OB_R_VAL,
+	SP5K_IQ_CFG_OB_GR_VAL,
+	SP5K_IQ_CFG_OB_B_VAL,
+	SP5K_IQ_CFG_OB_GB_VAL,
+	SP5K_IQ_CFG_OB_MANUAL_VAL,
+	/* wb offset */
+	SP5K_IQ_CFG_WB_OFS_R					_T(= IQ_CFG_WB_OFS_R),
+	SP5K_IQ_CFG_WB_OFS_GR,
+	SP5K_IQ_CFG_WB_OFS_B,
+	SP5K_IQ_CFG_WB_OFS_GB,
+	SP5K_IQ_CFG_WB_OFS_ARRAY,
+	/* lsc */
+	SP5K_IQ_CFG_LSC_GAIN					_T(= IQ_CFG_LSC_GAIN),
+	SP5K_IQ_CFG_LSC_BASIC_CHANNEL,
+	SP5K_IQ_CFG_LSC_ONE_LUT,
+	/* ard */
+	SP5K_IQ_CFG_ARD_MODE					_T(= IQ_CFG_ARD_MODE),
+	SP5K_IQ_CFG_ARD_MIRROR,
+	SP5K_IQ_CFG_ARD_BLUR_MASK_G,
+	SP5K_IQ_CFG_ARD_BLUR_MASK_RB,
+	SP5K_IQ_CFG_ARD_HIGH_VAR_MASK_G,
+	SP5K_IQ_CFG_ARD_SHRINK_ENABLE,
+	SP5K_IQ_CFG_ARD_SHRINK_SHIFT,
+	SP5K_IQ_CFG_ARD_SPK_OPT2_G,
+	SP5K_IQ_CFG_ARD_SPK_OPT3_G,
+	SP5K_IQ_CFG_ARD_SPK_OPT2_RB,
+	SP5K_IQ_CFG_ARD_SPK_OPT3_RB,
+	SP5K_IQ_CFG_ARD_VAR_SCALE_R,
+	SP5K_IQ_CFG_ARD_VAR_SCALE_G,
+	SP5K_IQ_CFG_ARD_VAR_SCALE_B,
+	SP5K_IQ_CFG_ARD_LOW_THR_R,
+	SP5K_IQ_CFG_ARD_LOW_THR_G,
+	SP5K_IQ_CFG_ARD_LOW_THR_B,
+	SP5K_IQ_CFG_ARD_HIGH_THR_R0,
+	SP5K_IQ_CFG_ARD_HIGH_THR_G0,
+	SP5K_IQ_CFG_ARD_HIGH_THR_B0,
+	SP5K_IQ_CFG_ARD_HIGH_THR_R1,
+	SP5K_IQ_CFG_ARD_HIGH_THR_G1,
+	SP5K_IQ_CFG_ARD_HIGH_THR_B1,
+	SP5K_IQ_CFG_ARD_CONTRAST_GAIN_R,
+	SP5K_IQ_CFG_ARD_CONTRAST_GAIN_G,
+	SP5K_IQ_CFG_ARD_CONTRAST_GAIN_B,
+	SP5K_IQ_CFG_ARD_DN_Y_THR_CTR,
+	SP5K_IQ_CFG_ARD_DN_Y_POS_THR,
+	SP5K_IQ_CFG_ARD_DN_Y_NEG_THR,
+#if SPCA6330
+	SP5K_IQ_CFG_ARD_DN_UV_THR_CTR,
+	SP5K_IQ_CFG_ARD_DN_UV_POS_THR,
+	SP5K_IQ_CFG_ARD_DN_UV_NEG_THR,
+#endif
+	/* ca */
+	SP5K_IQ_CFG_CA_R_X_GAIN					_T(= IQ_CFG_CA_R_X_GAIN),
+	SP5K_IQ_CFG_CA_R_Y_GAIN,
+	SP5K_IQ_CFG_CA_B_X_GAIN,
+	SP5K_IQ_CFG_CA_B_Y_GAIN,
+	/* depeak */
+	SP5K_IQ_CFG_DEPEAK_R_POS_THR			_T(= IQ_CFG_DEPEAK_R_POS_THR),
+	SP5K_IQ_CFG_DEPEAK_R_NEG_THR,
+	SP5K_IQ_CFG_DEPEAK_R_PIXEL_CNT,
+	SP5K_IQ_CFG_DEPEAK_G_POS_THR,
+	SP5K_IQ_CFG_DEPEAK_G_NEG_THR,
+	SP5K_IQ_CFG_DEPEAK_G_PIXEL_CNT,
+	SP5K_IQ_CFG_DEPEAK_B_POS_THR,
+	SP5K_IQ_CFG_DEPEAK_B_NEG_THR,
+	SP5K_IQ_CFG_DEPEAK_B_PIXEL_CNT,
+	SP5K_IQ_CFG_DEPEAK_R_BAD_THR,
+	SP5K_IQ_CFG_DEPEAK_R_SHRINK_THR,
+	SP5K_IQ_CFG_DEPEAK_R_CLOSE_THR,
+	SP5K_IQ_CFG_DEPEAK_R_SLOPE,
+	SP5K_IQ_CFG_DEPEAK_G_BAD_THR,
+	SP5K_IQ_CFG_DEPEAK_G_SHRINK_THR,
+	SP5K_IQ_CFG_DEPEAK_G_CLOSE_THR,
+	SP5K_IQ_CFG_DEPEAK_G_SLOPE,
+	SP5K_IQ_CFG_DEPEAK_B_BAD_THR,
+	SP5K_IQ_CFG_DEPEAK_B_SHRINK_THR,
+	SP5K_IQ_CFG_DEPEAK_B_CLOSE_THR,
+	SP5K_IQ_CFG_DEPEAK_B_SLOPE,
+	/* wb gain */
+	SP5K_IQ_CFG_WB_GAIN_R_GAIN				_T(= IQ_CFG_WB_GAIN_R_GAIN),
+	SP5K_IQ_CFG_WB_GAIN_GR_GAIN,
+	SP5K_IQ_CFG_WB_GAIN_B_GAIN,
+	SP5K_IQ_CFG_WB_GAIN_GB_GAIN,
+	SP5K_IQ_CFG_WB_GAIN_ARRAY,
+	SP5K_IQ_CFG_WB_GAIN_GLOBAL_GAIN,
+	SP5K_IQ_CFG_WB_GAIN_POS,
+	/* interpolation */
+	SP5K_IQ_CFG_INTPL_LOW_THR				_T(= IQ_CFG_INTPL_LOW_THR),
+	SP5K_IQ_CFG_INTPL_EDGE_THR,
+	SP5K_IQ_CFG_INTPL_SLANT_THR,
+	SP5K_IQ_CFG_INTPL_HF_THR,
+	SP5K_IQ_CFG_INTPL_MODE,
+	SP5K_IQ_CFG_INTPL_GRAD_OPT,
+	SP5K_IQ_CFG_INTPL_CLIP_OPT,
+	SP5K_IQ_CFG_INTPL_LAC_THR,
+	SP5K_IQ_CFG_INTPL_LSO_THR,
+	SP5K_IQ_CFG_INTPL_LAC_CNT_THR,
+	SP5K_IQ_CFG_INTPL_LAC_DIV,
+	SP5K_IQ_CFG_INTPL_LAC_SHR,
+	SP5K_IQ_CFG_INTPL_LAC_EDGE_THR,
+	SP5K_IQ_CFG_INTPL_LAC_PAT_THR,
+	SP5K_IQ_CFG_INTPL_LAC_ARRAY				_T(= IQ_CFG_INTPL_LAC_ARRAY),
+	SP5K_IQ_CFG_INTPL_LSO_ARRAY				_T(= IQ_CFG_INTPL_LSO_ARRAY),
+	/* rgb denoise */
+	SP5K_IQ_CFG_RGB_DENOISE_WEIGHT			_T(= IQ_CFG_RGB_DENOISE_WEIGHT),
+	/* white/dark clip */
+	SP5K_IQ_CFG_CLIP1_WHITE_CH				_T(= IQ_CFG_CLIP1_WHITE_CH),
+	SP5K_IQ_CFG_CLIP1_WHITE_X_LVL,
+	SP5K_IQ_CFG_CLIP1_WHITE_Y_LVL,
+	SP5K_IQ_CFG_CLIP1_WHITE_X_THR,
+	SP5K_IQ_CFG_CLIP1_WHITE_Y_THR,
+	SP5K_IQ_CFG_CLIP1_DARK_CH,
+	SP5K_IQ_CFG_CLIP1_DARK_X_LVL,
+	SP5K_IQ_CFG_CLIP1_DARK_Y_LVL,
+	SP5K_IQ_CFG_CLIP1_DARK_X_THR,
+	SP5K_IQ_CFG_CLIP1_DARK_Y_THR,
+	SP5K_IQ_CFG_CLIP2_WHITE_CH,
+	SP5K_IQ_CFG_CLIP2_WHITE_X_LVL,
+	SP5K_IQ_CFG_CLIP2_WHITE_Y_LVL,
+	SP5K_IQ_CFG_CLIP2_WHITE_X_THR,
+	SP5K_IQ_CFG_CLIP2_WHITE_Y_THR,
+	SP5K_IQ_CFG_CLIP2_DARK_CH,
+	SP5K_IQ_CFG_CLIP2_DARK_X_LVL,
+	SP5K_IQ_CFG_CLIP2_DARK_Y_LVL,
+	SP5K_IQ_CFG_CLIP2_DARK_X_THR,
+	SP5K_IQ_CFG_CLIP2_DARK_Y_THR,
+	/* wdr */
+	SP5K_IQ_CFG_WDR_MODE					_T(= IQ_CFG_WDR_MODE),
+	SP5K_IQ_CFG_WDR_Q_SCALE_FACTOR,
+	SP5K_IQ_CFG_WDR_Q_ENHANCE_SCALE_FACTOR,
+	SP5K_IQ_CFG_WDR_MAX_Q_FACTOR,
+	SP5K_IQ_CFG_WDR_MAX_Q_THR,
+	SP5K_IQ_CFG_WDR_Q_FACTOR_SLOPE,
+	SP5K_IQ_CFG_WDR_CONTRAST_GAIN,
+	SP5K_IQ_CFG_WDR_CONTRAST_OFS,
+	SP5K_IQ_CFG_WDR_THR_R,
+	SP5K_IQ_CFG_WDR_THR_G,
+	SP5K_IQ_CFG_WDR_THR_B,
+	/* color matrix */
+	SP5K_IQ_CFG_CM_ARRAY					_T(= IQ_CFG_CM_ARRAY),
+	/* rgb gamma */
+	SP5K_IQ_CFG_RGB_GAMMA_FLOW				_T(= IQ_CFG_RGB_GAMMA_FLOW),
+	SP5K_IQ_CFG_RGB_GAMMA_INVERSE,
+	SP5K_IQ_CFG_RGB_GAMMA_3TBL,
+#if SPCA6330
+	/* color matrix 2 */
+	SP5K_IQ_CFG_CM2_ARRAY					_T(= IQ_CFG_CM2_ARRAY),
+#endif
+	/* hue correction */
+	SP5K_IQ_CFG_HUE_CLAMP_U					_T(= IQ_CFG_HUE_CLAMP_U),
+	SP5K_IQ_CFG_HUE_CLAMP_V,
+	SP5K_IQ_CFG_HUE_LOW_THR,
+	SP5K_IQ_CFG_HUE_WIN_WEIGHT,
+	/* aa */
+	SP5K_IQ_CFG_AA_MODE						_T(= IQ_CFG_AA_MODE),
+	SP5K_IQ_CFG_AA_CLAMP_U,
+	SP5K_IQ_CFG_AA_CLAMP_V,
+	SP5K_IQ_CFG_AA_THR,
+	SP5K_IQ_CFG_AA_X_SUB,
+	SP5K_IQ_CFG_AA_Y_SUB,
+	SP5K_IQ_CFG_AA_SHRINK_MODE,
+	SP5K_IQ_CFG_AA_SHRINK_SCALE,
+
+	/* yef/ynf */
+	SP5K_IQ_CFG_YEF_FILTER					_T(= IQ_CFG_YEF_FILTER),
+	SP5K_IQ_CFG_YEF_EDGE_PATTERN,
+	SP5K_IQ_CFG_YEF_YNF_THR,
+	SP5K_IQ_CFG_YEF_YNF_EDGE_DIV,
+	SP5K_IQ_CFG_YNF_EDGE_WEIGHTING,
+	SP5K_IQ_CFG_YNF_AREA_WEIGHTING,
+	/* y edge */
+	SP5K_IQ_CFG_Y_EDGE_SCALE				_T(= IQ_CFG_Y_EDGE_SCALE),
+	SP5K_IQ_CFG_Y_EDGE_INDEX,
+	SP5K_IQ_CFG_Y_EDGE_MAP_SCALE,
+	SP5K_IQ_CFG_Y_EDGE_LOW_THR,
+	SP5K_IQ_CFG_Y_EDGE_HIGH_THR,
+	SP5K_IQ_CFG_Y_EDGE_YH_GAIN,
+	SP5K_IQ_CFG_Y_EDGE_FINAL_LOW_THR,
+	SP5K_IQ_CFG_Y_EDGE_FINAL_HIGH_THR,
+	SP5K_IQ_CFG_Y_EDGE_FW_GAIN,
+	SP5K_IQ_CFG_Y_EDGE_FILTER_ARRAY			_T(= IQ_CFG_Y_EDGE_FILTER_ARRAY),
+	SP5K_IQ_CFG_Y_EDGE_GAIN_ARRAY			_T(= IQ_CFG_Y_EDGE_GAIN_ARRAY),
+	/* uv lpf */
+	SP5K_IQ_CFG_UV_LPF_MODE					_T(= IQ_CFG_UV_LPF_MODE),
+	SP5K_IQ_CFG_UV_LPF_DIR_MEDIAN_WEIGHTING,
+	SP5K_IQ_CFG_UV_LPF_AREA_MEDIAN_WEIGHTING,
+	SP5K_IQ_CFG_UV_LPF_THR,
+	SP5K_IQ_CFG_UV_LPF_DIR_MEDIAN_SEL,
+	SP5K_IQ_CFG_UV_LPF_AREA_MEDIAN_SEL,
+	SP5K_IQ_CFG_UV_LPF_SUP_EDGE_DIV,
+#if SPCA6330
+	SP5K_IQ_CFG_UV_LPF_DIR_MODE,
+	SP5K_IQ_CFG_UV_LPF_AREA_MODE,
+	SP5K_IQ_CFG_UV_LPF_DIR_OPT,
+	SP5K_IQ_CFG_UV_LPF_DIR_PAT_SEL,
+	SP5K_IQ_CFG_UV_LPF_ARRAY_THR,
+	SP5K_IQ_CFG_UV_LPF_ARRAY,
+#endif
+
+	/* digital effect */
+	SP5K_IQ_CFG_YB_OFS						_T(= IQ_CFG_YB_OFS),
+	SP5K_IQ_CFG_YC_FACTOR,
+	SP5K_IQ_CFG_Y_THR,
+	SP5K_IQ_CFG_UV_SAT_HUE_OFS_U,
+	SP5K_IQ_CFG_UV_SAT_HUE_OFS_V,
+	SP5K_IQ_CFG_SKETCH_BASE_VAL,
+	SP5K_IQ_CFG_UV_SAT_HUE_MATRIX_ARRAY		_T(= IQ_CFG_UV_SAT_HUE_MATRIX_ARRAY),
+	/* ahd */
+	SP5K_IQ_CFG_AHD_SPK_OPT2_Y_L1			_T(= IQ_CFG_AHD_SPK_OPT2_Y_L1),
+	SP5K_IQ_CFG_AHD_SPK_OPT3_Y_L1,
+	SP5K_IQ_CFG_AHD_SPK_OPT2_UV_L1,
+	SP5K_IQ_CFG_AHD_SPK_OPT3_UV_L1,
+	SP5K_IQ_CFG_AHD_SPK_OPT2_Y_L2,
+	SP5K_IQ_CFG_AHD_SPK_OPT3_Y_L2,
+	SP5K_IQ_CFG_AHD_SPK_OPT2_UV_L2,
+	SP5K_IQ_CFG_AHD_SPK_OPT3_UV_L2,
+	SP5K_IQ_CFG_AHD_SPK_OPT2_Y_L3,
+	SP5K_IQ_CFG_AHD_SPK_OPT3_Y_L3,
+	SP5K_IQ_CFG_AHD_SPK_OPT2_UV_L3,
+	SP5K_IQ_CFG_AHD_SPK_OPT3_UV_L3,
+	SP5K_IQ_CFG_AHD_SPK_OPT2_Y_L4,
+	SP5K_IQ_CFG_AHD_SPK_OPT3_Y_L4,
+	SP5K_IQ_CFG_AHD_SPK_OPT2_UV_L4,
+	SP5K_IQ_CFG_AHD_SPK_OPT3_UV_L4,
+	SP5K_IQ_CFG_AHD_SPK_OPT2_Y_L5,
+	SP5K_IQ_CFG_AHD_SPK_OPT3_Y_L5,
+	SP5K_IQ_CFG_AHD_SPK_OPT2_UV_L5,
+	SP5K_IQ_CFG_AHD_SPK_OPT3_UV_L5,
+	SP5K_IQ_CFG_AHD_VAR_SCALE_Y_L1,
+	SP5K_IQ_CFG_AHD_VAR_SCALE_U_L1,
+	SP5K_IQ_CFG_AHD_VAR_SCALE_V_L1,
+	SP5K_IQ_CFG_AHD_VAR_SCALE_Y_L2,
+	SP5K_IQ_CFG_AHD_VAR_SCALE_U_L2,
+	SP5K_IQ_CFG_AHD_VAR_SCALE_V_L2,
+	SP5K_IQ_CFG_AHD_VAR_SCALE_Y_L3,
+	SP5K_IQ_CFG_AHD_VAR_SCALE_U_L3,
+	SP5K_IQ_CFG_AHD_VAR_SCALE_V_L3,
+	SP5K_IQ_CFG_AHD_VAR_SCALE_Y_L4,
+	SP5K_IQ_CFG_AHD_VAR_SCALE_U_L4,
+	SP5K_IQ_CFG_AHD_VAR_SCALE_V_L4,
+	SP5K_IQ_CFG_AHD_VAR_SCALE_Y_L5,
+	SP5K_IQ_CFG_AHD_VAR_SCALE_U_L5,
+	SP5K_IQ_CFG_AHD_VAR_SCALE_V_L5,
+	SP5K_IQ_CFG_AHD_LOW_THR_Y_L1,
+	SP5K_IQ_CFG_AHD_LOW_THR_U_L1,
+	SP5K_IQ_CFG_AHD_LOW_THR_V_L1,
+	SP5K_IQ_CFG_AHD_LOW_THR_Y_L2,
+	SP5K_IQ_CFG_AHD_LOW_THR_U_L2,
+	SP5K_IQ_CFG_AHD_LOW_THR_V_L2,
+	SP5K_IQ_CFG_AHD_LOW_THR_Y_L3,
+	SP5K_IQ_CFG_AHD_LOW_THR_U_L3,
+	SP5K_IQ_CFG_AHD_LOW_THR_V_L3,
+	SP5K_IQ_CFG_AHD_LOW_THR_Y_L4,
+	SP5K_IQ_CFG_AHD_LOW_THR_U_L4,
+	SP5K_IQ_CFG_AHD_LOW_THR_V_L4,
+	SP5K_IQ_CFG_AHD_LOW_THR_Y_L5,
+	SP5K_IQ_CFG_AHD_LOW_THR_U_L5,
+	SP5K_IQ_CFG_AHD_LOW_THR_V_L5,
+	SP5K_IQ_CFG_AHD_HIGH_THR_Y_OPT0,
+	SP5K_IQ_CFG_AHD_HIGH_THR_U_OPT0,
+	SP5K_IQ_CFG_AHD_HIGH_THR_V_OPT0,
+	SP5K_IQ_CFG_AHD_HIGH_THR_Y_OPT1,
+	SP5K_IQ_CFG_AHD_HIGH_THR_U_OPT1,
+	SP5K_IQ_CFG_AHD_HIGH_THR_V_OPT1,
+	SP5K_IQ_CFG_AHD_HIGH_THR_SEL,
+	SP5K_IQ_CFG_AHD_CONTRAST_GAIN_Y_L1,
+	SP5K_IQ_CFG_AHD_CONTRAST_GAIN_U_L1,
+	SP5K_IQ_CFG_AHD_CONTRAST_GAIN_V_L1,
+	SP5K_IQ_CFG_AHD_CONTRAST_GAIN_Y_L2,
+	SP5K_IQ_CFG_AHD_CONTRAST_GAIN_U_L2,
+	SP5K_IQ_CFG_AHD_CONTRAST_GAIN_V_L2,
+	SP5K_IQ_CFG_AHD_CONTRAST_GAIN_Y_L3,
+	SP5K_IQ_CFG_AHD_CONTRAST_GAIN_U_L3,
+	SP5K_IQ_CFG_AHD_CONTRAST_GAIN_V_L3,
+	SP5K_IQ_CFG_AHD_CONTRAST_GAIN_Y_L4,
+	SP5K_IQ_CFG_AHD_CONTRAST_GAIN_U_L4,
+	SP5K_IQ_CFG_AHD_CONTRAST_GAIN_V_L4,
+	SP5K_IQ_CFG_AHD_CONTRAST_GAIN_Y_L5,
+	SP5K_IQ_CFG_AHD_CONTRAST_GAIN_U_L5,
+	SP5K_IQ_CFG_AHD_CONTRAST_GAIN_V_L5,
+	SP5K_IQ_CFG_AHD_DN_Y_THR_CTR,
+	SP5K_IQ_CFG_AHD_DN_Y_POS_THR,
+	SP5K_IQ_CFG_AHD_DN_Y_NEG_THR,
+#if SPCA6330
+	SP5K_IQ_CFG_AHD_DN_UV_THR_CTR,
+	SP5K_IQ_CFG_AHD_DN_UV_POS_THR,
+	SP5K_IQ_CFG_AHD_DN_UV_NEG_THR,
+#endif
+	SP5K_IQ_CFG_AHD_HF_THR_Y,
+	SP5K_IQ_CFG_AHD_HF_THR_UV,
+	SP5K_IQ_CFG_AHD_HF_GAIN_Y,
+	SP5K_IQ_CFG_AHD_HF_GAIN_UV,
+	SP5K_IQ_CFG_AHD_Y_START_LVL,
+	SP5K_IQ_CFG_AHD_Y_END_LVL,
+	SP5K_IQ_CFG_AHD_UV_START_LVL,
+	SP5K_IQ_CFG_AHD_UV_END_LVL,
+	/* HDR */
+	SP5K_IQ_CFG_HDR_MIRROR					_T(= IQ_CFG_HDR_MIRROR),
+	SP5K_IQ_CFG_HDR_Y_HIGH_THR,
+	SP5K_IQ_CFG_HDR_Y_LOW_THR,
+	SP5K_IQ_CFG_HDR_Y_MEDIAN_THR,
+	SP5K_IQ_CFG_HDR_R_RATIO,
+	SP5K_IQ_CFG_HDR_B_RATIO,
+	SP5K_IQ_CFG_HDR_IMG_A_SHIFT,
+	SP5K_IQ_CFG_HDR_IMG_B_SHIFT,
+	SP5K_IQ_CFG_HDR_OUTPUT_SHIFT,
+
+	/* temporal denoise */
+	SP5K_IQ_CFG_TEMPORAL_DENOISE_MASK			_T(= IQ_CFG_TEMPORAL_DENOISE_MASK),
+	SP5K_IQ_CFG_TEMPORAL_DENOISE_LOW_THR,
+	SP5K_IQ_CFG_TEMPORAL_DENOISE_HIGH_THR,
+	SP5K_IQ_CFG_TEMPORAL_DENOISE_Y_MIN_WEIGHT,
+	SP5K_IQ_CFG_TEMPORAL_DENOISE_Y_MAX_WEIGHT,
+	SP5K_IQ_CFG_TEMPORAL_DENOISE_Y_THR,
+	SP5K_IQ_CFG_TEMPORAL_DENOISE_Y_WEIGHING,
+	SP5K_IQ_CFG_TEMPORAL_DENOISE_UV_MIN_WEIGHT,
+	SP5K_IQ_CFG_TEMPORAL_DENOISE_UV_MAX_WEIGHT,
+	SP5K_IQ_CFG_TEMPORAL_DENOISE_UV_THR,
+	SP5K_IQ_CFG_TEMPORAL_DENOISE_UV_WEIGHING,
+	SP5K_IQ_CFG_TEMPORAL_DENOISE_GAIN,
+	SP5K_IQ_CFG_TEMPORAL_DENOISE_LEVEL,
+	SP5K_IQ_CFG_TEMPORAL_DENOISE_BASE_Y,
+	SP5K_IQ_CFG_TEMPORAL_DENOISE_BASE_UV,
+	SP5K_IQ_CFG_TEMPORAL_DENOISE_GAP,
+	/* ldc */
+	SP5K_IQ_CFG_LDC_GAIN					_T(= IQ_CFG_LDC_GAIN),
+	SP5K_IQ_CFG_LDC_FISHEYE_LVL,
+	/* misc */
+	SP5K_IQ_CFG_SUP_POS 					_T(= IQ_CFG_SUP_POS),
+	SP5K_IQ_CFG_Y_GAMMA_INV,	/* 0x2360[1] */
+
+	SP5K_IQ_CFG_ICAT_ANSMATCH,
+	SP5K_IQ_CFG_REDO_POS,
+
+	/*************PRE AHD BLOCK******************/
+	/* hue correction */
+	SP5K_IQ_CFG_PRE_AHD_HUE_CLAMP_U			_T(= IQ_CFG_PRE_AHD_HUE_CLAMP_U),
+	SP5K_IQ_CFG_PRE_AHD_HUE_CLAMP_V,
+	SP5K_IQ_CFG_PRE_AHD_HUE_LOW_THR,
+	SP5K_IQ_CFG_PRE_AHD_HUE_WIN_WEIGHT,
+	/* aa */
+	SP5K_IQ_CFG_PRE_AHD_AA_MODE				_T(= IQ_CFG_PRE_AHD_AA_MODE),
+	SP5K_IQ_CFG_PRE_AHD_AA_CLAMP_U,
+	SP5K_IQ_CFG_PRE_AHD_AA_CLAMP_V,
+	SP5K_IQ_CFG_PRE_AHD_AA_THR,
+	SP5K_IQ_CFG_PRE_AHD_AA_X_SUB,
+	SP5K_IQ_CFG_PRE_AHD_AA_Y_SUB,
+	SP5K_IQ_CFG_PRE_AHD_AA_SHRINK_MODE,
+	SP5K_IQ_CFG_PRE_AHD_AA_SHRINK_SCALE,
+
+	/* yef/ynf */
+	SP5K_IQ_CFG_PRE_AHD_YEF_FILTER			_T(= IQ_CFG_PRE_AHD_YEF_FILTER),
+	SP5K_IQ_CFG_PRE_AHD_YEF_EDGE_PATTERN,
+	SP5K_IQ_CFG_PRE_AHD_YEF_YNF_THR,
+	SP5K_IQ_CFG_PRE_AHD_YEF_YNF_EDGE_DIV,
+	SP5K_IQ_CFG_PRE_AHD_YNF_EDGE_WEIGHTING,
+	SP5K_IQ_CFG_PRE_AHD_YNF_AREA_WEIGHTING,
+	/* y edge */
+	SP5K_IQ_CFG_PRE_AHD_Y_EDGE_SCALE			_T(= IQ_CFG_PRE_AHD_Y_EDGE_SCALE),
+	SP5K_IQ_CFG_PRE_AHD_Y_EDGE_INDEX,
+	SP5K_IQ_CFG_PRE_AHD_Y_EDGE_MAP_SCALE,
+	SP5K_IQ_CFG_PRE_AHD_Y_EDGE_LOW_THR,
+	SP5K_IQ_CFG_PRE_AHD_Y_EDGE_HIGH_THR,
+
+	SP5K_IQ_CFG_PRE_AHD_Y_EDGE_YH_GAIN,
+	SP5K_IQ_CFG_PRE_AHD_Y_EDGE_FINAL_LOW_THR,
+	SP5K_IQ_CFG_PRE_AHD_Y_EDGE_FINAL_HIGH_THR,
+	SP5K_IQ_CFG_PRE_AHD_Y_EDGE_FW_GAIN,
+	SP5K_IQ_CFG_PRE_AHD_Y_EDGE_FILTER_ARRAY		_T(= IQ_CFG_PRE_AHD_Y_EDGE_FILTER_ARRAY),
+	SP5K_IQ_CFG_PRE_AHD_Y_EDGE_GAIN_ARRAY		_T(= IQ_CFG_PRE_AHD_Y_EDGE_GAIN_ARRAY),
+	/* uv lpf */
+	SP5K_IQ_CFG_PRE_AHD_UV_LPF_MODE				_T(= IQ_CFG_PRE_AHD_UV_LPF_MODE),
+	SP5K_IQ_CFG_PRE_AHD_UV_LPF_DIR_MEDIAN_WEIGHTING,
+	SP5K_IQ_CFG_PRE_AHD_UV_LPF_AREA_MEDIAN_WEIGHTING,
+	SP5K_IQ_CFG_PRE_AHD_UV_LPF_THR,
+	SP5K_IQ_CFG_PRE_AHD_UV_LPF_DIR_MEDIAN_SEL,
+	SP5K_IQ_CFG_PRE_AHD_UV_LPF_AREA_MEDIAN_SEL,
+	SP5K_IQ_CFG_PRE_AHD_UV_LPF_SUP_EDGE_DIV,
+
+#if SPCA6330
+	SP5K_IQ_CFG_PRE_AHD_UV_LPF_DIR_MODE,
+	SP5K_IQ_CFG_PRE_AHD_UV_LPF_AREA_MODE,
+	SP5K_IQ_CFG_PRE_AHD_UV_LPF_DIR_OPT,
+	SP5K_IQ_CFG_PRE_AHD_UV_LPF_DIR_PAT_SEL,
+	SP5K_IQ_CFG_PRE_AHD_UV_LPF_ARRAY_THR,
+	SP5K_IQ_CFG_PRE_AHD_UV_LPF_ARRAY,
+#endif
+
+	/* digital effect */
+	SP5K_IQ_CFG_PRE_AHD_YB_OFS					_T(= IQ_CFG_PRE_AHD_YB_OFS),
+	SP5K_IQ_CFG_PRE_AHD_YC_FACTOR,
+	SP5K_IQ_CFG_PRE_AHD_Y_THR,
+	SP5K_IQ_CFG_PRE_AHD_UV_SAT_HUE_OFS_U,
+	SP5K_IQ_CFG_PRE_AHD_UV_SAT_HUE_OFS_V,
+	SP5K_IQ_CFG_PRE_AHD_UV_SAT_HUE_MATRIX_ARRAY		_T(= IQ_CFG_PRE_AHD_UV_SAT_HUE_MATRIX_ARRAY),
+	/*************AHD BLOCK******************/
+	/* aa */
+	SP5K_IQ_CFG_AHD_AA_MODE						_T(= IQ_CFG_AHD_AA_MODE),
+	SP5K_IQ_CFG_AHD_AA_CLAMP_U,
+	SP5K_IQ_CFG_AHD_AA_CLAMP_V,
+	SP5K_IQ_CFG_AHD_AA_THR,
+	SP5K_IQ_CFG_AHD_AA_X_SUB,
+	SP5K_IQ_CFG_AHD_AA_Y_SUB,
+	SP5K_IQ_CFG_AHD_AA_SHRINK_MODE,
+	SP5K_IQ_CFG_AHD_AA_SHRINK_SCALE,
+
+	/* uv lpf */
+	SP5K_IQ_CFG_AHD_UV_LPF_MODE					_T(= IQ_CFG_AHD_UV_LPF_MODE),
+	SP5K_IQ_CFG_AHD_UV_LPF_DIR_MEDIAN_WEIGHTING,
+	SP5K_IQ_CFG_AHD_UV_LPF_AREA_MEDIAN_WEIGHTING,
+	SP5K_IQ_CFG_AHD_UV_LPF_THR,
+	SP5K_IQ_CFG_AHD_UV_LPF_DIR_MEDIAN_SEL,
+	SP5K_IQ_CFG_AHD_UV_LPF_AREA_MEDIAN_SEL,
+	SP5K_IQ_CFG_AHD_UV_LPF_SUP_EDGE_DIV,
+
+#if SPCA6330
+	SP5K_IQ_CFG_AHD_UV_LPF_DIR_MODE,
+	SP5K_IQ_CFG_AHD_UV_LPF_AREA_MODE,
+	SP5K_IQ_CFG_AHD_UV_LPF_DIR_OPT,
+	SP5K_IQ_CFG_AHD_UV_LPF_DIR_PAT_SEL,
+	SP5K_IQ_CFG_AHD_UV_LPF_ARRAY_THR,
+	SP5K_IQ_CFG_AHD_UV_LPF_ARRAY,
+#endif
+
+	/*************REDO BLOCK******************/
+	/* hue correction */
+	SP5K_IQ_CFG_REDO_HUE_CLAMP_U			_T(= IQ_CFG_REDO_HUE_CLAMP_U),
+	SP5K_IQ_CFG_REDO_HUE_CLAMP_V,
+	SP5K_IQ_CFG_REDO_HUE_LOW_THR,
+	SP5K_IQ_CFG_REDO_HUE_WIN_WEIGHT,
+	/* aa */
+	SP5K_IQ_CFG_REDO_AA_MODE				_T(= IQ_CFG_REDO_AA_MODE),
+	SP5K_IQ_CFG_REDO_AA_CLAMP_U,
+	SP5K_IQ_CFG_REDO_AA_CLAMP_V,
+	SP5K_IQ_CFG_REDO_AA_THR,
+	SP5K_IQ_CFG_REDO_AA_X_SUB,
+	SP5K_IQ_CFG_REDO_AA_Y_SUB,
+	SP5K_IQ_CFG_REDO_AA_SHRINK_MODE,
+	SP5K_IQ_CFG_REDO_AA_SHRINK_SCALE,
+
+	/* yef/ynf */
+	SP5K_IQ_CFG_REDO_YEF_FILTER			_T(= IQ_CFG_REDO_YEF_FILTER),
+	SP5K_IQ_CFG_REDO_YEF_EDGE_PATTERN,
+	SP5K_IQ_CFG_REDO_YEF_YNF_THR,
+	SP5K_IQ_CFG_REDO_YEF_YNF_EDGE_DIV,
+	SP5K_IQ_CFG_REDO_YNF_EDGE_WEIGHTING,
+	SP5K_IQ_CFG_REDO_YNF_AREA_WEIGHTING,
+	/* y edge */
+	SP5K_IQ_CFG_REDO_Y_EDGE_SCALE			_T(= IQ_CFG_REDO_Y_EDGE_SCALE),
+	SP5K_IQ_CFG_REDO_Y_EDGE_INDEX,
+	SP5K_IQ_CFG_REDO_Y_EDGE_MAP_SCALE,
+	SP5K_IQ_CFG_REDO_Y_EDGE_LOW_THR,
+	SP5K_IQ_CFG_REDO_Y_EDGE_HIGH_THR,
+
+	SP5K_IQ_CFG_REDO_Y_EDGE_YH_GAIN,
+	SP5K_IQ_CFG_REDO_Y_EDGE_FINAL_LOW_THR,
+	SP5K_IQ_CFG_REDO_Y_EDGE_FINAL_HIGH_THR,
+	SP5K_IQ_CFG_REDO_Y_EDGE_FW_GAIN,
+	SP5K_IQ_CFG_REDO_Y_EDGE_FILTER_ARRAY		_T(= IQ_CFG_REDO_Y_EDGE_FILTER_ARRAY),
+	SP5K_IQ_CFG_REDO_Y_EDGE_GAIN_ARRAY		_T(= IQ_CFG_REDO_Y_EDGE_GAIN_ARRAY),
+	/* uv lpf */
+	SP5K_IQ_CFG_REDO_UV_LPF_MODE				_T(= IQ_CFG_REDO_UV_LPF_MODE),
+	SP5K_IQ_CFG_REDO_UV_LPF_DIR_MEDIAN_WEIGHTING,
+	SP5K_IQ_CFG_REDO_UV_LPF_AREA_MEDIAN_WEIGHTING,
+	SP5K_IQ_CFG_REDO_UV_LPF_THR,
+	SP5K_IQ_CFG_REDO_UV_LPF_DIR_MEDIAN_SEL,
+	SP5K_IQ_CFG_REDO_UV_LPF_AREA_MEDIAN_SEL,
+	SP5K_IQ_CFG_REDO_UV_LPF_SUP_EDGE_DIV,
+
+#if SPCA6330
+	SP5K_IQ_CFG_REDO_UV_LPF_DIR_MODE,
+	SP5K_IQ_CFG_REDO_UV_LPF_AREA_MODE,
+	SP5K_IQ_CFG_REDO_UV_LPF_DIR_OPT,
+	SP5K_IQ_CFG_REDO_UV_LPF_DIR_PAT_SEL,
+	SP5K_IQ_CFG_REDO_UV_LPF_ARRAY_THR,
+	SP5K_IQ_CFG_REDO_UV_LPF_ARRAY,
+#endif
+
+	/* digital effect */
+	SP5K_IQ_CFG_REDO_YB_OFS					_T(= IQ_CFG_REDO_YB_OFS),
+	SP5K_IQ_CFG_REDO_YC_FACTOR,
+	SP5K_IQ_CFG_REDO_Y_THR,
+	SP5K_IQ_CFG_REDO_UV_SAT_HUE_OFS_U,
+	SP5K_IQ_CFG_REDO_UV_SAT_HUE_OFS_V,
+	SP5K_IQ_CFG_REDO_UV_SAT_HUE_MATRIX_ARRAY		_T(= IQ_CFG_REDO_UV_SAT_HUE_MATRIX_ARRAY),
+} sp5kIqCfgSelector_t;
+#undef _T
+
+#ifdef _WINDOWS_
+	#define SP5K_RES_AUTO (-1)
+	/* here define it again to avoid including "sp5k_rsvblk_api.h" and all files implicated by it in iCatTune app */
+#endif
+
+#define SP5K_IQ_LUT_OPT_ALLOCATED	(1<<0)
+#define SP5K_IQ_LUT_OPT_STATIC		(0<<0)
+
+#define SP5K_IQ_RES_LUT_ADJUST_LDC_GAIN		IQ_RES_LUT_ADJUST_LDC_GAIN
+#define SP5K_IQ_RES_LUT_ADJUST_FISHEYE_LVL	IQ_RES_LUT_ADJUST_FISHEYE_LVL
+#define SP5K_IQ_RES_LUT_ADJUST_LSC_GAIN		IQ_RES_LUT_ADJUST_LSC_GAIN
+#define SP5K_IQ_RES_LUT_ADJUST_CA_GAIN		IQ_RES_LUT_ADJUST_CA_GAIN
+
+/**************************************************************************
+ *                          D A T A    T Y P E S                          *
+ **************************************************************************/
+#if 1 /* to be removed */
+
+typedef struct sp5kImgObResult_s {
+	UINT16 robvalue;
+	UINT16 grobvalue;
+	UINT16 bobvalue;
+	UINT16 gbobvalue;
+}sp5kImgObResult_t;
+
+
+typedef struct sp5kWindowCfg_s {
+	UINT16 HWinOffset;
+	UINT16 VWinOffset;
+	UINT16 HWinSize;
+	UINT16 VWinSize;
+}sp5kWindowCfg_t;
+
+
+typedef struct {
+	UINT16 rgain;
+	UINT16 grgain;
+	UINT16 bgain;
+	UINT16 gbgain;
+}sp5kWbGain_t;
+
+typedef struct {
+	UINT16 rgain;
+	UINT16 ggain;
+	UINT16 bgain;
+} sp5kPosWbGain_t;
+
+typedef struct {
+	SINT16 roffset;
+	SINT16 groffset;
+	SINT16 boffset;
+	SINT16 gboffset;
+}sp5kWbOffset_t;
+
+typedef struct sp5kEdgeCfg_s {
+    UINT16 *pFilterCoeff;
+    UINT16 scale1;
+    UINT16 scale2;
+    UINT16 eeGain;
+	UINT16 scale1f;
+	UINT16 hgain;
+} sp5kEdgeCfg_t;
+
+typedef struct sp5kPeakThr_s {
+	UINT16 r_pos,r_neg;
+	UINT16 g_pos,g_neg;
+	UINT16 b_pos,b_neg;
+	UINT8 r_cnt,g_cnt,b_cnt;
+} sp5kPeakThr_t;
+
+typedef struct sp5kPeakParam_s {
+	UINT16 r_ratio,r_loy,r_dif,r_slope;
+	UINT16 g_ratio,g_loy,g_dif,g_slope;
+	UINT16 b_ratio,b_loy,b_dif,b_slope;
+} sp5kPeakParam_t;
+
+typedef struct sp5kWdrParam_s {
+	UINT32 yga             ; /* Y channel Contrast enhance gain, 5 bit */
+	UINT32 qs              ; /* Q value scale factor, 8 bit */
+	UINT32 es              ; /* Enhance scale factor, 8 bit */
+	UINT32 qth             ; /* Maximum Q factor, 11 bit */
+	UINT32 yqthr           ; /* Maximum Q factor threshold, 10 bit */
+	UINT32 qfslope         ; /* Q factor shrinking slope, 12 bits */
+	UINT32 yoff            ; /* Y channel contrast enhance offset, 10 bits */
+	UINT32 rfthr           ; /* R channel scale factor high threshold, 11 bits */
+	UINT32 gfthr           ; /* G/Cb channel scale factor high threshold, 11 bits */
+	UINT32 bfthr           ; /* B/Cr channel scale factor high threshold, 11 bits */
+} sp5kWdrParam_t;
+
+typedef struct sp5kSmearParam_s{
+	UINT32 thr;
+	UINT32 thr_ht;
+	UINT32 oddGain;
+	UINT32 evenGain;
+	UINT32 offset;
+	UINT32 smoothRadius;
+	UINT32 min_peak;
+	UINT32 min_width;
+} sp5kSmearParam_t;
+#endif /* to be removed */
+
+typedef struct {
+	UINT16 gain;
+	UINT16 baseCh;
+	UINT16 oneCh;
+} sp5kIdResLutAdjustLscGain;
+
+typedef struct {
+	UINT16 rXGain;
+	UINT16 rYGain;
+	UINT16 bXGain;
+	UINT16 bYGain;
+} sp5kIdResLutAdjustCaGain;
+
+/**************************************************************************
+ *                               M A C R O S                              *
+ **************************************************************************/
+
+ /**************************************************************************
+ *               F U N C T I O N    D E C L A R A T I O N S               *
+ **************************************************************************/
+
+#if 1 /* to be removed */
+UINT32 sp5kImgObModeCfgSet(sp5kObMode_t mode);
+UINT32 sp5kImgLscCfgSet(sp5kLscSelector_t selector, UINT32 value1, UINT32 value2, UINT32 value3);
+UINT32 sp5kImgHueCfgSet(UINT32 uclamp, UINT32 vclamp);
+UINT32 sp5kImgDarkFrameSubCfgSet(UINT32 thr);
+
+UINT32 sp5kImgAutoObGet(sp5kImgObResult_t *presult);
+UINT32 sp5kImgWbGainGet(sp5kWbGain_t *pWbVal);
+UINT32 sp5kImgPosWbGainGet(sp5kPosWbGain_t *pWbVal);
+UINT32 sp5kImgHistogramGet(UINT32 *phist);
+
+UINT32 sp5kImgObSet(SINT32 value);
+UINT32 sp5kImgGlobalGainSet(UINT32 gain);
+UINT32 sp5kImgWbGainSet(const sp5kWbGain_t *pWbVal);
+UINT32 sp5kImgPosWbGainSet(const sp5kPosWbGain_t *pWbVal);
+UINT32 sp5kImgColorFeatureSet(sp5kColorFeatureSelector_t selector, UINT32 val);
+UINT32 sp5kImgCdspBlockEnable(sp5kCdspBlocklSelector_t selector, UINT32 enable);
+UINT32 sp5kImgCdspBlockEnableGet(void);
+
+UINT32 sp5kImgWdrCfg( sp5kWdrParam_t *wdr );
+
+UINT32 sp5kImgModeSet(UINT32 mode5k);
+UINT32 sp5kImgModeSetDone(UINT32 mode5k);
+UINT32 sp5kImgModeGet(void);
+#endif
+
+/* 5330 new api */
+/*#if !defined(_WINDOWS_) */
+UINT32 sp5kIqCfgSet( sp5kIqCfgSelector_t id, UINT32 value );
+UINT32 sp5kIqCfgGet( sp5kIqCfgSelector_t id, UINT32 *value );
+UINT32 sp5kIqLutSet( UINT32 resId, UINT8 *buf, UINT32 size, UINT32 option );
+UINT32 sp5kIqLutAdjust( UINT32 id, UINT32 srcAddr, UINT32 dstAddr, UINT32 opt, void *paramPtr );
+UINT32 sp5kIqBlockEnable( sp5kIqBlocklSelector_t selector, UINT32 enable );
+UINT32 sp5kIqBlockEnableGet( sp5kIqBlocklSelector_t selector, UINT32 *enable );
+UINT32 sp5kIqModeSet( UINT32 mode5k );
+UINT32 sp5kIqModeSetDone( UINT32 mode5k );
+UINT32 sp5kIqModeGet( void );
+
+UINT32 sp5kIqCfgParamInfoQuery(UINT32 selector,	UINT32 *lenInfo);
+UINT32 sp5kIqCfgSetInfoQuery(UINT32 selector, UINT32 *lenInfo);
+UINT32 sp5kIqCfgGetInfoQuery(UINT32 selector,UINT32 *lenInfo);
+/*#endif */
+
+UINT32 sp5kCdspLdcCoordinateTransfer( UINT32 x, UINT32 y, UINT32 boxSize, UINT32 *xTrans, UINT32 *yTrans, UINT32 *boxSizeTrans );
+UINT32 sp5kCdspLdcCoordinateInvTransfer( UINT32 x, UINT32 y, UINT32 boxSize, UINT32 *xTrans, UINT32 *yTrans, UINT32 *boxSizeTrans );
+void sp5kIqCfgColorDistillationCtrl(unsigned short nHueAng, unsigned short nConvg, unsigned short nConvg2, unsigned short nDistPercent ,unsigned char *pSatLut);
+
+
+#endif /* _SP5K_CDSP_API_H_ */

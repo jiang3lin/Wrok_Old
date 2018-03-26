@@ -1,0 +1,13 @@
+---- appLcmBrightness Matches (6 in 4 files) ----
+App_background_timer.c (sphost\customization\hostfw\service\misc):			appLcmBrightness(30);
+App_osd_api_lcm.c (sphost\customization\hostfw\service\osd):void appLcmBrightness(UINT32 duty)
+App_osd_api_lcm.h (sphost\customization\hostfw\include):extern void appLcmBrightness(UINT32 duty);
+App_scdv_global.c (sphost\customization\hostfw\ui\sys):			appLcmBrightness(100);
+App_scdv_global.c (sphost\customization\hostfw\ui\sys):			appLcmBrightness(60);
+App_scdv_global.c (sphost\customization\hostfw\ui\sys):			appLcmBrightness(30);
+---- appOsdBrightnessSet Matches (5 in 5 files) ----
+App_main.c (sphost\customization\hostfw\sys):			appOsdBrightnessSet();
+App_menu_event_dvs5m2.c (sphost\customization\hostfw\ui\menu):			appOsdBrightnessSet();
+App_scdv_global.c (sphost\customization\hostfw\ui\sys):void appOsdBrightnessSet(void)
+App_scdv_global.h (sphost\customization\hostfw\include):extern void appOsdBrightnessSet(void);
+App_ui_para.c (sphost\customization\hostfw\ui\menu)://	appOsdBrightnessSet();

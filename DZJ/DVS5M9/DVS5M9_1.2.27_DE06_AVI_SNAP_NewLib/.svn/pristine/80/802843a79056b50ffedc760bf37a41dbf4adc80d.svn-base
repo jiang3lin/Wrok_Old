@@ -1,0 +1,519 @@
+/**************************************************************************
+ *
+ *        Copyright (c) 2006-2008 by Sunplus mMedia Inc., Ltd.
+ *
+ *  This software is copyrighted by and is the property of Sunplus
+ *  mMedia Inc., Ltd. All rights are reserved by Sunplus mMedia
+ *  Inc., Ltd. This software may only be used in accordance with the
+ *  corresponding license agreement. Any unauthorized use, duplication,
+ *  distribution, or disclosure of this software is expressly forbidden.
+ *
+ *  This Copyright notice MUST not be removed or modified without prior
+ *  written consent of Sunplus mMedia Inc., Ltd.
+ *
+ *  Sunplus mMedia Inc., Ltd. reserves the right to modify this
+ *  software without notice.
+ *
+ *  Sunplus mMedia Inc., Ltd.
+ *  19-1, Innovation First Road, Science-Based Industrial Park,
+ *  Hsin-Chu, Taiwan, R.O.C. 
+ *
+ **************************************************************************/
+#define HOST_DBG 1
+#include "app_com_def.h"
+#include "app_com_api.h"
+#include "app_timer.h"
+#include "app_hw_def.h"
+#include "app_battery.h"
+#include "app_gSensor.h"
+#include "app_view_param_def.h"
+#include "customization/solution_def.h"
+#include "app_battery_ctrl.h"
+#include "app_ui_para.h"
+#include "Gpio_custom.h"
+#include "sp5k_usb_api.h"
+#include "dev_init.h"
+
+#include "app_scdv_ui_para_def.h"
+#include "app_osd_api_lcm.h"
+#include "app_wifi_connection.h"
+
+#define BACKGROUND_TIMER_TICK  20 //20ms
+#define AUTO_POWER_OFF_TIME_OUT  60*1000 // ms
+#define BATTERY_CHECK_COUNT 50
+
+static UINT32 isPowerSavingEnable = 1;
+static UINT32 isAutoPowerOffCountDown = 0;
+static UINT32 powerSave_t0 = 0;
+static UINT32 count=0;
+extern BOOL bBatteryIn;
+
+static BOOL gAutoPowerOffEnable = TRUE;
+static UINT32 gAutoPowerOffTime = 0;
+
+static BOOL gLcmPowerSaveEnable = TRUE;
+static UINT32 gLcmPowerSaveTime = 0;
+
+extern void appBatteryLevelPolling(void);
+extern void appLedFlickerServiceRoutine(void);
+extern void appPsuedoPowerOff(UINT32 powerDown);
+
+void _usbLowPwrChargeHandler(void);
+
+void appUsbDetect(void)
+{
+	static UINT32 preValue=0,cnt=0;
+	UINT32 curValue=0xff;
+	static BOOL bsrc_PC = FALSE;
+	UINT32 bChargePortType ;
+	
+	static UINT32 DcInInCount = 0, DcInOutCount = 0, DcInPower = 0;
+	
+	curValue=sp5kUsbDetectStateGet();
+	if(curValue !=preValue)
+	{
+		if(cnt == 10)
+		{
+			cnt = 0;
+		}
+		else
+		{
+			cnt++;
+			return;
+		}
+	}
+	else
+	{
+		cnt = 0;
+	}
+	
+	if((curValue == 1) && (preValue == 0))
+	{
+		bsrc_PC = appBatteryCharge_LineStateGet();
+
+		if(bsrc_PC != BATTERY_DCSRC_ADAPTER)
+		{
+			sp5kHostMsgSend(APP_KEY_USB_IN,0);
+			appGlobal.appDcInFlag = FALSE;
+			//printf("--BATTERY_DCSRC_ADAPTER\n");
+		}
+		else
+		{
+			appGlobal.appDcInFlag = TRUE;
+			//printf("--BATTERY_DCSRC_PC\n");
+			
+			bChargePortType = sp5kUsbChargePortTypeGet();
+			switch (bChargePortType)
+			{
+				case 0 :
+					printf("USB_PORT_OPEN\n") ;
+					break ;
+				case 1 :
+					printf("USB_PORT_50K\n");
+					break ;
+				case 2 :
+					printf("USB_PORT_SHORT\n");
+					break ;
+				case 3 :
+					printf("USB_PORT_APPLE\n");
+					break ;
+			}
+			bBatteryIn = appBatteryAdcValueGet() > 100 ? TRUE:FALSE;
+			if(bBatteryIn)
+			{
+				appBatteryCharge_SetStartCBF();
+				LED_RULES_CHARGE_ON;
+			}
+			//sp5kHostMsgSend(APP_KEY_USB_IN,0);
+		}
+	}
+	else if((curValue == 0) && (preValue == 1))
+	{
+		appGlobal.appDcInFlag = FALSE;
+		
+		if(bsrc_PC != BATTERY_DCSRC_ADAPTER)
+		{
+			sp5kHostMsgSend(APP_KEY_USB_OUT,0);
+		}
+		
+		if(bBatteryIn)
+		{
+			appBatteryCharge_SetStopCBF();
+			LED_RULES_CHARGE_OFF;
+		}
+	}
+
+	if(curValue == 1)
+	{	
+		count++;
+		if(count > BATTERY_CHECK_COUNT && bBatteryIn)
+		{
+		    if(appBatteryCharge_SetCheckStatusCBF() == BATTERY_STATUS_FULL)
+			{
+				if (appBatteryCharge_ChargerStatusGet()==TRUE){
+		        		appBatteryCharge_SetStopCBF();
+					LED_RULES_CHARGE_OFF;
+				}
+			}
+	        count = 0;
+	    }
+	}
+
+	//for DVS5M2
+	if(appGlobal.appDcInFlag == TRUE)
+	{
+		DcInPower = 1;
+		DcInOutCount = 0;
+		DcInInCount ++;
+		if(DcInInCount * BACKGROUND_TIMER_TICK == SCDV_AUTO_RECORD_TIME)
+		{
+				UINT32 tCurState;//lyc@add
+				tCurState=appActiveStateGet();
+				if(tCurState!=APP_STATE_CARDV_VIDEO_REC && tCurState!=APP_STATE_CARDV_VIDEO_REC_LAPSE)	
+				sp5kHostMsgSend(APP_UI_MSG_DCIN_PLUG, appGlobal.appDcInFlag);
+		}
+	}
+	else
+	{
+		DcInInCount = 0;
+		DcInOutCount ++;
+		if(DcInOutCount * BACKGROUND_TIMER_TICK == SCDV_AUTO_STOP_TIME*10)
+		{
+			#if(USB_FORCE_TO_BOOT == 0)
+			uiPara_t* puiPara = appUiParaGet();
+			if(puiPara->ScdvMainMode == UI_SCDV_MAIN_MODE_CAR && DcInPower != 0)
+			{
+				sp5kHostMsgSend(APP_UI_MSG_POWER_OFF, APP_POWER_OFF_DCIN_OUT);
+			}
+			#endif
+		}
+	}
+	//for DVS5M2
+	
+	preValue = curValue;
+}
+
+#if CAM_TYPE_CVR
+/*cvr project ,power save only close background light, not do power off*/
+void
+_powerSavePolling(
+	void
+)
+{
+	UINT32 time[POWER_SAVE_MAX] = {0, 1 ,3 ,5 };
+	uiPara_t* puiPara = appUiParaGet();
+	UINT32 timeOutInMs = (time[puiPara->SleepTime] * 60 * 1000);
+	if (!isPowerSavingEnable) 
+	{
+		return;
+	}
+
+	if (puiPara->SleepTime == POWER_SAVE_OFF)
+	{
+		return;
+	}
+	powerSave_t0 = powerSave_t0 + BACKGROUND_TIMER_TICK;
+	
+	if(powerSave_t0 >= timeOutInMs)  /*add for mantis bug 0047408*/
+	{
+		LCD_BACKLIGHT_OFF;
+		powerSave_t0 = 0;	
+		isAutoPowerOffCountDown = 0;
+	}
+
+}
+#else
+/*dsc  project ,power save do power off*/
+void
+_powerSavePolling(
+	void
+)
+{
+	UINT32 time[POWER_SAVE_MAX] = {0, 1 ,3 ,5 };
+	uiPara_t* puiPara = appUiParaGet();
+	UINT32 timeOutInMs = (time[puiPara->SleepTime] * 60 * 1000);
+	#if AUTO_POWER_OFF_DISABLE
+	return;
+	#endif
+	if (!isPowerSavingEnable) 
+	{
+		return;
+	}
+
+	if (puiPara->SleepTime == POWER_SAVE_OFF)
+	{
+		return;
+	}
+		
+	powerSave_t0 = powerSave_t0 + BACKGROUND_TIMER_TICK;
+	
+	if(powerSave_t0 >= timeOutInMs)  /*add for mantis bug 0047408*/
+	{
+		//sp5kHostMsgSend(SP5K_MSG_POWER_OFF,0);
+		sp5kHostMsgSend(APP_UI_MSG_POWER_OFF, APP_POWER_OFF_NORMAL);
+		powerSave_t0 = 0;	
+		isAutoPowerOffCountDown = 0;
+	}
+	#if 0
+	if(isAutoPowerOffCountDown)
+	{
+		if(powerSave_t0 >= AUTO_POWER_OFF_TIME_OUT)
+		{
+			appPowerOffUiMsgSend(APP_POWER_OFF_APO);	
+			powerSave_t0 = 0;	
+			isAutoPowerOffCountDown = 0;
+		}
+	}
+	else 
+	{
+		if(powerSave_t0 >= timeOutInMs)
+		{			
+			sp5kHostMsgSend(APP_UI_MSG_POWER_SAVE_TIME_OUT, 0);	
+			powerSave_t0 = 0;	
+			isAutoPowerOffCountDown = 1;
+		}
+	}
+	#endif
+}
+#endif
+
+void _AutoPowerOffPolling(void)
+{
+	UINT32 time[UI_SCDV_SYSTEM_AUTO_POWER_OFF_MAX] = {60, 30, 10, 5, 3, 1, 0};
+	uiPara_t* puiPara = appUiParaGet();
+	UINT32 timeOutInMs = (time[puiPara->SystemAutoPowerOff] * 60 * 1000);
+
+	if (!gAutoPowerOffEnable) 
+	{
+		return;
+	}
+
+	if(puiPara->SystemAutoPowerOff == UI_SCDV_SYSTEM_AUTO_POWER_OFF_OFF)
+	{
+		return;
+	}
+
+	if(appWiFiConnection_UtilityStateGet() > WIFI_UTILITY_CLOSE)
+	{
+		return;
+	}
+
+	if(gAutoPowerOffTime != (UINT32)-1)
+	{
+		gAutoPowerOffTime += BACKGROUND_TIMER_TICK;
+		if(gAutoPowerOffTime >= timeOutInMs)
+		{
+			gAutoPowerOffTime = -1;
+			//sp5kHostMsgSend(SP5K_MSG_POWER_OFF,0);
+			sp5kHostMsgSend(APP_UI_MSG_POWER_OFF, APP_POWER_OFF_NORMAL);
+		}
+	}
+}
+
+void appAutoPowerOffReset(void)
+{
+	gAutoPowerOffTime = 0;
+}
+
+void appAutoPowerOffEnable(BOOL bEnable)
+{
+	gAutoPowerOffEnable = bEnable;
+	if(bEnable)
+	{
+		appAutoPowerOffReset();
+	}
+}
+
+void _lcmPowerSavePolling(void)
+{
+	uiPara_t* puiPara = appUiParaGet();
+	UINT32 timeOutInMs = (10 * 1000);	//10 second
+
+	if (!gLcmPowerSaveEnable) 
+	{
+		return;
+	}
+
+	if(puiPara->SystemOsdBrightness == UI_SCDV_SYSTEM_OSD_BRIGHTNESS_30)
+	{
+		return;
+	}
+
+	if(appWiFiConnection_UtilityStateGet() > WIFI_UTILITY_CLOSE)
+	{
+		return;
+	}
+
+	if(gLcmPowerSaveTime != (UINT32)-1)
+	{
+		gLcmPowerSaveTime += BACKGROUND_TIMER_TICK;
+		if(gLcmPowerSaveTime >= timeOutInMs)
+		{
+			gLcmPowerSaveTime = -1;
+			appLcmBrightness(30);
+		}
+	}
+}
+
+void appLcmPowerSaveReset(void)
+{
+	gLcmPowerSaveTime = 0;
+}
+
+void appLcmPowerSaveEnable(BOOL bEnable)
+{
+	gLcmPowerSaveEnable = bEnable;
+	if(bEnable)
+	{
+		appLcmPowerSaveReset();
+		appOsdBrightnessSet();
+	}
+}
+
+BOOL appLcmPowerSaveStateGet(void)
+{
+	if(gLcmPowerSaveTime == (UINT32)-1)
+	{
+		return TRUE;
+	}
+	else
+	{
+		return FALSE;
+	}
+}
+
+void _backgroundTimerServiceRoutine(void)
+{
+	uiPara_t* puiPara = appUiParaGet();
+	
+#if COMPEL_POWEROFF_CHARGE
+	if(appGetBoot4ChargingFlag())
+		_usbLowPwrChargeHandler();
+	else
+#endif
+	{
+		appBatteryLevelPolling();
+		//_powerSavePolling();
+		_AutoPowerOffPolling();
+		_lcmPowerSavePolling();
+		appLedFlickerServiceRoutine();
+		appUsbDetect();
+
+		#if CAM_TYPE_CVR
+		if(puiPara->CollisionDetection == UI_COLLISION_DETECT_ON)
+		{
+			if(appActiveStateGet() == APP_STATE_POWER_ON)
+			{
+				if(appGsensorIntrStatusGet() == TRUE)
+				{
+					printf("G-sensor Trigger Video Rec\n");
+					sp5kHostMsgSend(APP_UI_MSG_GSENSOR_REC, 1);
+				}
+			}
+		}
+		#endif
+	}
+}
+
+void 
+appBackgroundTimerInit(
+	void
+)
+{
+	UINT32 timrHdlr = TIMER_NULL;
+	timrHdlr = appTimerIsrReg(_backgroundTimerServiceRoutine, (BACKGROUND_TIMER_TICK/appTimerIsrTickIntervalGet()));
+	if (timrHdlr == TIMER_NULL)
+	{
+		printf("[ERR] background timer register failed!!!\n\n");
+	}
+}
+
+UINT32
+appBackgroundTimerTickIntervalGet(
+	void
+)
+{
+	return BACKGROUND_TIMER_TICK;
+}
+
+void 
+appPowerSaveTimeOutReset(
+	void
+)
+{
+	powerSave_t0 = 0;
+	isAutoPowerOffCountDown = 0;
+}
+
+void
+appPowerSavingEnableSet(
+	BOOL enable
+)
+{
+	isPowerSavingEnable = enable;
+	if(enable) 
+	{
+		appPowerSaveTimeOutReset();
+	}
+}
+
+UINT32 
+appAutoPowerOffPhaseCheck(
+	void
+)
+{
+	return isAutoPowerOffCountDown;
+}
+
+void 
+_usbLowPwrChargeHandler(
+	void
+)
+{
+	static UINT8 fBatChargeInit = 0;
+	UINT32 pwrVal;
+	
+	if(!fBatChargeInit){
+		appBatteryCharge_Init();
+		fBatChargeInit = 1;
+	}
+	if(!sp5kUsbDetectStateGet())/* replace IS_USB_IN with sp5kUsbDetectStateGet() temporarily */
+		appPsuedoPowerOff(TRUE);
+	
+	if(!appBatteryCharge_ChargerStatusGet()){
+		if(appBatteryAdcValueGet() > 100){ /* have battery ? */
+			appBatteryCharge_SetStartCBF();
+			RED_LED_ON;
+		}
+		else
+			RED_LED_OFF;
+	}
+	else{
+		count++;
+		
+		if(count > BATTERY_CHECK_COUNT)
+		{
+		    if(appBatteryCharge_SetCheckStatusCBF() == BATTERY_STATUS_FULL)
+			{
+				printf("BATTERY_STATUS_FULL\n");
+	        	appBatteryCharge_SetStopCBF();
+				RED_LED_OFF;
+				appPsuedoPowerOff(TRUE);
+			}
+	        count = 0;
+	    }
+	}
+
+	sp5kGpioRead(SP5K_GPIO_GRP_POCU,BIT0,&pwrVal);
+	
+	if(pwrVal & BIT0){
+		do{
+			sp5kGpioRead(SP5K_GPIO_GRP_POCU,BIT0,&pwrVal);
+			sp5kTimeDelay(SP5K_TIME_DELAY_1MS, 20);
+		}while(pwrVal & BIT0);	
+		appPsuedoPowerOff(TRUE);
+	}
+	
+}
+
+

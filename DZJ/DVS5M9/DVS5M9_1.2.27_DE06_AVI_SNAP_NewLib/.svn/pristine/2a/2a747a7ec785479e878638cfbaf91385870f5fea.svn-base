@@ -1,0 +1,240 @@
+/**************************************************************************
+ *
+ *        Copyright (c) 2006-2008 by Sunplus mMedia Inc., Ltd.
+ *
+ *  This software is copyrighted by and is the property of Sunplus
+ *  mMedia Inc., Ltd. All rights are reserved by Sunplus mMedia
+ *  Inc., Ltd. This software may only be used in accordance with the
+ *  corresponding license agreement. Any unauthorized use, duplication,
+ *  distribution, or disclosure of this software is expressly forbidden.
+ *
+ *  This Copyright notice MUST not be removed or modified without prior
+ *  written consent of Sunplus mMedia Inc., Ltd.
+ *
+ *  Sunplus mMedia Inc., Ltd. reserves the right to modify this
+ *  software without notice.
+ *
+ *  Sunplus mMedia Inc., Ltd.
+ *  19-1, Innovation First Road, Science-Based Industrial Park,
+ *  Hsin-Chu, Taiwan, R.O.C. 
+ *
+ **************************************************************************/
+
+#define HOST_DBG 1
+#include "app_com_def.h"
+#include "app_com_api.h"
+#include "gpio_custom.h"
+#include "app_dev_plug.h"
+#include "sp5k_usb_api.h"
+#include "sp5k_disk_api.h"
+#include "app_errorosd.h"
+#include "app_sensor.h"
+#include "app_tvlcd.h"
+
+#include "app_osd_api_lcm.h"
+#include "app_osd_draw_lcm.h"
+#include "app_icon_def.h"
+#include "app_rf_def.h"
+//#define USB_MSDC_WP_ENABLE  1
+/**************************************************************************
+ *                           C O N S T A N T S                            *
+ **************************************************************************/
+
+static UINT32 msdcStartTimer;
+
+/**************************************************************************
+ *                              M A C R O S                               *
+ **************************************************************************/
+
+/**************************************************************************
+ *                          D A T A    T Y P E S                          *
+ **************************************************************************/
+#ifdef	USB_MSDC_WP_ENABLE
+typedef struct IOPin_s
+{
+  UINT16 grp;
+  UINT8 id;
+  UINT8 pol;
+  UINT32 msk;
+} IOPin_t;
+#endif
+/**************************************************************************
+ *                         G L O B A L    D A T A                         *
+ **************************************************************************/
+
+ 
+
+/**************************************************************************
+ *                 E X T E R N A L    R E F E R E N C E S                 *
+ **************************************************************************/
+extern UINT32 appUsbBackwardStateGet(void);
+
+/**************************************************************************
+ *               F U N C T I O N    D E C L A R A T I O N S               *
+ **************************************************************************/
+ 
+void appUsbCreateOsdShow(void)
+{
+	appLcmOsdClean();
+
+	//Mode Icon
+	appLcmOsdLargeIconShow(LcmOsdIconIndex0, ID_ICON_SCDV_USB_MSDC, FALSE);
+
+	//Large Text
+	appLcmOsdLargeStringShow(ID_STR_USB, FALSE);
+
+	//Mode Tips
+	appLcmOsdModeStringShow(ID_STR_USB, FALSE);
+
+	//Tips
+	appLcmOsdTipsStringShow(ID_STR_MSDC, FALSE);
+
+	//Battery
+	appLcmOsdDrawBattery(TRUE, -1);
+	
+	appLcmRefresh();
+}
+
+void
+appUsbMsdcModeSet(
+	void
+)
+{
+	sp5kUsbModeSet(SP5K_USB_MODE_MSDC);
+	UsbStrSettingInit();
+	sp5kUsbLunSet(0,0);
+	sp5kUsbLunSet(0,1);
+	sp5kUsbLunSet(SP5K_DRIVE_NAND,0);
+	if (IS_CARD_EXIST)
+	{
+		sp5kUsbLunSet(SP5K_DRIVE_SD,0);
+	}
+}
+
+
+/*-------------------------------------------------------------------------
+ *  File Name : appUsbMsdcStateClose
+ *------------------------------------------------------------------------*/
+void 
+appUsbMsdcStateClose(
+	UINT32 type
+)
+{
+	if (type) 
+	{
+		if (!IS_USB_IN) 
+		{					
+			sp5kUsbSwCon(0);
+			appDiskMount(appActiveDiskGet());			
+		}	
+	}
+	else 
+	{
+		if (!IS_USB_IN) 
+		{	
+			sp5kUsbSwCon(0);	
+		}	
+	}	
+}
+
+
+/*-------------------------------------------------------------------------
+ *  File Name : appUsbMsdcStateInit
+ *------------------------------------------------------------------------*/
+void
+appUsbMsdcStateInit(
+	void
+)
+{
+	//Led setting
+	LED_RULES_NORMAL;
+
+	appUsbCreateOsdShow();
+
+	if (!IS_USB_IN) 
+	{
+		LCD_BACKLIGHT_ON;
+		return;
+	}
+    #if POWER_OFF_AFTER_USB_OUT
+	appSensorPowerOff();
+	
+	#endif
+	
+
+	 msdcStartTimer= appTimerSet(5000, "MSDC Start Timer");
+
+	// wait mount complete here
+	if (IS_DISK_MOUNT_READY) 
+	{
+		#ifdef USB_MSDC_WP_ENABLE
+		IOPin_t sdWpPin={ SP5K_GPIO_GRP_NO_USE, 0, 1 };
+		sp5kDiskDriverPinCfg(SP5K_DRIVE_SD, SP5K_DISK_WRITE_PROTECT_PIN, sdWpPin.grp, sdWpPin.id, sdWpPin.pol);
+		#endif
+		appUsbMsdcModeSet();
+		sp5kUsbMaxPowerSet(SP5K_USB_MAXPOWER_HIGH);
+		sp5kUsbSwCon(1);
+	}
+}
+
+
+/*-------------------------------------------------------------------------
+ *  File Name : appUsbMsdcState
+ *------------------------------------------------------------------------*/
+void 
+appUsbMsdcState(
+	UINT32 msg,
+	UINT32 param
+)
+{	
+	static UINT8 isBack2PreviousState = 0;
+	
+	switch (msg) 
+	{
+	case APP_STATE_MSG_INIT:	
+		RPrintf("appUsbMsdcState");
+		isBack2PreviousState = 0;		
+		appUsbMsdcStateInit();
+		break;
+	case APP_STATE_MSG_CLOSE:	
+		appUsbMsdcStateClose(FALSE);	
+		appStateCloseDone();
+		break;
+	case APP_UI_MSG_USB_PLUG:	
+		isBack2PreviousState = 1;		
+		appUsbMsdcStateClose(TRUE);		
+		break;
+
+	case SP5K_MSG_USB_MSDC_ACCESS:
+		break;
+	case SP5K_MSG_TIMER: 
+		appLcdTurnOff();
+		appTimerClear(&msdcStartTimer);
+		break;
+	case SP5K_MSG_USB_MSDC_ACCESS_START:
+		
+		break;
+	case SP5K_MSG_USB_MSDC_ACCESS_STOP:
+		
+		break;
+	case SP5K_MSG_DISK_MOUNT_COMPLETE:
+		printf("SP5K_MSG_DISK_MOUNT_COMPLETE=%d\n",isBack2PreviousState);
+		isBack2PreviousState = 0;		
+		appStateChange(appUsbBackwardStateGet(),STATE_PARAM_USB_PLUG);
+		break;
+	case SP5K_MSG_DISK_MOUNT_FAIL:		
+	case SP5K_MSG_DISK_ERROR:		
+		if (isBack2PreviousState) 
+		{
+			isBack2PreviousState = 0;
+			appStateChange(appUsbBackwardStateGet(),STATE_PARAM_USB_PLUG);
+		}
+		break;
+	default:		
+		break;
+	}
+	
+} 
+
+
+

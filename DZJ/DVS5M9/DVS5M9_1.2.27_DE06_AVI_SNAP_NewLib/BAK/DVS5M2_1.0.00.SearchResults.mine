@@ -1,0 +1,2 @@
+---- RFDualStreamSampleInit Matches (1 in 1 files) ----
+App_sdv_video_rec.c (sphost\customization\hostfw\ui\video):		RFDualStreamSampleInit();

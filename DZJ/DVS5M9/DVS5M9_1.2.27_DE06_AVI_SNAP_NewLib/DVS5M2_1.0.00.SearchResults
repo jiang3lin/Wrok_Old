@@ -1,0 +1,329 @@
+---- quality Matches (369 in 52 files) ----
+App_calib_awb.c (sphost\customization\hostfw\service\calib):	appStill_SetQuality(UI_QUALITY_FINE);
+App_cdv_video_view.c (sphost\customization\hostfw\ui\video):	UINT8 qualityRatio[UI_SCDV_VIDEO_SIZE_MAX][3] = 	{	//Super	Fine		Normal
+App_cdv_video_view.c (sphost\customization\hostfw\ui\video):	UINT8 qualityRatio[UI_SCDV_VIDEO_SIZE_MAX][3] = 	{	//Super	Fine		Normal
+App_cdv_video_view.c (sphost\customization\hostfw\ui\video):			qualityRatio[0][1]=8;
+App_cdv_video_view.c (sphost\customization\hostfw\ui\video):			qualityRatio[1][1]=8;
+App_cdv_video_view.c (sphost\customization\hostfw\ui\video):			qualityRatio[2][1]=8;
+App_cdv_video_view.c (sphost\customization\hostfw\ui\video):			qualityRatio[3][1]=8;
+App_cdv_video_view.c (sphost\customization\hostfw\ui\video):			qualityRatio[0][1]=9;
+App_cdv_video_view.c (sphost\customization\hostfw\ui\video):			qualityRatio[1][1]=9;
+App_cdv_video_view.c (sphost\customization\hostfw\ui\video):			qualityRatio[2][1]=8;
+App_cdv_video_view.c (sphost\customization\hostfw\ui\video):			qualityRatio[3][1]=8;
+App_cdv_video_view.c (sphost\customization\hostfw\ui\video):	UINT32 mjpgQualityRatio[UI_SCDV_VIDEO_SIZE_MAX] = {150, 110, 130, 50, 30, 30, 30, 30};
+App_cdv_video_view.c (sphost\customization\hostfw\ui\video):	UINT32 quality_idx = 1;
+App_cdv_video_view.c (sphost\customization\hostfw\ui\video):				gVideoCB.streamBytesPerSec = qualityRatio[size_idx][quality_idx] * 1000000 / 8;
+App_cdv_video_view.c (sphost\customization\hostfw\ui\video):				gVideoCB.streamBytesPerSec = mjpgQualityRatio[size_idx] * 30 * 1024;
+App_cdv_video_view.c (sphost\customization\hostfw\ui\video):				gVideoCB.streamBytesPerSec =  qualityRatio[size_idx][quality_idx]*1000000/8;
+App_cdv_video_view.c (sphost\customization\hostfw\ui\video):				gVideoCB.streamBytesPerSec = mjpgQualityRatio[size_idx] * 30 * 1024;
+App_cdv_video_view.c (sphost\customization\hostfw\ui\video):				gVideoCB.streamBytesPerSec =  qualityRatio[size_idx][quality_idx]*1000000/8;
+App_cdv_video_view.c (sphost\customization\hostfw\ui\video):				gVideoCB.streamBytesPerSec = mjpgQualityRatio[size_idx] * 30 * 1024;
+App_cdv_video_view.c (sphost\customization\hostfw\ui\video):				gVideoCB.streamBytesPerSec =  qualityRatio[size_idx][quality_idx]*1000000/8;
+App_cdv_video_view.c (sphost\customization\hostfw\ui\video):				gVideoCB.streamBytesPerSec = mjpgQualityRatio[size_idx] * 30 * 1024;
+App_cdv_video_view.c (sphost\customization\hostfw\ui\video):				gVideoCB.streamBytesPerSec =  qualityRatio[size_idx][quality_idx]*1000000/8;
+App_cdv_video_view.c (sphost\customization\hostfw\ui\video):				gVideoCB.streamBytesPerSec = mjpgQualityRatio[size_idx] * 30 * 1024;
+App_icon_def.h (sphost\customization\hostfw\include):#define ID_ICON_QUALITY		0x00dd
+App_icon_def.h (sphost\customization\hostfw\include):#define ID_ICON_QUALITY_FINE		0x00de
+App_icon_def.h (sphost\customization\hostfw\include):#define ID_ICON_QUALITY_SUPER_FINE		0x00df
+App_menu_event.h (sphost\customization\hostfw\include):UINT32 appMenuEvt_VideoQualitySet (UINT8 layer, UINT8 item, UINT32 msg, UINT32 para);
+App_menu_event_cvr.c (sphost\customization\hostfw\ui\menu):appMenuEvt_VideoQualitySet(
+App_menu_event_cvr.c (sphost\customization\hostfw\ui\menu):				ret = menuProcVidRecAlwaysParaExcute(layer, item, msg,puiPara->VideoQuality);
+App_menu_event_cvr.c (sphost\customization\hostfw\ui\menu):				appVideoSetQuality(puiPara->VideoQuality);
+App_menu_event_cvr.c (sphost\customization\hostfw\ui\menu):appMenuEvt_DPSQualitySet(
+App_menu_event_cvr.c (sphost\customization\hostfw\ui\menu):			pDpsMenuOpt->Quality.SelOption = (UINT16)puiPara->DPSQuality;
+App_menu_event_cvr.c (sphost\customization\hostfw\ui\menu):			appUsbDps_PaperQualityConfigSet(pDpsMenuOpt);
+App_menu_event_cvr.c (sphost\customization\hostfw\ui\menu):			appUsbDps_PaperQualityConfigSet(pDpsMenuOpt);
+App_menu_event_cvr.c (sphost\customization\hostfw\ui\menu):			appUsbDps_PaperQualityConfigSet(pDpsMenuOpt);
+App_menu_event_cvr.c (sphost\customization\hostfw\ui\menu):			appUsbDps_PaperQualityConfigSet(pDpsMenuOpt);
+App_menu_event_cvr.c (sphost\customization\hostfw\ui\menu):			appUsbDps_PaperQualityConfigSet(pDpsMenuOpt);
+App_menu_event_cvr.c (sphost\customization\hostfw\ui\menu):			appUsbDps_PaperQualityConfigSet(pDpsMenuOpt);
+App_menu_event_cvr.c (sphost\customization\hostfw\ui\menu):			appUsbDps_PaperQualityConfigSet(pDpsMenuOpt);
+App_menu_event_cvr.c (sphost\customization\hostfw\ui\menu):			appStill_SetQuality(puiPara->ImageQuality);	
+App_menu_event_cvr.c (sphost\customization\hostfw\ui\menu):			appStill_SetQuality(puiPara->ImageQuality);			
+App_menu_event_dsc.c (sphost\customization\hostfw\ui\menu):appMenuEvt_VideoQualitySet(
+App_menu_event_dsc.c (sphost\customization\hostfw\ui\menu):			appVideoSetQuality(puiPara->VideoQuality);
+App_menu_event_dsc.c (sphost\customization\hostfw\ui\menu):appMenuEvt_DPSQualitySet(
+App_menu_event_dsc.c (sphost\customization\hostfw\ui\menu):			pDpsMenuOpt->Quality.SelOption = (UINT16)puiPara->DPSQuality;
+App_menu_event_dsc.c (sphost\customization\hostfw\ui\menu):			appUsbDps_PaperQualityConfigSet(pDpsMenuOpt);
+App_menu_event_dsc.c (sphost\customization\hostfw\ui\menu):			appUsbDps_PaperQualityConfigSet(pDpsMenuOpt);
+App_menu_event_dsc.c (sphost\customization\hostfw\ui\menu):			appUsbDps_PaperQualityConfigSet(pDpsMenuOpt);
+App_menu_event_dsc.c (sphost\customization\hostfw\ui\menu):			appUsbDps_PaperQualityConfigSet(pDpsMenuOpt);
+App_menu_event_dsc.c (sphost\customization\hostfw\ui\menu):			appUsbDps_PaperQualityConfigSet(pDpsMenuOpt);
+App_menu_event_dsc.c (sphost\customization\hostfw\ui\menu):			appUsbDps_PaperQualityConfigSet(pDpsMenuOpt);
+App_menu_event_dsc.c (sphost\customization\hostfw\ui\menu):			appUsbDps_PaperQualityConfigSet(pDpsMenuOpt);
+App_menu_event_dsc.c (sphost\customization\hostfw\ui\menu):			appStill_SetQuality(puiPara->ImageQuality);	
+App_menu_event_dsc.c (sphost\customization\hostfw\ui\menu):			appStill_SetQuality(puiPara->ImageQuality);			
+App_menu_micro.h (sphost\customization\hostfw\include):// Quality Items
+App_menu_micro.h (sphost\customization\hostfw\include):typedef enum _PRV_QUALITY
+App_menu_micro.h (sphost\customization\hostfw\include):} PRV_QUALITY;
+App_menu_micro.h (sphost\customization\hostfw\include):// Quality Items
+App_menu_micro.h (sphost\customization\hostfw\include):typedef enum _MOV_QUALITY
+App_menu_micro.h (sphost\customization\hostfw\include):} MOV_QUALITY;
+App_menu_micro.h (sphost\customization\hostfw\include):typedef enum _DPS_QUALITY
+App_menu_micro.h (sphost\customization\hostfw\include):	DPS_QUALITY_AUTO		= ( unsigned char ) 0x00,
+App_menu_micro.h (sphost\customization\hostfw\include):	DPS_QUALITY_FINE		= ( unsigned char ) 0x01,
+App_menu_micro.h (sphost\customization\hostfw\include):	DPS_QUALITY_NORMAL	= ( unsigned char ) 0x02,
+App_menu_micro.h (sphost\customization\hostfw\include):	DPS_QUALITY_DRAFT		= ( unsigned char ) 0x03,
+App_menu_micro.h (sphost\customization\hostfw\include):} DPS_QUALITY;
+App_menu_res.h (sphost\customization\hostfw\include):	"Video Quality",		[(VideoQuality)],
+App_menu_res.h (sphost\customization\hostfw\include):		"Super Fine",		"quality_super_fine.bmp",		[(VideoQuality)appMenuEvt_VideoQualitySet],
+App_menu_res.h (sphost\customization\hostfw\include):		"Fine",		"quality_fine.bmp",		[(VideoQuality)appMenuEvt_VideoQualitySet],
+App_menu_res.h (sphost\customization\hostfw\include):		"Normal",		"quality.bmp",		[(VideoQuality)appMenuEvt_VideoQualitySet],
+App_menu_tab.c (sphost\customization\hostfw\ui\menu):	ID_ICON_NONE,	ID_ICON_QUALITY_SUPER_FINE,	ID_ICON_QUALITY_FINE,	ID_ICON_QUALITY,
+App_menu_tab.c (sphost\customization\hostfw\ui\menu):	NULL,	appMenuEvt_VideoQualitySet,	appMenuEvt_VideoQualitySet,	appMenuEvt_VideoQualitySet,
+App_playback_zpan.c (sphost\customization\hostfw\ui\play):	sp5kStillPlayCfgSet(SP5K_SPB_SCALE_QUALITY,SP5K_SPB_SCALE_QUALITY_FAST);
+App_playback_zpan.c (sphost\customization\hostfw\ui\play):	sp5kStillPlayCfgSet(SP5K_SPB_SCALE_QUALITY,SP5K_SPB_SCALE_QUALITY_FAST);
+App_ptp.c (sphost\customization\hostfw\sys):    UINT16 quality;
+App_ptp.c (sphost\customization\hostfw\sys):} PTPUI_Map_Quality[]=
+App_ptp.c (sphost\customization\hostfw\sys):    {  5, UI_QUALITY_SUPERFINE },
+App_ptp.c (sphost\customization\hostfw\sys):    {  8, UI_QUALITY_FINE},
+App_ptp.c (sphost\customization\hostfw\sys):    { 12, UI_QUALITY_NORMAL},
+App_ptp.c (sphost\customization\hostfw\sys):		puiPara->ImageQuality, gStillCB.ae.iso, puiPara->Iso,
+App_ptp.c (sphost\customization\hostfw\sys):            for (i = 1 ; i < (sizeof(PTPUI_Map_Quality)/sizeof(PTPUI_Map_Quality[0])) ; i++)
+App_ptp.c (sphost\customization\hostfw\sys):                if(PTPUI_Map_Quality[i].UiIndex == puiPara->ImageQuality)
+App_ptp.c (sphost\customization\hostfw\sys):                if(PTPUI_Map_Quality[i].UiIndex == UI_QUALITY_SUPERFINE)
+App_ptp.c (sphost\customization\hostfw\sys):            dat[cnt++] = PTPUI_Map_Quality[CurSetting].quality;
+App_ptp.c (sphost\customization\hostfw\sys):            dat[cnt++] = PTPUI_Map_Quality[DefSetting].quality;
+App_ptp.c (sphost\customization\hostfw\sys):            for (i = 1 ; i < (sizeof(PTPUI_Map_Quality)/sizeof(PTPUI_Map_Quality[0])) ; i++)
+App_ptp.c (sphost\customization\hostfw\sys):                if(PTPUI_Map_Quality[i].UiIndex == UI_PTP_UNSUPPORT_CMD)
+App_ptp.c (sphost\customization\hostfw\sys):                dat[cnt++] = PTPUI_Map_Quality[i].quality;
+App_ptp.c (sphost\customization\hostfw\sys):            for (i = 1 ; i < (sizeof(PTPUI_Map_Quality)/sizeof(PTPUI_Map_Quality[0])) ; i++)
+App_ptp.c (sphost\customization\hostfw\sys):                if (PTPUI_Map_Quality[i].quality== PTPDat[1])
+App_ptp.c (sphost\customization\hostfw\sys):                    UIIdx = PTPUI_Map_Quality[i].UiIndex;
+App_ptp.c (sphost\customization\hostfw\sys):                puiPara->ImageQuality= UIIdx;
+App_ptp.c (sphost\customization\hostfw\sys):	case VIEWMENU_QUALITY:
+App_ptp.c (sphost\customization\hostfw\sys):	case VIEWMENU_VIDEO_QUALITY:
+App_sdv_still_view.c (sphost\customization\hostfw\ui\still):		//appStill_SetQuality(UI_QUALITY_FINE);
+App_sdv_still_view.c (sphost\customization\hostfw\ui\still):		appStill_SetQuality(puiPara->ImageQuality);		
+App_sdv_still_view.c (sphost\customization\hostfw\ui\still):	///printf("--puiPara->ImageQuality=%d\n",puiPara->ImageQuality);
+App_sdv_still_view.c (sphost\customization\hostfw\ui\still):	gStillCB.estFileSize = appStillEstFileSize(puiPara->ImageSize, puiPara->ImageQuality, gStillCB.diskClusterSize);				
+App_sdv_video_view.c (sphost\customization\hostfw\ui\video):	UINT8 qualityRatio[UI_SCDV_VIDEO_SIZE_MAX][3] = 	{	//Super	Fine		Normal
+App_sdv_video_view.c (sphost\customization\hostfw\ui\video):	UINT8 qualityRatio[UI_SCDV_VIDEO_SIZE_MAX][3] = 	{	//Super	Fine		Normal
+App_sdv_video_view.c (sphost\customization\hostfw\ui\video):			qualityRatio[0][1]=8;
+App_sdv_video_view.c (sphost\customization\hostfw\ui\video):			qualityRatio[1][1]=8;
+App_sdv_video_view.c (sphost\customization\hostfw\ui\video):			qualityRatio[2][1]=8;
+App_sdv_video_view.c (sphost\customization\hostfw\ui\video):			qualityRatio[3][1]=8;
+App_sdv_video_view.c (sphost\customization\hostfw\ui\video):			qualityRatio[0][1]=9;
+App_sdv_video_view.c (sphost\customization\hostfw\ui\video):			qualityRatio[1][1]=9;
+App_sdv_video_view.c (sphost\customization\hostfw\ui\video):			qualityRatio[2][1]=8;
+App_sdv_video_view.c (sphost\customization\hostfw\ui\video):			qualityRatio[3][1]=8;
+App_sdv_video_view.c (sphost\customization\hostfw\ui\video):	UINT32 mjpgQualityRatio[UI_SCDV_VIDEO_SIZE_MAX] = {150, 110, 130, 50, 30, 30, 30, 30};
+App_sdv_video_view.c (sphost\customization\hostfw\ui\video):	UINT32 quality_idx = 1;
+App_sdv_video_view.c (sphost\customization\hostfw\ui\video):				gVideoCB.streamBytesPerSec = qualityRatio[size_idx][quality_idx] * 1000000 / 8;
+App_sdv_video_view.c (sphost\customization\hostfw\ui\video):				gVideoCB.streamBytesPerSec = mjpgQualityRatio[size_idx] * 30 * 1024;
+App_sdv_video_view.c (sphost\customization\hostfw\ui\video):				gVideoCB.streamBytesPerSec =  qualityRatio[size_idx][quality_idx]*1000000/8;
+App_sdv_video_view.c (sphost\customization\hostfw\ui\video):				gVideoCB.streamBytesPerSec = mjpgQualityRatio[size_idx] * 30 * 1024;
+App_sdv_video_view.c (sphost\customization\hostfw\ui\video):				gVideoCB.streamBytesPerSec =  qualityRatio[size_idx][quality_idx]*1000000/8;
+App_sdv_video_view.c (sphost\customization\hostfw\ui\video):				gVideoCB.streamBytesPerSec = mjpgQualityRatio[size_idx] * 30 * 1024;
+App_sdv_video_view.c (sphost\customization\hostfw\ui\video):				gVideoCB.streamBytesPerSec =  qualityRatio[size_idx][quality_idx]*1000000/8;
+App_sdv_video_view.c (sphost\customization\hostfw\ui\video):				gVideoCB.streamBytesPerSec = mjpgQualityRatio[size_idx] * 30 * 1024;
+App_sdv_video_view.c (sphost\customization\hostfw\ui\video):				gVideoCB.streamBytesPerSec =  qualityRatio[size_idx][quality_idx]*1000000/8;
+App_sdv_video_view.c (sphost\customization\hostfw\ui\video):				gVideoCB.streamBytesPerSec = mjpgQualityRatio[size_idx] * 30 * 1024;
+App_sdv_video_view.c (sphost\customization\hostfw\ui\video):	UINT8 qualityRatio[UI_SCDV_VIDEO_SIZE_MAX][3] = 	{	//Super	Fine		Normal
+App_sdv_video_view.c (sphost\customization\hostfw\ui\video):			qualityRatio[0][1]=8;
+App_sdv_video_view.c (sphost\customization\hostfw\ui\video):			qualityRatio[1][1]=8;
+App_sdv_video_view.c (sphost\customization\hostfw\ui\video):			qualityRatio[2][1]=8;
+App_sdv_video_view.c (sphost\customization\hostfw\ui\video):			qualityRatio[3][1]=8;
+App_sdv_video_view.c (sphost\customization\hostfw\ui\video):			qualityRatio[0][1]=9;
+App_sdv_video_view.c (sphost\customization\hostfw\ui\video):			qualityRatio[1][1]=9;
+App_sdv_video_view.c (sphost\customization\hostfw\ui\video):			qualityRatio[2][1]=8;
+App_sdv_video_view.c (sphost\customization\hostfw\ui\video):			qualityRatio[3][1]=8;
+App_sdv_video_view.c (sphost\customization\hostfw\ui\video):	UINT32 mjpgQualityRatio[UI_SCDV_VIDEO_SIZE_MAX] = {150, 110, 130, 50, 30, 30, 30, 30};
+App_sdv_video_view.c (sphost\customization\hostfw\ui\video):	UINT32 quality_idx = 1;
+App_sdv_video_view.c (sphost\customization\hostfw\ui\video):				gVideoCB.streamBytesPerSec = qualityRatio[size_idx][quality_idx] * 1000000 / 8;
+App_sdv_video_view.c (sphost\customization\hostfw\ui\video):				gVideoCB.streamBytesPerSec = mjpgQualityRatio[size_idx] * 30 * 1024;
+App_sdv_video_view.c (sphost\customization\hostfw\ui\video):				gVideoCB.streamBytesPerSec =  qualityRatio[size_idx][quality_idx]*1000000/8;
+App_sdv_video_view.c (sphost\customization\hostfw\ui\video):				gVideoCB.streamBytesPerSec = mjpgQualityRatio[size_idx] * 30 * 1024;
+App_sdv_video_view.c (sphost\customization\hostfw\ui\video):				gVideoCB.streamBytesPerSec =  qualityRatio[size_idx][quality_idx]*1000000/8;
+App_sdv_video_view.c (sphost\customization\hostfw\ui\video):				gVideoCB.streamBytesPerSec = mjpgQualityRatio[size_idx] * 30 * 1024;
+App_sdv_video_view.c (sphost\customization\hostfw\ui\video):				gVideoCB.streamBytesPerSec =  qualityRatio[size_idx][quality_idx]*1000000/8;
+App_sdv_video_view.c (sphost\customization\hostfw\ui\video):				gVideoCB.streamBytesPerSec = mjpgQualityRatio[size_idx] * 30 * 1024;
+App_sdv_video_view.c (sphost\customization\hostfw\ui\video):				gVideoCB.streamBytesPerSec =  qualityRatio[size_idx][quality_idx]*1000000/8;
+App_sdv_video_view.c (sphost\customization\hostfw\ui\video):				gVideoCB.streamBytesPerSec = mjpgQualityRatio[size_idx] * 30 * 1024;
+App_still.h (sphost\customization\hostfw\include): UINT32 appStillEstFileSize(UINT32 imgSizeIdx, UINT32 qualityIdx, UINT32 clustersize);
+App_still.h (sphost\customization\hostfw\include):void appStill_SetQuality(UINT8 idx);
+App_still_background.c (sphost\customization\hostfw\ui\still):	gStillCB.estFileSize = appStillEstFileSize(puiPara->ImageSize, puiPara->ImageQuality, gStillCB.diskClusterSize);
+App_still_callback.c (sphost\customization\hostfw\ui\still):	gStillCB.estFileSize = appStillEstFileSize(puiPara->ImageSize, puiPara->ImageQuality, gStillCB.diskClusterSize);			
+App_still_cwb.c (sphost\customization\hostfw\ui\still):	//appStill_SetQuality(puiPara->ImageQuality);
+App_still_setting.c (sphost\customization\hostfw\ui\still):static UINT8 compressRatio[UI_QUALITY_MAX]={ 5, 8, 12 };
+App_still_setting.c (sphost\customization\hostfw\ui\still):	UINT32 qualityIdx,
+App_still_setting.c (sphost\customization\hostfw\ui\still):	ratio = compressRatio[qualityIdx];
+App_still_setting.c (sphost\customization\hostfw\ui\still): *  Function Name : appStill_SetQuality
+App_still_setting.c (sphost\customization\hostfw\ui\still):appStill_SetQuality(
+App_still_setting.c (sphost\customization\hostfw\ui\still):			" snap quality [0|1|2] 			: normal/fine/best\n"
+App_still_setting.c (sphost\customization\hostfw\ui\still):	else if (strcmp(arg[1], "quality")==0)
+App_still_setting.c (sphost\customization\hostfw\ui\still):		puiPara->ImageQuality= v[2];
+App_still_setting.c (sphost\customization\hostfw\ui\still):		printf("puiPara->quality=%d\n",puiPara->ImageQuality);
+App_still_view.c (sphost\customization\hostfw\ui\still):		appStill_SetQuality(puiPara->ImageQuality);
+App_still_view.c (sphost\customization\hostfw\ui\still):	gStillCB.estFileSize = appStillEstFileSize(puiPara->ImageSize, puiPara->ImageQuality, gStillCB.diskClusterSize);
+App_tvlcd.c (sphost\customization\hostfw\device):			/* for better TV out display quality, window width must be multiple of osd buffer(320)	*/
+App_tvlcd.c (sphost\customization\hostfw\device):					/* for better TV out display quality, window width must be multiple of osd buffer(320)	*/
+App_ui_para_cvr.h (sphost\customization\hostfw\include):	UINT8 VideoQuality;		/* Auto create code zone, don't modify or delete! */
+App_ui_para_cvr.h (sphost\customization\hostfw\include):	UINT8 ImageQuality;
+App_ui_para_dsc.h (sphost\customization\hostfw\include):	UINT8 VideoQuality;		/* Auto create code zone, don't modify or delete! */
+App_ui_para_dvs5m2.h (sphost\customization\hostfw\include):	UINT8 VideoQuality;		/* Auto create code zone, don't modify or delete! */
+App_ui_para_dvs5m2.h (sphost\customization\hostfw\include):	UINT8 ImageQuality;
+App_usb_dps.c (sphost\customization\hostfw\ui\usb):	appUsbDps_PaperQualityCapabilityGet(&gDpsMenuOpt);
+App_usb_dpslib.c (sphost\customization\hostfw\ui\usb):	{PIMA_QUALITY_AUTO, PIMA_QUALITY_NORMAL, PIMA_QUALITY_DRAFT, PIMA_QUALITY_FINE},	
+App_usb_dpslib.c (sphost\customization\hostfw\ui\usb): *  File Name : appUsbDps_PaperQualityCapabilityGet
+App_usb_dpslib.c (sphost\customization\hostfw\ui\usb):void appUsbDps_PaperQualityCapabilityGet(PdpsMenuOption_t DpsCapOption)
+App_usb_dpslib.c (sphost\customization\hostfw\ui\usb):		printf("\nappUsbDps_PaperQualityCapabilityGet Error \n\n");
+App_usb_dpslib.c (sphost\customization\hostfw\ui\usb):	DpsCapOption->Quality.OsdEnOption =0x00000000;
+App_usb_dpslib.c (sphost\customization\hostfw\ui\usb):	appUsbDps_MenuCapabilityOptionSet(datdBuf,dataLen ,gPIMACodeTab.Quality, DPS_QUALITY_TOTAL, &DpsCapOption->Quality);
+App_usb_dpslib.c (sphost\customization\hostfw\ui\usb):	appUsbDps_MenuCapabilityOptionSet(datdBuf,dataLen ,gPIMACodeTab.DateTime, DPS_QUALITY_TOTAL, &DpsCapOption->DateTime);
+App_usb_dpslib.c (sphost\customization\hostfw\ui\usb): *  File Name : appUsbDps_PaperQualityConfigSet
+App_usb_dpslib.c (sphost\customization\hostfw\ui\usb):void appUsbDps_PaperQualityConfigSet(
+App_usb_dpslib.c (sphost\customization\hostfw\ui\usb):	sp5kDpsPrtCapabilitySet( SP5K_SET_QUALITY,gPIMACodeTab.Quality[DpsCapOption->Quality.SelOption]);
+App_usb_dpslib.c (sphost\customization\hostfw\ui\usb):	appUsbDps_PaperQualityConfigSet(&gDpsMenuOpt);
+App_usb_dpslib.c (sphost\customization\hostfw\ui\usb):	appUsbDps_PaperQualityConfigSet(&gDpsMenuOpt);
+App_usb_dpslib.c (sphost\customization\hostfw\ui\usb):	appUsbDps_PaperQualityConfigSet(&gDpsMenuOpt);
+App_usb_dpslib.c (sphost\customization\hostfw\ui\usb):	puiPara->DPSQuality   =DPS_PAPER_QUALITY_AUTO;
+App_usb_dpslib.c (sphost\customization\hostfw\ui\usb):	gDpsMenuOpt.Quality.SelOption= DPS_PAPER_QUALITY_AUTO;
+App_usb_dpslib.h (sphost\customization\hostfw\include):#define DPS_PAPER_QUALITY_DEFAULT    DPS_PAPER_QUALITY_AUTO
+App_usb_dpslib.h (sphost\customization\hostfw\include):	dpsMenuItemEn_t Quality;
+App_usb_dpslib.h (sphost\customization\hostfw\include):	DPS_PAPER_QUALITY_AUTO	 	= 0x00,
+App_usb_dpslib.h (sphost\customization\hostfw\include):	DPS_PAPER_QUALITY_FINE  	= 0x01,
+App_usb_dpslib.h (sphost\customization\hostfw\include):	DPS_PAPER_QUALITY_NORMAL 	= 0x02,
+App_usb_dpslib.h (sphost\customization\hostfw\include):	DPS_PAPER_QUALITY_DRAFT	 	= 0x03,
+App_usb_dpslib.h (sphost\customization\hostfw\include):	DPS_PAPER_QUALITY_TOTAL	 	= 0x04,
+App_usb_dpslib.h (sphost\customization\hostfw\include):	DPS_QUALITY_AUTO		= 0x00,
+App_usb_dpslib.h (sphost\customization\hostfw\include):	DPS_QUALITY_NORMAL	= 0x01,
+App_usb_dpslib.h (sphost\customization\hostfw\include):	DPS_QUALITY_DRAFT		= 0x02,
+App_usb_dpslib.h (sphost\customization\hostfw\include):	DPS_QUALITY_FINE		= 0x03,
+App_usb_dpslib.h (sphost\customization\hostfw\include):	DPS_QUALITY_TOTAL		= 0x04,
+App_usb_dpslib.h (sphost\customization\hostfw\include):	UINT32 Quality[DPS_QUALITY_TOTAL];		
+App_usb_dpslib.h (sphost\customization\hostfw\include):#define PIMA_QUALITY_AUTO					0x50000000
+App_usb_dpslib.h (sphost\customization\hostfw\include):#define PIMA_QUALITY_NORMAL				0x50010000
+App_usb_dpslib.h (sphost\customization\hostfw\include):#define PIMA_QUALITY_DRAFT					0x50020000
+App_usb_dpslib.h (sphost\customization\hostfw\include):#define PIMA_QUALITY_FINE					0x50030000
+App_usb_dpslib.h (sphost\customization\hostfw\include):void appUsbDps_PaperQualityCapabilityGet(PdpsMenuOption_t DpsCapOption);
+App_usb_dpslib.h (sphost\customization\hostfw\include):void appUsbDps_PaperQualityConfigSet(PdpsMenuOption_t DpsCapOption);
+App_usb_dps_osd.c (sphost\customization\hostfw\ui\usb):		case DPS_MENU_QUALITY:
+App_usb_dps_osd.h (sphost\customization\hostfw\ui\usb):	DPS_MENU_QUALITY		=0x03,
+App_user_setting.c (sphost\customization\hostfw\service\misc):	puiPara->ImageQuality = QUALITY_DEFAULT;
+App_user_setting.c (sphost\customization\hostfw\service\misc):	puiPara->VideoQuality = QUALITY_DEFAULT;
+App_user_setting.c (sphost\customization\hostfw\service\misc):	puiPara->DPSQuality   =DPS_PAPER_QUALITY_DEFAULT;
+App_user_setting.h (sphost\customization\hostfw\include):	UINT8	nQuality;
+App_video.h (sphost\customization\hostfw\include):void appVideoStreamPerByteSet(UINT32 size_idx,UINT32 quality_idx ,UINT32 isSdCard);
+App_video.h (sphost\customization\hostfw\include):void appVideoSetQuality(UINT8 idx);
+App_video_osd.c (sphost\customization\hostfw\ui\video):				appViewOsd_VideoQtyDraw(TRUE, puiPara->VideoQuality);
+App_video_osd.c (sphost\customization\hostfw\ui\video):				appViewOsd_VideoQtyDraw(TRUE, puiPara->VideoQuality);
+App_video_record.c (sphost\customization\hostfw\ui\video):	 myTag.temporal_quality = 0x200;
+App_video_record.c (sphost\customization\hostfw\ui\video):	 myTag.spatial_quality = 0x200;
+App_video_setting.c (sphost\customization\hostfw\ui\video):	UINT32 quality_idx ,
+App_video_setting.c (sphost\customization\hostfw\ui\video):	UINT8 qualityRatio[5][3]={{17,14,11},               //`1080P
+App_video_setting.c (sphost\customization\hostfw\ui\video):	UINT32 mjpgQualityRatio[5] = {150, 110, 130, 50, 30};
+App_video_setting.c (sphost\customization\hostfw\ui\video):			gVideoCB.streamBytesPerSec = qualityRatio[size_idx][quality_idx]*1000000/8;
+App_video_setting.c (sphost\customization\hostfw\ui\video):			gVideoCB.streamBytesPerSec = (isSdCard) ? (mjpgQualityRatio[size_idx]*30*1024) : (mjpgQualityRatio[size_idx]*30*1024);
+App_video_setting.c (sphost\customization\hostfw\ui\video):			gVideoCB.streamBytesPerSec =  qualityRatio[size_idx][quality_idx]*1000000/8;
+App_video_setting.c (sphost\customization\hostfw\ui\video):			gVideoCB.streamBytesPerSec = (isSdCard) ? (mjpgQualityRatio[size_idx]*30*1024) : (mjpgQualityRatio[size_idx]*30*1024);
+App_video_setting.c (sphost\customization\hostfw\ui\video):			gVideoCB.streamBytesPerSec =  qualityRatio[size_idx][quality_idx]*1000000/8;
+App_video_setting.c (sphost\customization\hostfw\ui\video):			gVideoCB.streamBytesPerSec = (isSdCard) ? (mjpgQualityRatio[size_idx]*30*1024) : (mjpgQualityRatio[size_idx]*30*1024);
+App_video_setting.c (sphost\customization\hostfw\ui\video):			gVideoCB.streamBytesPerSec =  qualityRatio[size_idx][quality_idx]*1000000/8;
+App_video_setting.c (sphost\customization\hostfw\ui\video):			gVideoCB.streamBytesPerSec = (isSdCard) ? (mjpgQualityRatio[size_idx]*30*1024) : (mjpgQualityRatio[size_idx]*30*1024);
+App_video_setting.c (sphost\customization\hostfw\ui\video):			gVideoCB.streamBytesPerSec =  qualityRatio[size_idx][quality_idx]*1000000/8;
+App_video_setting.c (sphost\customization\hostfw\ui\video):			gVideoCB.streamBytesPerSec = (isSdCard) ? (mjpgQualityRatio[size_idx]*30*1024) : (mjpgQualityRatio[size_idx]*30*1024);
+App_video_setting.c (sphost\customization\hostfw\ui\video):appVideoSetQuality(
+App_video_view.c (sphost\customization\hostfw\ui\video):		appVideoStreamPerByteSet(puiPara->VideoSize,puiPara->VideoQuality, IS_CARD_EXIST);
+App_video_view.c (sphost\customization\hostfw\ui\video):		appVideoStreamPerByteSet(puiPara->VideoSize, uiPara->VideoQuality, IS_CARD_EXIST);
+App_video_view.c (sphost\customization\hostfw\ui\video):	extern void appVideoSetQuality(UINT8 idx);
+App_video_view.c (sphost\customization\hostfw\ui\video):	appVideoSetQuality(puiPara->VideoQuality);
+App_view_osd.c (sphost\customization\hostfw\ui\still):UINT16 QualityIcon[]=
+App_view_osd.c (sphost\customization\hostfw\ui\still):	ID_ICON_QUALITY_SUPER_FINE, 
+App_view_osd.c (sphost\customization\hostfw\ui\still):	ID_ICON_QUALITY_FINE,
+App_view_osd.c (sphost\customization\hostfw\ui\still):	ID_ICON_QUALITY
+App_view_osd.c (sphost\customization\hostfw\ui\still):		appViewOsd_PicQtyDraw(TRUE, puiPara->ImageQuality);
+App_view_osd.c (sphost\customization\hostfw\ui\still):		appViewOsd_PicQtyDraw(FALSE, puiPara->ImageQuality);
+App_view_osd.c (sphost\customization\hostfw\ui\still):		if(ViewOsdPresentStatus&VIEW_OSD_PRESENT_QUALITY && lastRecord==nPicQty) 
+App_view_osd.c (sphost\customization\hostfw\ui\still):		if(ViewOsdPresentStatus&VIEW_OSD_PRESENT_QUALITY && lastRecord!=nPicQty) 
+App_view_osd.c (sphost\customization\hostfw\ui\still):		ViewOsdPresentStatus |= VIEW_OSD_PRESENT_QUALITY;
+App_view_osd.c (sphost\customization\hostfw\ui\still):			case UI_QUALITY_NORMAL:
+App_view_osd.c (sphost\customization\hostfw\ui\still):				//appOsdLib_OsdLayIconDraw(APPVIEW_PICQTY_X, APPVIEW_PICQTY_Y, SP5K_GFX_ALIGN_TOP_LEFT,  ID_ICON_QUALITY);
+App_view_osd.c (sphost\customization\hostfw\ui\still):				appIconShow(ID_ICON_QUALITY,ICON_SHOW,SP5K_GFX_ALIGN_TOP_LEFT);
+App_view_osd.c (sphost\customization\hostfw\ui\still):			case UI_QUALITY_FINE:
+App_view_osd.c (sphost\customization\hostfw\ui\still):				//appOsdLib_OsdLayIconDraw(APPVIEW_PICQTY_X, APPVIEW_PICQTY_Y, SP5K_GFX_ALIGN_TOP_LEFT,  ID_ICON_QUALITY_FINE);
+App_view_osd.c (sphost\customization\hostfw\ui\still):				appIconShow(ID_ICON_QUALITY_FINE,ICON_SHOW,SP5K_GFX_ALIGN_TOP_LEFT);
+App_view_osd.c (sphost\customization\hostfw\ui\still):			case UI_QUALITY_SUPERFINE:
+App_view_osd.c (sphost\customization\hostfw\ui\still):				//appOsdLib_OsdLayIconDraw(APPVIEW_PICQTY_X, APPVIEW_PICQTY_Y, SP5K_GFX_ALIGN_TOP_LEFT,  ID_ICON_QUALITY_SUPER_FINE);
+App_view_osd.c (sphost\customization\hostfw\ui\still):				appIconShow(ID_ICON_QUALITY_SUPER_FINE,ICON_SHOW,SP5K_GFX_ALIGN_TOP_LEFT);
+App_view_osd.c (sphost\customization\hostfw\ui\still):	else if(ViewOsdPresentStatus&VIEW_OSD_PRESENT_QUALITY) 
+App_view_osd.c (sphost\customization\hostfw\ui\still):		ViewOsdPresentStatus &= ~VIEW_OSD_PRESENT_QUALITY;
+App_view_osd.c (sphost\customization\hostfw\ui\still):		appOsdIconPosGet(ID_ICON_QUALITY_SUPER_FINE,&x,&y);
+App_view_osd.c (sphost\customization\hostfw\ui\still):		if(ViewOsdPresentStatus&VIEW_OSD_PRESENT_QUALITY && lastRecord==nPicQty) 
+App_view_osd.c (sphost\customization\hostfw\ui\still):		if(ViewOsdPresentStatus&VIEW_OSD_PRESENT_QUALITY && lastRecord!=nPicQty) 
+App_view_osd.c (sphost\customization\hostfw\ui\still):		ViewOsdPresentStatus |= VIEW_OSD_PRESENT_QUALITY;
+App_view_osd.c (sphost\customization\hostfw\ui\still):			case UI_QUALITY_NORMAL:
+App_view_osd.c (sphost\customization\hostfw\ui\still):				//appOsdLib_OsdLayIconDraw(APPVIEW_PICQTY_X-162, APPVIEW_PICQTY_Y+2, SP5K_GFX_ALIGN_TOP_LEFT,  ID_ICON_QUALITY);
+App_view_osd.c (sphost\customization\hostfw\ui\still):				appIconShow(ID_ICON_QUALITY,ICON_SHOW,SP5K_GFX_ALIGN_TOP_LEFT);
+App_view_osd.c (sphost\customization\hostfw\ui\still):			case UI_QUALITY_FINE:
+App_view_osd.c (sphost\customization\hostfw\ui\still):				//appOsdLib_OsdLayIconDraw(APPVIEW_PICQTY_X-162, APPVIEW_PICQTY_Y+2, SP5K_GFX_ALIGN_TOP_LEFT,  ID_ICON_QUALITY_FINE);
+App_view_osd.c (sphost\customization\hostfw\ui\still):				appIconShow(ID_ICON_QUALITY_FINE,ICON_SHOW,SP5K_GFX_ALIGN_TOP_LEFT);
+App_view_osd.c (sphost\customization\hostfw\ui\still):			case UI_QUALITY_SUPERFINE:
+App_view_osd.c (sphost\customization\hostfw\ui\still):				//appOsdLib_OsdLayIconDraw(APPVIEW_PICQTY_X-162, APPVIEW_PICQTY_Y+2, SP5K_GFX_ALIGN_TOP_LEFT,  ID_ICON_QUALITY_SUPER_FINE);
+App_view_osd.c (sphost\customization\hostfw\ui\still):				appIconShow(ID_ICON_QUALITY_SUPER_FINE,ICON_SHOW,SP5K_GFX_ALIGN_TOP_LEFT);
+App_view_osd.c (sphost\customization\hostfw\ui\still):	else if(ViewOsdPresentStatus&VIEW_OSD_PRESENT_QUALITY) 
+App_view_osd.c (sphost\customization\hostfw\ui\still):		ViewOsdPresentStatus &= ~VIEW_OSD_PRESENT_QUALITY;
+App_view_osd.c (sphost\customization\hostfw\ui\still):		appOsdIconPosGet(ID_ICON_QUALITY,&x,&y);
+App_view_osd.h (sphost\customization\hostfw\include):	mode  flash  Af  drive  	   stabilizer  size  quality  image-number  	
+App_view_osd.h (sphost\customization\hostfw\include):#define VIEW_OSD_PRESENT_QUALITY				0x00000040
+App_view_param.c (sphost\customization\hostfw\service\misc):	DEF_VIEW_PRM_INF(quality,				PRM_SAVE,				UI_QUALITY_FINE,		0 ),
+App_view_param.c (sphost\customization\hostfw\service\misc):	DEF_VIEW_PRM_INF(videoQuality,			PRM_SHARE|PRM_MODE_P,	UI_QUALITY_SUPERFINE, 	0 ),
+App_view_param.c (sphost\customization\hostfw\service\misc):	DEF_VIEW_PRM_INF(quality,			PRM_SHARE|PRM_MODE_P,		UI_QUALITY_FINE,		0 ),
+App_view_param.c (sphost\customization\hostfw\service\misc):	DEF_VIEW_PRM_INF(videoQuality,		PRM_SHARE|PRM_MODE_P,		UI_QUALITY_SUPERFINE,	0 ),
+App_view_param.c (sphost\customization\hostfw\service\misc):	DEF_VIEW_PRM_INF(quality,			PRM_SHARE|PRM_MODE_P,	0,						0 ),
+App_view_param.c (sphost\customization\hostfw\service\misc):	DEF_VIEW_PRM_INF(videoQuality,		PRM_SHARE|PRM_MODE_P,	UI_QUALITY_SUPERFINE,	0 ),
+App_view_param.c (sphost\customization\hostfw\service\misc):	DEF_VIEW_PRM_INF(quality,			PRM_SHARE|PRM_MODE_P,	0,						0 ),
+App_view_param.c (sphost\customization\hostfw\service\misc):	DEF_VIEW_PRM_INF(videoQuality,		PRM_SHARE|PRM_MODE_P,	UI_QUALITY_SUPERFINE,	0 ),
+App_view_param.c (sphost\customization\hostfw\service\misc):	DEF_VIEW_PRM_INF(quality,			PRM_SHARE|PRM_MODE_P,	0,						0 ),
+App_view_param.c (sphost\customization\hostfw\service\misc):	DEF_VIEW_PRM_INF(videoQuality,		PRM_SHARE|PRM_MODE_P,	UI_QUALITY_SUPERFINE, 	0 ),
+App_view_param.c (sphost\customization\hostfw\service\misc):	DEF_VIEW_PRM_INF(quality,			PRM_NOSEL,				UI_QUALITY_SUPERFINE,	0 ),
+App_view_param.c (sphost\customization\hostfw\service\misc):	DEF_VIEW_PRM_INF(videoQuality,		PRM_SHARE|PRM_MODE_P,	UI_QUALITY_SUPERFINE, 	0 ),
+App_view_param.c (sphost\customization\hostfw\service\misc):	DEF_VIEW_PRM_INF(quality,			PRM_SHARE|PRM_MODE_P,	0,						0 ),
+App_view_param.c (sphost\customization\hostfw\service\misc):	DEF_VIEW_PRM_INF(videoQuality,		PRM_SHARE|PRM_MODE_P,	UI_QUALITY_SUPERFINE, 	0 ),
+App_view_param.c (sphost\customization\hostfw\service\misc):	DEF_VIEW_PRM_INF(quality,			PRM_NOUSE,				0,						0 ),
+App_view_param.c (sphost\customization\hostfw\service\misc):	DEF_VIEW_PRM_INF(videoQuality  ,    PRM_SAVE,				UI_QUALITY_SUPERFINE,	0 ),
+App_view_param.c (sphost\customization\hostfw\service\misc):	DEF_VIEW_PRM_INF(quality,			PRM_SHARE|PRM_MODE_P,	0,						0 ),
+App_view_param.c (sphost\customization\hostfw\service\misc):	DEF_VIEW_PRM_INF(videoQuality,		PRM_SHARE|PRM_MODE_P,	UI_QUALITY_SUPERFINE,	0 ),
+App_view_param.c (sphost\customization\hostfw\service\misc):	DEF_VIEW_PRM_INF(quality,			PRM_SHARE|PRM_MODE_P,	0,						0 ),
+App_view_param.c (sphost\customization\hostfw\service\misc):	DEF_VIEW_PRM_INF(videoQuality,		PRM_SHARE|PRM_MODE_P,	UI_QUALITY_SUPERFINE, 	0 ),
+App_view_param.h (sphost\customization\hostfw\include):	UINT8 quality;
+App_view_param.h (sphost\customization\hostfw\include):	UINT8 videoQuality;
+App_view_param_def.h (sphost\customization\hostfw\include):#define QUALITY_DEFAULT          UI_QUALITY_SUPERFINE
+App_view_param_def.h (sphost\customization\hostfw\include):	UI_QUALITY_SUPERFINE,
+App_view_param_def.h (sphost\customization\hostfw\include):	UI_QUALITY_FINE,
+App_view_param_def.h (sphost\customization\hostfw\include):	UI_QUALITY_NORMAL,
+App_view_param_def.h (sphost\customization\hostfw\include):	UI_QUALITY_MAX,
+App_wifi_utility.c (sphost\customization\hostfw\service\network):	#else /* MJPG quality issue */
+App_wifi_utility.c (sphost\customization\hostfw\service\network):	#else /* MJPG quality issue */
+Aud_filter_def.h (spca6330\inc\middleware):	float  Qfactor;  /**< Quality factor. */
+Aud_filter_def.h (spca6330\inc\middleware):	float  Qfactor;  /**< Quality factor. */
+Command.c (sphost\customization):void jpeg_add_quant_table(int quality, unsigned char *qtable);
+iconPV.ini (sphost\resource\a\ro_res\ui\icon_src\iconlayout):QUALITY.bmp 200 2
+iconPV.ini (sphost\resource\a\ro_res\ui\icon_src\iconlayout):QUALITY_FINE.bmp 200 2
+iconPV.ini (sphost\resource\a\ro_res\ui\icon_src\iconlayout):QUALITY_SUPER_FINE.bmp 200 2
+iconPV_HDMI.ini (sphost\resource\a\ro_res\ui\icon_src\iconlayout):QUALITY.bmp 448 10
+iconPV_HDMI.ini (sphost\resource\a\ro_res\ui\icon_src\iconlayout):QUALITY_SUPER_FINE.bmp 448 10
+iconPV_HDMI.ini (sphost\resource\a\ro_res\ui\icon_src\iconlayout):QUALITY_FINE.bmp 448 10
+iconVid.ini (sphost\resource\a\ro_res\ui\icon_src\iconlayout):QUALITY_SUPER_FINE.bmp 38 4
+iconVid.ini (sphost\resource\a\ro_res\ui\icon_src\iconlayout):QUALITY.bmp 38 4
+iconVid.ini (sphost\resource\a\ro_res\ui\icon_src\iconlayout):QUALITY_FINE.bmp 38 4
+iconVid_HDMI.ini (sphost\resource\a\ro_res\ui\icon_src\iconlayout):QUALITY_SUPER_FINE.bmp 82 10
+iconVid_HDMI.ini (sphost\resource\a\ro_res\ui\icon_src\iconlayout):QUALITY.bmp 82 10
+iconVid_HDMI.ini (sphost\resource\a\ro_res\ui\icon_src\iconlayout):QUALITY_FINE.bmp 82 10
+Media_def.h (spca6330\inc\middleware):	UINT32	temporal_quality;
+Media_def.h (spca6330\inc\middleware):	UINT32 	spatial_quality;
+Sockets.h (sphost\customization\hostfw\cathyware\inc\net\lwip): * parameters of the quality of service desired.  These parameters are
+Sp5k_pb_api.h (spca6330\inc\api):	SP5K_SPB_SCALE_QUALITY,
+Sp5k_pb_api.h (spca6330\inc\api):    SP5K_SPB_SCALE_QUALITY_FASTEST=0,  /*use GPE*/
+Sp5k_pb_api.h (spca6330\inc\api):    SP5K_SPB_SCALE_QUALITY_FAST, 	/*use GPE*/
+Sp5k_pb_api.h (spca6330\inc\api):    SP5K_SPB_SCALE_QUALITY_NORMAL, 	/*use GPE Bilinear*/
+Sp5k_pb_api.h (spca6330\inc\api):    SP5K_SPB_SCALE_QUALITY_GOOD, /*use GPE Bilinear*/
+Sp5k_pb_api.h (spca6330\inc\api):    SP5K_SPB_SCALE_QUALITY_BEST, /*use JPEG*/
+Sp5k_pb_api.h (spca6330\inc\api):    SP5K_SPB_SCALE_QUALITY_MAX,
+Sp5k_pb_api.h (spca6330\inc\api):} sp5kPbZoomScaleQuality_e;
+Sp5k_usb_api.h (spca6330\inc\api):	SP5K_SET_QUALITY       = 0x0000,
+Sp5k_usb_api.h (spca6330\inc\api):	SP5K_Quality_Default            = 0x50000000,
+Sp5k_usb_api.h (spca6330\inc\api):	SP5K_Quality_Normal             = 0x50010000,
+Sp5k_usb_api.h (spca6330\inc\api):	SP5K_Quality_Draft              = 0x50020000,
+Sp5k_usb_api.h (spca6330\inc\api):	SP5K_Quality_Fine               = 0x50030000,
+Usb_pima_code.h (spca6330\inc\middleware):	USB_PIMA_OPC_ENCODING_QUALITY					= 0xDEA0,

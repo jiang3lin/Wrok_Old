@@ -1,0 +1,4 @@
+---- appGSensorFlipGet Matches (3 in 3 files) ----
+app_gSensor.c (sphost\customization\hostfw\device):BOOL appGSensorFlipGet(void)
+app_gSensor.h (sphost\include\gsensor):BOOL appGSensorFlipGet(void);
+App_scdv_global.c (sphost\customization\hostfw\ui\sys):			appCdspFlipSet(appGSensorFlipGet(), Immediate);

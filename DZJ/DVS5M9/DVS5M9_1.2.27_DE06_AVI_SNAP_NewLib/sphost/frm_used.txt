@@ -1,0 +1,22 @@
+FRM 使用方法介绍：
+【1】，Program All: 烧录FW和所有的Rsv
+
+				Backup/Restore RSV:回读烧录进去的RSV
+
+	   			可在......\download\frm_user.ini中[READBACK_FILELIST]后面配置需要读取的文件
+
+
+
+【2】, F/W + Partial RSV: 烧录FW和部分 RSV
+
+	1，在Advanced选项卡中，选中需要重新烧录的文件，右键->select，此时选中文件会被标记为红色。
+
+	2，回到Basic选项卡中，选择F/W + Partial RSV，点击ISP烧录。
+
+
+
+【3】，F/W Only:只烧录FW 
+
+
+【4】，RSV Ony:只烧录Rsv
+

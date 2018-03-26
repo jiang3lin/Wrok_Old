@@ -1,0 +1,34 @@
+tool\
+
+- 7z.exe/7za.exe : 7-zip windows & cygwin version
+
+- addhdr.exe : Insert SP5K bin header
+
+- addr2func.exe : helper utility to convert FW address to function
+
+- fif.exe : FileInFile utility
+
+- objdump.exe
+
+- sumpatch.exe : FW binary checksum patcher
+
+- t2b.exe : Text-To-Binary converter
+
+- zlib.bat : zip SP5K environment (5210 + tool folder)
+
+vc83\
+- config.sh : configure vc83 hardware & project
+config.sh vca370z
+
+- release.sh : release script to build everything and zip everything
+release.sh
+
+- zbin.sh : zip download folder & elf+map file
+zip bin to .7z: zbin.sh 
+zip bin to .zip: zbin.sh zip
+
+- zvc83.sh : zip vc83 sources
+usage: same as zbin.sh
+
+- addr.sh : find function name of specified address
+addr.sh 8007146c 80082032

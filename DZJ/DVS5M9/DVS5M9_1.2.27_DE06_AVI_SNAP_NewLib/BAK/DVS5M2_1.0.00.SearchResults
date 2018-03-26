@@ -1,0 +1,16 @@
+---- SdvPhotoNormalSize Matches (15 in 8 files) ----
+App_menu_event_dvs5m2.c (sphost\customization\hostfw\ui\menu):UINT32 appMenuEvt_SdvPhotoNormalSizeSet (UINT8 layer, UINT8 item, UINT32 msg, UINT32 para)
+App_ptp.c (sphost\customization\hostfw\sys):            //printf("---cb get image size=%d\n",puiPara->SdvPhotoNormalSize)	;
+App_ptp.c (sphost\customization\hostfw\sys):                if(PTPUI_Map_Size[i].UiIndex ==puiPara->SdvPhotoNormalSize) //puiPara->ImageSize
+App_ptp.c (sphost\customization\hostfw\sys):			  	puiPara->SdvPhotoNormalSize=	nPhotoSizeIndex;		  	
+App_ptp.c (sphost\customization\hostfw\sys):			  	printf("--photo size setting is=%d =%d\n",puiPara->SdvPhotoNormalSize,UIIdx);
+App_scdv_global.c (sphost\customization\hostfw\ui\sys):			if(puiPara->SdvPhotoNormalSize == UI_SCDV_PHOTO_NORMAL_SIZE_2M_16X9)
+App_sdv_still_view.c (sphost\customization\hostfw\ui\still):		if(puiPara->SdvPhotoNormalSize == UI_SCDV_PHOTO_NORMAL_SIZE_2M_16X9)
+App_sdv_still_view.c (sphost\customization\hostfw\ui\still):	switch(puiPara->SdvPhotoNormalSize)
+App_sdv_still_view.c (sphost\customization\hostfw\ui\still):	switch(puiPara->SdvPhotoNormalSize)
+App_sdv_still_view.c (sphost\customization\hostfw\ui\still):			switch(puiPara->SdvPhotoNormalSize)
+App_sdv_still_view.c (sphost\customization\hostfw\ui\still):	//if(puiPara->SdvPhotoNormalSize==UI_SCDV_PHOTO_NORMAL_SIZE_16M)
+App_still_setting.c (sphost\customization\hostfw\ui\still):	switch(puiPara->SdvPhotoNormalSize)
+App_ui_para_dsc.h (sphost\customization\hostfw\include):	UINT8 SdvPhotoNormalSize;		/* Auto create code zone, don't modify or delete! */
+App_ui_para_dvs5m2.h (sphost\customization\hostfw\include):	UINT8 SdvPhotoNormalSize;		/* Auto create code zone, don't modify or delete! */
+App_user_setting.c (sphost\customization\hostfw\service\misc):	puiPara->SdvPhotoNormalSize = UI_SCDV_PHOTO_NORMAL_SIZE_5M;

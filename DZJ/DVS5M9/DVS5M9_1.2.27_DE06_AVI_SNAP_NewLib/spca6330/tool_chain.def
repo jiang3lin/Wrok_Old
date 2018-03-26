@@ -1,0 +1,1649 @@
+#/**************************************************************************
+# *
+# *       Copyright (c) 2002-2012 by iCatch Technology, Inc.
+# *
+# *  This software is copyrighted by and is the property of iCatch
+# *  Technology, Inc.. All rights are reserved by iCatch Technology, Inc..
+# *  This software may only be used in accordance with the corresponding
+# *  license agreement. Any unauthorized use, duplication, distribution,
+# *  or disclosure of this software is expressly forbidden.
+# *
+# *  This Copyright notice MUST not be removed or modified without prior
+# *  written consent of iCatch Technology, Inc..
+# *
+# *  iCatch Technology, Inc. reserves the right to modify this software
+# *  without notice.
+# *
+# *  iCatch Technology, Inc.
+# *  19-1, Innovation First Road, Science-Based Industrial Park,
+# *  Hsin-Chu, Taiwan.
+# *
+# *  Author: Anmin Deng
+# *
+# **************************************************************************/
+TOOLCHAIN     := GCC_3.4.3
+#TOOLCHAIN     := ICATCHTEK
+#NO: real chip, maskrom; YES: FPGA
+ifndef FPGA
+FPGA := NO
+endif
+
+ifndef CFLAGS
+CFLAGS :=
+endif
+
+ifndef ASFLAGS
+ASFLAGS :=
+endif
+
+ifeq ($(TOOLCHAIN), GXX_SOURCERY)
+
+ARCH := arm
+PREFIX := c:/progra~1/codeso~1/source~1/bin/arm-none-linux-gnueabi-
+CFLAGS += -mcpu=arm926ej-s
+CFLAGS += -mlittle-endian
+# avoid using sourcery provided libc too bloat xlocale and ctype
+# CFLAGS += -fno-builtin -fno-inline -D__NO_CTYPE
+
+else ifeq ($(TOOLCHAIN), ICATCHTEK)
+
+ARCH := mips
+
+PREFIX := $(firstword $(foreach e,1 2 3 4 5 6 7 8 9,$(wildcard /cygdrive/c/Progra~$(e)/iCatchtek/tool-chain4/bin/mipsel-icatchtek-elf-)))
+
+CFLAGS += -march=lexra5ke
+CFLAGS += -msym32
+CFLAGS += -membedded-data
+CFLAGS += -muninit-const-in-rodata
+CFLAGS += -mcode-readable=pcrel #no
+CFLAGS += -mno-unaligned-insn
+CFLAGS += -fno-builtin-memcpy
+CFLAGS += -fno-common
+CFLAGS += -EL
+
+else ifeq ($(TOOLCHAIN), GCC_3.4.3)
+
+ARCH := mips
+
+ifdef TOOLCHAIN_RAM_DRIVE
+PREFIX := $(TOOLCHAIN_RAM_DRIVE):/gnu/bin/
+else
+PREFIX := $(firstword $(foreach e,1 2 3 4 5 6 7 8 9,$(wildcard C:/Progra~$(e)/Sunplus/MIDE-V2.2.0/gnu/bin/)))
+endif
+
+CFLAGS += -mBongoIII
+CFLAGS += -mno-unaligned-insn
+CFLAGS += -fno-builtin-memcpy
+CFLAGS += -fno-common
+CFLAGS += -EL
+
+CFLAGS += -DPATCH_DUALSTREAM_JPGENC_SYNC_H264SOF=1
+CFLAGS += -DPATCH_DUALSTREAM_JPGENC_SYNC_H264SOF_STATISTIC=0
+
+## 
+## Add macro for special project which has no PB/USB/DISP. (Default: 0 for these 3 macro)
+##
+NO_PB   := 0
+NO_USB  := 0
+NO_DISP := 0
+ifeq ($(NO_PB), 1)
+CFLAGS += -DNO_PB=1
+endif
+ifeq ($(NO_USB), 1)
+CFLAGS += -DNO_USB=1
+endif
+ifeq ($(NO_DISP), 1)
+CFLAGS += -DNO_DISP=1
+endif
+
+## 
+## Add macro for controlling output of C preprocess file. (1: Output intermediate file, 0: no output intermediate file (Default))
+##
+OUTPUT_C_PREPROCESS_FILE := 0
+
+else
+
+ARCH := mips
+PREFIX := C:/Progra~1/Sunplus/MIDE/bin/
+CFLAGS += -mcpu=LX5180
+CFLAGS += -fno-common
+CFLAGS += -EL
+
+endif #$(TOOLCHAIN)
+
+CFLAGS += -DUART_BAUD=115200
+CFLAGS += -DSPCA5110=1
+CFLAGS += -DSPCA5210=1
+CFLAGS += -DSPCA5310=1
+CFLAGS += -DSPCA5330=1
+CFLAGS += -DSPCA6330=1
+CFLAGS += -DCHIP_ID=6330
+ifeq ($(H264ACE), YES)
+CFLAGS += -DH264ACE=1
+endif
+
+ifeq ($(FPGA), YES)
+CFLAGS += -DMASTER_CLK=10
+CFLAGS += -DFPGA=1
+else
+CFLAGS += -DMASTER_CLK=48
+endif
+
+#system stack defines
+CFLAGS += -DSYS_STACK_SIZE=1024 #at least 512, must be power of 2
+CFLAGS += -DSYS_STACK_BOT=0xd0002000 #all stack in the same +-32K block
+CFLAGS += -DSYS_DEAD_FRAME=0xd0001800 #all stack in the same +-32K block
+
+ASFLAGS += -x assembler-with-cpp
+ASFLAGS += -D__ASSEMBLER__=1     # why CPP manual said this is predefined???
+
+# sorry, it is ugly but i don t where to setup it
+ifeq ($(NO_MOUNT_TASK), YES)
+CFLAGS += -DNO_MOUNT_TASK
+endif
+
+PLATFORM := spca6330
+
+CC      := $(PREFIX)gcc
+AR      := $(PREFIX)ar
+OBJDUMP := $(PREFIX)objdump
+OBJCOPY := $(PREFIX)objcopy
+SIZE    := $(PREFIX)size
+NM      := $(PREFIX)nm
+CXX     := $(PREFIX)g++
+ECHO    := echo
+CP      := /bin/cp -f
+MV      := /bin/mv -f
+MKDIR   := /bin/mkdir -p
+RM      := /bin/rm -f
+RMR     := /bin/rm -rf
+CAT     := /bin/cat
+TOUCH   := /bin/touch
+SED     := /bin/sed
+GREP    := /bin/grep
+DIFF    := /usr/bin/diff
+SORT    := /usr/bin/sort
+DOXYGEN := /usr/bin/doxygen
+
+
+# defining functions in makefiles for multi boot support
+
+ifndef TOOL_PATH
+TOOL_PATH := $(ROOT)/../tool
+endif
+
+# /** \brief $(call numeric-sort,$(1)), numeric sorting unique level values
+#  * \param $(1), a space-separated numeric list of stage levels
+#  */
+numeric-sort = $(shell /bin/sh -c \
+		"$(ECHO) $(strip $(1)) | $(SED) -e 's/ /\n/g' | $(SORT) -g -u")
+
+# /** \brief $(call ckeyget,$(1),$(2)), to get define value in c header
+#  * \param $(1), the c (header) file
+#  * \param $(2), the key name
+#  * \return the <value> in line "#define $(2) <value>" in file $(1)
+#  */
+ckeyget = $(shell $(TOOL_PATH)/ckeyget.sh $(1) $(2))
+
+# /** \brief $(call stage-value,$(1),$(2)),
+#  * to find all the stage values of the multi boot stage name list
+#  * \note the 3rd argument of $(foreach ..) must have no leading space
+#  * \param $(1), the header file (multiboot_api.h) defines stage values
+#  * \param $(2), a space-separated list of multi boot stage names
+#  */
+stage-value = $(foreach lvl,$(2),$(call ckeyget,$(1),$(lvl)))
+
+# /** \brief $(call find-stage-list,$(1),$(2)),
+#  * to find all the multie boot levels used in $(2) file list
+#  * \param $(1), the header file (multiboot_api.h) defines stage values
+#  * \param $(2), a space-separated list of source files
+#  */
+find-stage-list = $(call numeric-sort,1 $(call stage-value,$(1), \
+	$(sort $(shell /bin/sh -c "$(GREP) '^[[:blank:]]*\#[[:blank:]]*if' $(2) \
+	| $(GREP) -o -w 'MULTI_BOOT_STAGE_\w\+'"))))
+
+# /** \brief $(call objs-attach-stage,$(1),$(2),$(3)),
+#  * to attach suffix to stage obj files in obj list for building stage $(1)
+#  * \param $(1), the stage value to build
+#  * \param $(2), a space-separated list of all the prerequist obj files
+#  * \param $(3), a space-separated list of stage obj files
+#  * \return a list of obj files $(2) with stage suffix attached for stage $(1)
+#  */
+objs-attach-stage = $(foreach obj,$(2),\
+		$(if $(filter $(obj),$(3)),$(obj:.o=.stage$(1).o),$(obj)))
+
+
+# canceling implicit rules to build source files
+%.tmpl: ;
+%.def: ;
+# %.c: ;
+# %.S: ;
+# %.h: ;
+%.ld: ;
+%.txt: ;
+%.TXT: ;
+%.dat: ;
+%.DAT: ;
+%.bin: ;
+%.BIN: ;
+%.bak: ;
+%.exe: ;
+%.io: ;
+# %.d: ;
+# %.o: ;
+# %.a: ;
+# %.elf: ;
+
+# -- Common Message, please don t remove. --
+MSG_SPLIT_LINE =
+#MSG_COMPILING = @$(ECHO) "   Compiling <$<>"
+MSG_COMPILING = @$(ECHO) "   Compiling < $< > to < $(notdir $@) >"
+MSG_GOAL_OK = @$(ECHO) "*** $@ is built successfully! ***"
+
+
+# -- template of generic goal rules --
+define GEN_GOAL_RULES
+
+ #add by kevin for replace "-O2 -Os" into "-g".
+ ifeq ($$(GDB),YES)
+  CFLAGS := $$(shell /bin/sh -c "$$(ECHO) $$(CFLAGS) | $$(SED) -e 's/-O[123s]/-g/g'")
+ endif
+
+ ifndef HOST_ROOT
+  ifeq ($(FPGA), YES)
+   INST_GOAL_DIR := $$(ROOT)/lib.fpga
+  else
+   INST_GOAL_DIR := $$(ROOT)/lib
+  endif
+  ifndef APP_BUILD
+  ifdef GOAL
+   INST_STAGE_DIR := $$(INST_GOAL_DIR)/_multiboot.bak/$$(notdir $$(GOAL:.a=))
+  endif #GOAL
+  endif #ifndef APP_BUILD
+ endif #ifndef HOST_ROOT
+
+ GOAL_OBJS := $$(OBJS) $$(REV_OBJS) $$(EMPTY_IMPL_OBJS)
+
+ #---------------------------------------------------------------------------
+ # GDB definitions
+ #---------------------------------------------------------------------------
+ ifdef GDB_OBJS
+  INST_GDB_DIR := $$(INST_GOAL_DIR)
+
+  GDB_GOAL := $$(GOAL:.a=.gdb.a)
+  GDB_ALL_OBJS := $$(GDB_OBJS:.o=.gdb.o)
+  GDB_INST_STAGE_DIR := $$(INST_GDB_DIR)/_multiboot.bak/$$(notdir $$(GDB_GOAL:.a=))
+ else
+  GDB_GOAL :=
+  GDB_ALL_OBJS :=
+ endif #GDB_OBJS
+
+ #---------------------------------------------------------------------------
+ # DBG definitions
+ #---------------------------------------------------------------------------
+ ifdef DBG_OBJS
+  INST_DBG_DIR := $$(INST_GOAL_DIR)
+
+  DBG_GOAL := $$(GOAL:.a=.dbg.a)
+  DBG_ALL_OBJS := $$(DBG_OBJS:.o=.dbg.o)
+  DBG_INST_STAGE_DIR := $$(INST_DBG_DIR)/_multiboot.bak/$$(notdir $$(DBG_GOAL:.a=))
+ else
+  DBG_GOAL :=
+  DBG_ALL_OBJS :=
+ endif #DBG_OBJS
+
+ #---------------------------------------------------------------------------
+ # FUJI definitions
+ #---------------------------------------------------------------------------
+ ifdef FUJI_DBG_OBJS
+  INST_FUJI_DBG_DIR := $$(INST_GOAL_DIR)
+
+  FUJI_DBG_GOAL := $$(GOAL:.a=.ff.dbg.a)
+  FUJI_DBG_ALL_OBJS := $$(FUJI_DBG_OBJS:.o=.ff.dbg.o)
+  FUJI_DBG_INST_STAGE_DIR := $$(INST_FUJI_DBG_DIR)/_multiboot.bak/$$(notdir $$(FUJI_DBG_GOAL:.a=))
+ else
+  FUJI_DBG_GOAL :=
+  FUJI_DBG_ALL_OBJS :=
+ endif #FUJI_DBG_OBJS
+
+ ifdef FUJI_OBJS
+  INST_FUJI_DIR := $$(INST_GOAL_DIR)
+
+  FUJI_GOAL := $$(GOAL:.a=.ff.a)
+  FUJI_ALL_OBJS := $$(FUJI_OBJS:.o=.ff.o)
+  FUJI_INST_STAGE_DIR := $$(INST_FUJI_DIR)/_multiboot.bak/$$(notdir $$(FUJI_GOAL:.a=))
+ else
+  FUJI_GOAL :=
+  FUJI_ALL_OBJS :=
+ endif #FUJI_OBJS
+
+ #---------------------------------------------------------------------------
+ # BLUETOOTH definitions (BT)
+ #---------------------------------------------------------------------------
+ ifdef HSUART_DBG_OBJS
+  INST_HSUART_DBG_DIR := $$(INST_GOAL_DIR)
+
+  HSUART_DBG_GOAL := $$(GOAL:.a=.hsuart.dbg.a)
+  HSUART_DBG_ALL_OBJS := $$(HSUART_DBG_OBJS:.o=.hsuart.dbg.o)
+  HSUART_DBG_INST_STAGE_DIR := $$(INST_HSUART_DBG_DIR)/_multiboot.bak/$$(notdir $$(HSUART_DBG_GOAL:.a=))
+ else
+  HSUART_DBG_GOAL :=
+  HSUART_DBG_ALL_OBJS :=
+ endif #HSUART_DBG_OBJS
+
+ ifdef HSUART_OBJS
+  INST_HSUART_DIR := $$(INST_GOAL_DIR)
+
+  HSUART_GOAL := $$(GOAL:.a=.hsuart.a)
+  HSUART_ALL_OBJS := $$(HSUART_OBJS:.o=.hsuart.o)
+  HSUART_INST_STAGE_DIR := $$(INST_HSUART_DIR)/_multiboot.bak/$$(notdir $$(HSUART_GOAL:.a=))
+ else
+  HSUART_GOAL :=
+  HSUART_ALL_OBJS :=
+ endif #HSUART_OBJS
+
+ #---------------------------------------------------------------------------
+ # BLUETOOTH multi boot definitions (BT)
+ #---------------------------------------------------------------------------
+ ifdef HSUART_DBG_STAGE_OBJS
+  ifeq (,$$(wildcard $$(MULTI_BOOT_DEF_HDR)))
+  HSUART_DBG_STAGE_LIST :=
+  HSUART_DBG_STAGE_GOALS :=
+  HSUART_DBG_STAGE_ALL_OBJS :=
+  else
+  HSUART_DBG_STAGE_LIST := $$(call find-stage-list, \
+		$$(MULTI_BOOT_DEF_HDR), \
+		$$(addprefix $$(SRC_DIR)/,$$(HSUART_DBG_STAGE_OBJS:.hsuart.dbg.o=.c)))
+
+  HSUART_DBG_STAGE_GOALS := $$(foreach n,$$(HSUART_DBG_STAGE_LIST),$$(HSUART_DBG_GOAL:.hsuart.dbg.a=.hsuart.dbg.stage$$(n).a))
+  HSUART_DBG_STAGE_ALL_OBJS := $$(foreach n,$$(HSUART_DBG_STAGE_LIST),$$(HSUART_DBG_STAGE_OBJS:.hsuart.dbg.o=.hsuart.dbg.stage$$(n).o))
+  endif
+ else
+  HSUART_DBG_STAGE_LIST :=
+  HSUART_DBG_STAGE_GOALS :=
+  HSUART_DBG_STAGE_ALL_OBJS :=
+ endif #HSUART_DBG_STAGE_OBJS
+
+ ifdef HSUART_STAGE_OBJS
+  ifeq (,$$(wildcard $$(MULTI_BOOT_DEF_HDR)))
+  HSUART_STAGE_LIST :=
+  HSUART_STAGE_GOALS :=
+  HSUART_STAGE_ALL_OBJS :=
+  else
+  HSUART_STAGE_LIST := $$(call find-stage-list, \
+		$$(MULTI_BOOT_DEF_HDR), \
+		$$(addprefix $$(SRC_DIR)/,$$(HSUART_STAGE_OBJS:.hsuart.o=.c)))
+
+  HSUART_STAGE_GOALS := $$(foreach n,$$(HSUART_STAGE_LIST),$$(HSUART_GOAL:.hsuart.a=.hsuart.stage$$(n).a))
+  HSUART_STAGE_ALL_OBJS := $$(foreach n,$$(HSUART_STAGE_LIST),$$(HSUART_STAGE_OBJS:.hsuart.o=.hsuart.stage$$(n).o))
+  endif
+ else
+  HSUART_STAGE_LIST :=
+  HSUART_STAGE_GOALS :=
+  HSUART_STAGE_ALL_OBJS :=
+ endif #HSUART_STAGE_OBJS
+
+ #---------------------------------------------------------------------------
+ # multi boot definitions
+ #---------------------------------------------------------------------------
+ ifdef STAGE_OBJS
+  ifeq (,$$(wildcard $$(MULTI_BOOT_DEF_HDR)))
+  STAGE_LIST :=
+  STAGE_GOALS :=
+  STAGE_ALL_OBJS :=
+  else
+  STAGE_LIST := $$(call find-stage-list, \
+		$$(MULTI_BOOT_DEF_HDR), \
+		$$(addprefix $$(SRC_DIR)/,$$(STAGE_OBJS:.o=.c)))
+
+  STAGE_GOALS := $$(foreach n,$$(STAGE_LIST),$$(GOAL:.a=.stage$$(n).a))
+  STAGE_ALL_OBJS := $$(foreach n,$$(STAGE_LIST),$$(STAGE_OBJS:.o=.stage$$(n).o))
+  endif
+ else
+  STAGE_LIST :=
+  STAGE_GOALS :=
+  STAGE_ALL_OBJS :=
+ endif #STAGE_OBJS
+
+ ifdef DBG_STAGE_OBJS
+  ifeq (,$$(wildcard $$(MULTI_BOOT_DEF_HDR)))
+  DBG_STAGE_LIST :=
+  DBG_STAGE_GOALS :=
+  DBG_STAGE_ALL_OBJS :=
+  else
+  DBG_STAGE_LIST := $$(call find-stage-list, \
+		$$(MULTI_BOOT_DEF_HDR), \
+		$$(addprefix $$(SRC_DIR)/,$$(DBG_STAGE_OBJS:.dbg.o=.c)))
+
+  DBG_STAGE_GOALS := $$(foreach n,$$(DBG_STAGE_LIST),$$(DBG_GOAL:.dbg.a=.dbg.stage$$(n).a))
+  DBG_STAGE_ALL_OBJS := $$(foreach n,$$(DBG_STAGE_LIST),$$(DBG_STAGE_OBJS:.dbg.o=.dbg.stage$$(n).o))
+  endif
+ else
+  DBG_STAGE_LIST :=
+  DBG_STAGE_GOALS :=
+  DBG_STAGE_ALL_OBJS :=
+ endif #DBG_STAGE_OBJS
+
+ ifdef FUJI_DBG_STAGE_OBJS
+  ifeq (,$$(wildcard $$(MULTI_BOOT_DEF_HDR)))
+  FUJI_DBG_STAGE_LIST :=
+  FUJI_DBG_STAGE_GOALS :=
+  FUJI_DBG_STAGE_ALL_OBJS :=
+  else
+  FUJI_DBG_STAGE_LIST := $$(call find-stage-list, \
+		$$(MULTI_BOOT_DEF_HDR), \
+		$$(addprefix $$(SRC_DIR)/,$$(FUJI_DBG_STAGE_OBJS:.ff.dbg.o=.c)))
+
+  FUJI_DBG_STAGE_GOALS := $$(foreach n,$$(FUJI_DBG_STAGE_LIST),$$(FUJI_DBG_GOAL:.ff.dbg.a=.ff.dbg.stage$$(n).a))
+  FUJI_DBG_STAGE_ALL_OBJS := $$(foreach n,$$(FUJI_DBG_STAGE_LIST),$$(FUJI_DBG_STAGE_OBJS:.ff.dbg.o=.ff.dbg.stage$$(n).o))
+  endif
+ else
+  FUJI_DBG_STAGE_LIST :=
+  FUJI_DBG_STAGE_GOALS :=
+  FUJI_DBG_STAGE_ALL_OBJS :=
+ endif #FUJI_DBG_STAGE_OBJS
+
+ ifdef FUJI_STAGE_OBJS
+  ifeq (,$$(wildcard $$(MULTI_BOOT_DEF_HDR)))
+  FUJI_STAGE_LIST :=
+  FUJI_STAGE_GOALS :=
+  FUJI_STAGE_ALL_OBJS :=
+  else
+  FUJI_STAGE_LIST := $$(call find-stage-list, \
+		$$(MULTI_BOOT_DEF_HDR), \
+		$$(addprefix $$(SRC_DIR)/,$$(FUJI_STAGE_OBJS:.ff.o=.c)))
+
+  FUJI_STAGE_GOALS := $$(foreach n,$$(FUJI_STAGE_LIST),$$(FUJI_GOAL:.ff.a=.ff.stage$$(n).a))
+  FUJI_STAGE_ALL_OBJS := $$(foreach n,$$(FUJI_STAGE_LIST),$$(FUJI_STAGE_OBJS:.ff.o=.ff.stage$$(n).o))
+  endif
+ else
+  FUJI_STAGE_LIST :=
+  FUJI_STAGE_GOALS :=
+  FUJI_STAGE_ALL_OBJS :=
+ endif #FUJI_STAGE_OBJS
+
+ ifdef GDB_STAGE_OBJS
+  ifeq (,$$(wildcard $$(MULTI_BOOT_DEF_HDR)))
+  GDB_STAGE_LIST :=
+  GDB_STAGE_GOALS :=
+  GDB_STAGE_ALL_OBJS :=
+  else
+  GDB_STAGE_LIST := $$(call find-stage-list, \
+		$$(MULTI_BOOT_DEF_HDR), \
+		$$(addprefix $$(SRC_DIR)/,$$(GDB_STAGE_OBJS:.gdb.o=.c)))
+
+  GDB_STAGE_GOALS := $$(foreach n,$$(GDB_STAGE_LIST),$$(GDB_GOAL:.gdb.a=.gdb.stage$$(n).a))
+  GDB_STAGE_ALL_OBJS := $$(foreach n,$$(GDB_STAGE_LIST),$$(GDB_STAGE_OBJS:.gdb.o=.gdb.stage$$(n).o))
+  endif
+ else
+  GDB_STAGE_LIST :=
+  GDB_STAGE_GOALS :=
+  GDB_STAGE_ALL_OBJS :=
+ endif #GDB_STAGE_OBJS
+
+ #---------------------------------------------------------------------------
+ # ISP definitions
+ #---------------------------------------------------------------------------
+ ifdef ISP_OBJS
+  INST_ISP_DIR := $$(INST_GOAL_DIR).isp
+
+  ISP_GOAL := $$(GOAL:.a=.isp.a)
+  ISP_ALL_OBJS := $$(ISP_OBJS:.o=.isp.o)
+ else
+  ISP_GOAL :=
+  ISP_ALL_OBJS :=
+ endif #ISP_OBJS
+
+ #---------------------------------------------------------------------------
+ # MASK definitions
+ #---------------------------------------------------------------------------
+ ifdef MASK_OBJS
+  INST_MASK_DIR := $$(INST_GOAL_DIR).mask
+
+  MASK_GOAL := $$(GOAL:.a=.mask.a)
+  MASK_ALL_OBJS := $$(MASK_OBJS:.o=.mask.o)
+ else
+  MASK_GOAL :=
+  MASK_ALL_OBJS :=
+ endif #MASK_OBJS
+
+ #---------------------------------------------------------------------------
+ # Intermediate build objects
+ #---------------------------------------------------------------------------
+ ALL_GOALS := $$(GOAL) $$(STAGE_GOALS) $$(GDB_STAGE_GOALS) $$(DBG_STAGE_GOALS) $$(FUJI_DBG_STAGE_GOALS) $$(FUJI_STAGE_GOALS) $$(HSUART_DBG_STAGE_GOALS) $$(HSUART_STAGE_GOALS) $$(ISP_GOAL) $$(MASK_GOAL) $$(GDB_GOAL) $$(DBG_GOAL) $$(FUJI_DBG_GOAL) $$(FUJI_GOAL) $$(HSUART_DBG_GOAL) $$(HSUART_GOAL)
+
+ DEP_OBJS := $$(EXT_OBJS) $$(OBJS) $$(STAGE_ALL_OBJS) $$(GDB_STAGE_ALL_OBJS) $$(DBG_STAGE_ALL_OBJS) $$(FUJI_DBG_STAGE_ALL_OBJS) $$(FUJI_STAGE_ALL_OBJS) $$(HSUART_DBG_STAGE_ALL_OBJS) $$(HSUART_STAGE_ALL_OBJS) $$(ISP_ALL_OBJS) $$(MASK_ALL_OBJS) $$(GDB_ALL_OBJS) $$(DBG_ALL_OBJS) $$(FUJI_DBG_ALL_OBJS) $$(FUJI_ALL_OBJS) $$(HSUART_DBG_ALL_OBJS) $$(HSUART_ALL_OBJS)
+ ALL_OBJS := $$(DEP_OBJS) $$(REV_OBJS) $$(EMPTY_IMPL_OBJS)
+
+ ifndef HOST_ROOT
+  SRC_ROOT := $$(ROOT)/src
+  ifeq ($(FPGA), YES)
+   BUILD_ROOT := $$(ROOT)/build.fpga
+  else
+   BUILD_ROOT := $$(ROOT)/build
+  endif
+ else
+  SRC_ROOT := $$(HOST_ROOT)
+  BUILD_ROOT := $$(OBJS_PATH)
+ endif #ifndef HOST_ROOT
+
+ #*SIGH* make v3.80 or earlier does not support function $(abspath FILES..)
+ ABS_SRC_DIR := $$(abspath $$(SRC_DIR))
+ ABS_SRC_ROOT := $$(abspath $$(SRC_ROOT))
+ #REL_SRC_DIR := $$(patsubst $$(ABS_SRC_ROOT)/%,%,$$(ABS_SRC_DIR))
+ REL_SRC_DIR := $$(shell p='$$(ABS_SRC_DIR)'; $$(ECHO) $$$${p\#'$$(ABS_SRC_ROOT)/'})
+ BUILD_DIR := $$(BUILD_ROOT)/$$(REL_SRC_DIR)
+
+ BUILD_GOAL := $$(addprefix $$(BUILD_DIR)/,$$(GOAL))
+ BUILD_ALL_GOALS := $$(addprefix $$(BUILD_DIR)/,$$(ALL_GOALS))
+
+ BUILD_OBJS := $$(addprefix $$(BUILD_DIR)/,$$(OBJS))
+ BUILD_GOAL_OBJS := $$(addprefix $$(BUILD_DIR)/,$$(GOAL_OBJS))
+ BUILD_EXT_OBJS := $$(addprefix $$(BUILD_DIR)/,$$(EXT_OBJS))
+ BUILD_REV_OBJS := $$(addprefix $$(BUILD_DIR)/,$$(REV_OBJS))
+ BUILD_DEP_OBJS := $$(addprefix $$(BUILD_DIR)/,$$(DEP_OBJS))
+ BUILD_EMPTY_IMPL_OBJS := $$(addprefix $$(BUILD_DIR)/,$$(EMPTY_IMPL_OBJS))
+
+ ifndef HOST_ROOT
+ ifdef STAGE_OBJS
+  BUILD_STAGE_GOALS := $$(addprefix $$(BUILD_DIR)/,$$(STAGE_GOALS))
+  BUILD_STAGE_OBJS := $$(addprefix $$(BUILD_DIR)/,$$(STAGE_OBJS))
+  BUILD_STAGE_ALL_OBJS := $$(addprefix $$(BUILD_DIR)/,$$(STAGE_ALL_OBJS))
+ else
+  BUILD_STAGE_ALL_OBJS :=
+ endif #STAGE_OBJS
+
+ ifdef GDB_STAGE_OBJS
+  BUILD_GDB_STAGE_GOALS := $$(addprefix $$(BUILD_DIR)/,$$(GDB_STAGE_GOALS))
+  BUILD_GDB_STAGE_OBJS := $$(addprefix $$(BUILD_DIR)/,$$(GDB_STAGE_OBJS))
+  BUILD_GDB_STAGE_ALL_OBJS := $$(addprefix $$(BUILD_DIR)/,$$(GDB_STAGE_ALL_OBJS))
+ else
+  BULD_GDB_STAGE_ALL_OBJS :=
+ endif #GDB_STAGE_OBJS
+
+ ifdef DBG_STAGE_OBJS
+  BUILD_DBG_STAGE_GOALS := $$(addprefix $$(BUILD_DIR)/,$$(DBG_STAGE_GOALS))
+  BUILD_DBG_STAGE_OBJS := $$(addprefix $$(BUILD_DIR)/,$$(DBG_STAGE_OBJS))
+  BUILD_DBG_STAGE_ALL_OBJS := $$(addprefix $$(BUILD_DIR)/,$$(DBG_STAGE_ALL_OBJS))
+ else
+  BULD_DBG_STAGE_ALL_OBJS :=
+ endif #DBG_STAGE_OBJS
+
+ ifdef FUJI_DBG_STAGE_OBJS
+  BUILD_FUJI_DBG_STAGE_GOALS := $$(addprefix $$(BUILD_DIR)/,$$(FUJI_DBG_STAGE_GOALS))
+  BUILD_FUJI_DBG_STAGE_OBJS := $$(addprefix $$(BUILD_DIR)/,$$(FUJI_DBG_STAGE_OBJS))
+  BUILD_FUJI_DBG_STAGE_ALL_OBJS := $$(addprefix $$(BUILD_DIR)/,$$(FUJI_DBG_STAGE_ALL_OBJS))
+ else
+  BULD_FUJI_DBG_STAGE_ALL_OBJS :=
+ endif #FUJI_DBG_STAGE_OBJS
+
+ ifdef FUJI_STAGE_OBJS
+  BUILD_FUJI_STAGE_GOALS := $$(addprefix $$(BUILD_DIR)/,$$(FUJI_STAGE_GOALS))
+  BUILD_FUJI_STAGE_OBJS := $$(addprefix $$(BUILD_DIR)/,$$(FUJI_STAGE_OBJS))
+  BUILD_FUJI_STAGE_ALL_OBJS := $$(addprefix $$(BUILD_DIR)/,$$(FUJI_STAGE_ALL_OBJS))
+ else
+  BULD_FUJI_STAGE_ALL_OBJS :=
+ endif #FUJI_STAGE_OBJS
+
+ ifdef HSUART_DBG_STAGE_OBJS
+  BUILD_HSUART_DBG_STAGE_GOALS := $$(addprefix $$(BUILD_DIR)/,$$(HSUART_DBG_STAGE_GOALS))
+  BUILD_HSUART_DBG_STAGE_OBJS := $$(addprefix $$(BUILD_DIR)/,$$(HSUART_DBG_STAGE_OBJS))
+  BUILD_HSUART_DBG_STAGE_ALL_OBJS := $$(addprefix $$(BUILD_DIR)/,$$(HSUART_DBG_STAGE_ALL_OBJS))
+ else
+  BULD_HSUART_DBG_STAGE_ALL_OBJS :=
+ endif #HSUART_DBG_STAGE_OBJS
+
+ ifdef HSUART_STAGE_OBJS
+  BUILD_HSUART_STAGE_GOALS := $$(addprefix $$(BUILD_DIR)/,$$(HSUART_STAGE_GOALS))
+  BUILD_HSUART_STAGE_OBJS := $$(addprefix $$(BUILD_DIR)/,$$(HSUART_STAGE_OBJS))
+  BUILD_HSUART_STAGE_ALL_OBJS := $$(addprefix $$(BUILD_DIR)/,$$(HSUART_STAGE_ALL_OBJS))
+ else
+  BULD_HSUART_STAGE_ALL_OBJS :=
+ endif #HSUART_STAGE_OBJS
+
+ ifdef ISP_OBJS
+  BUILD_ISP_GOAL := $$(addprefix $$(BUILD_DIR)/,$$(ISP_GOAL))
+  BUILD_ISP_OBJS := $$(addprefix $$(BUILD_DIR)/,$$(ISP_OBJS))
+  BUILD_ISP_ALL_OBJS := $$(addprefix $$(BUILD_DIR)/,$$(ISP_ALL_OBJS))
+ endif #ISP_OBJS
+
+ ifdef MASK_OBJS
+  BUILD_MASK_GOAL := $$(addprefix $$(BUILD_DIR)/,$$(MASK_GOAL))
+  BUILD_MASK_OBJS := $$(addprefix $$(BUILD_DIR)/,$$(MASK_OBJS))
+  BUILD_MASK_ALL_OBJS := $$(addprefix $$(BUILD_DIR)/,$$(MASK_ALL_OBJS))
+ endif #MASK_OBJS
+
+ ifdef GDB_OBJS
+  BUILD_GDB_GOAL := $$(addprefix $$(BUILD_DIR)/,$$(GDB_GOAL))
+  BUILD_GDB_OBJS := $$(addprefix $$(BUILD_DIR)/,$$(GDB_OBJS))
+  BUILD_GDB_ALL_OBJS := $$(addprefix $$(BUILD_DIR)/,$$(GDB_ALL_OBJS))
+ endif #GDB_OBJS
+
+ ifdef DBG_OBJS
+  BUILD_DBG_GOAL := $$(addprefix $$(BUILD_DIR)/,$$(DBG_GOAL))
+  BUILD_DBG_OBJS := $$(addprefix $$(BUILD_DIR)/,$$(DBG_OBJS))
+  BUILD_DBG_ALL_OBJS := $$(addprefix $$(BUILD_DIR)/,$$(DBG_ALL_OBJS))
+ endif #DBG_OBJS
+
+ ifdef FUJI_DBG_OBJS
+  BUILD_FUJI_DBG_GOAL := $$(addprefix $$(BUILD_DIR)/,$$(FUJI_DBG_GOAL))
+  BUILD_FUJI_DBG_OBJS := $$(addprefix $$(BUILD_DIR)/,$$(FUJI_DBG_OBJS))
+  BUILD_FUJI_DBG_ALL_OBJS := $$(addprefix $$(BUILD_DIR)/,$$(FUJI_DBG_ALL_OBJS))
+ endif #FUJI_DBG_OBJS
+
+ ifdef FUJI_OBJS
+  BUILD_FUJI_GOAL := $$(addprefix $$(BUILD_DIR)/,$$(FUJI_GOAL))
+  BUILD_FUJI_OBJS := $$(addprefix $$(BUILD_DIR)/,$$(FUJI_OBJS))
+  BUILD_FUJI_ALL_OBJS := $$(addprefix $$(BUILD_DIR)/,$$(FUJI_ALL_OBJS))
+ endif #FUJI_OBJS
+
+ ifdef HSUART_DBG_OBJS
+  BUILD_HSUART_DBG_GOAL := $$(addprefix $$(BUILD_DIR)/,$$(HSUART_DBG_GOAL))
+  BUILD_HSUART_DBG_OBJS := $$(addprefix $$(BUILD_DIR)/,$$(HSUART_DBG_OBJS))
+  BUILD_HSUART_DBG_ALL_OBJS := $$(addprefix $$(BUILD_DIR)/,$$(HSUART_DBG_ALL_OBJS))
+ endif #HSUART_DBG_OBJS
+
+ ifdef HSUART_OBJS
+  BUILD_HSUART_GOAL := $$(addprefix $$(BUILD_DIR)/,$$(HSUART_GOAL))
+  BUILD_HSUART_OBJS := $$(addprefix $$(BUILD_DIR)/,$$(HSUART_OBJS))
+  BUILD_HSUART_ALL_OBJS := $$(addprefix $$(BUILD_DIR)/,$$(HSUART_ALL_OBJS))
+ endif #HSUART_OBJS
+
+ ifdef GOAL
+  ifndef APP_BUILD
+   BUILD_STAGE_LIST := $$(BUILD_GOAL).stagelist
+   ifdef GDB_OBJS
+   BUILD_GDB_STAGE_LIST := $$(BUILD_GDB_GOAL).stagelist
+   endif #GDB_OBJS
+   ifdef DBG_OBJS
+   BUILD_DBG_STAGE_LIST := $$(BUILD_DBG_GOAL).stagelist
+   endif #DBG_OBJS
+   ifdef FUJI_DBG_OBJS
+   BUILD_FUJI_DBG_STAGE_LIST := $$(BUILD_FUJI_DBG_GOAL).stagelist
+   endif #FUJI_DBG_OBJS
+   ifdef FUJI_OBJS
+   BUILD_FUJI_STAGE_LIST := $$(BUILD_FUJI_GOAL).stagelist
+   endif #FUJI_OBJS
+   ifdef HSUART_DBG_OBJS
+   BUILD_HSUART_DBG_STAGE_LIST := $$(BUILD_HSUART_DBG_GOAL).stagelist
+   endif #HSUART_DBG_OBJS
+   ifdef HSUART_OBJS
+   BUILD_HSUART_STAGE_LIST := $$(BUILD_HSUART_GOAL).stagelist
+   endif #HSUART_OBJS
+  else
+   BUILD_STAGE_LIST :=
+   BUILD_GDB_STAGE_LIST :=
+   BUILD_DBG_STAGE_LIST :=
+   BUILD_FUJI_DBG_STAGE_LIST :=
+   BUILD_FUJI_STAGE_LIST :=
+   BUILD_HSUART_DBG_STAGE_LIST :=
+   BUILD_HSUART_STAGE_LIST :=
+  endif #ifndef APP_BUILD
+ else
+  BUILD_STAGE_LIST :=
+  BUILD_GDB_STAGE_LIST :=
+  BUILD_DBG_STAGE_LIST :=
+  BUILD_FUJI_DBG_STAGE_LIST :=
+  BUILD_FUJI_STAGE_LIST :=
+  BUILD_HSUART_DBG_STAGE_LIST :=
+  BUILD_HSUART_STAGE_LIST :=
+ endif #GOAL
+ endif #ifndef HOST_ROOT
+
+ #---------------------------------------------------------------------------
+ # Explicit rules
+ #---------------------------------------------------------------------------
+ .PHONY: all $$(ALL_GOALS) $$(ALL_OBJS)
+ all: $$(ALL_PRIVATE) $$(ALL_GOALS) $$(EXT_OBJS)
+ $$(ALL_GOALS) $$(ALL_OBJS): %: $$(BUILD_DIR)/%
+
+ ifdef GOAL
+ ifndef APP_BUILD
+  $$(BUILD_ALL_GOALS):
+	$$(MSG_SPLIT_LINE)
+	@$$(RM) $$@
+	@$$(AR) rus $$@ $$^
+	$$(MSG_GOAL_OK)
+
+  $$(BUILD_GOAL): $$(BUILD_GOAL_OBJS)
+ endif #ifndef APP_BUILD
+ endif #GOAL
+
+ ifdef STAGE_OBJS
+  define STAGE_GOAL_RULES
+   BUILD_STAGE$$(1)_OBJS := $$$$(call objs-attach-stage,$$(1),\
+		$$$$(BUILD_OBJS),$$$$(BUILD_STAGE_OBJS))
+   BUILD_STAGE$$(1)_GOAL := $$$$(BUILD_GOAL:.a=.stage$$(1).a)
+
+   $$$$(BUILD_STAGE$$(1)_GOAL): $$$$(BUILD_STAGE$$(1)_OBJS) $$$$(BUILD_REV_OBJS) $$$$(BUILD_EMPTY_IMPL_OBJS)
+  endef #STAGE_GOAL_RULES
+
+  $$(foreach stage,$$(STAGE_LIST),$$(eval $$(call STAGE_GOAL_RULES,$$(stage))))
+ endif #STAGE_OBJS
+
+ ifdef GDB_STAGE_OBJS
+  define GDB_STAGE_GOAL_RULES
+   BUILD_GDB_STAGE$$(1)_OBJS := $$$$(call objs-attach-stage,$$(1),\
+		$$$$(BUILD_GDB_OBJS),$$$$(BUILD_GDB_STAGE_OBJS))
+   BUILD_GDB_STAGE$$(1)_GOAL := $$$$(BUILD_GDB_GOAL:.gdb.a=.gdb.stage$$(1).a)
+
+   $$$$(BUILD_GDB_STAGE$$(1)_GOAL): $$$$(BUILD_GDB_STAGE$$(1)_OBJS) $$$$(BUILD_REV_OBJS) $$$$(BUILD_EMPTY_IMPL_OBJS)
+  endef #STAGE_GOAL_RULES
+
+  $$(foreach stage,$$(GDB_STAGE_LIST),$$(eval $$(call GDB_STAGE_GOAL_RULES,$$(stage))))
+ endif #GDB_STAGE_OBJS
+
+ ifdef DBG_STAGE_OBJS
+  define DBG_STAGE_GOAL_RULES
+   BUILD_DBG_STAGE$$(1)_OBJS := $$$$(call objs-attach-stage,$$(1),\
+		$$$$(BUILD_DBG_OBJS),$$$$(BUILD_DBG_STAGE_OBJS))
+   BUILD_DBG_STAGE$$(1)_GOAL := $$$$(BUILD_DBG_GOAL:.dbg.a=.dbg.stage$$(1).a)
+
+   $$$$(BUILD_DBG_STAGE$$(1)_GOAL): $$$$(BUILD_DBG_STAGE$$(1)_OBJS) $$$$(BUILD_REV_OBJS) $$$$(BUILD_EMPTY_IMPL_OBJS)
+  endef #STAGE_GOAL_RULES
+
+  $$(foreach stage,$$(DBG_STAGE_LIST),$$(eval $$(call DBG_STAGE_GOAL_RULES,$$(stage))))
+ endif #DBG_STAGE_OBJS
+
+ ifdef FUJI_DBG_STAGE_OBJS
+  define FUJI_DBG_STAGE_GOAL_RULES
+   BUILD_FUJI_DBG_STAGE$$(1)_OBJS := $$$$(call objs-attach-stage,$$(1),\
+		$$$$(BUILD_FUJI_DBG_OBJS),$$$$(BUILD_FUJI_DBG_STAGE_OBJS))
+   BUILD_FUJI_DBG_STAGE$$(1)_GOAL := $$$$(BUILD_FUJI_DBG_GOAL:.ff.dbg.a=.ff.dbg.stage$$(1).a)
+
+   $$$$(BUILD_FUJI_DBG_STAGE$$(1)_GOAL): $$$$(BUILD_FUJI_DBG_STAGE$$(1)_OBJS) $$$$(BUILD_REV_OBJS) $$$$(BUILD_EMPTY_IMPL_OBJS)
+  endef #FUJI_DBG_STAGE_GOAL_RULES
+
+  $$(foreach stage,$$(FUJI_DBG_STAGE_LIST),$$(eval $$(call FUJI_DBG_STAGE_GOAL_RULES,$$(stage))))
+ endif #FUJI_DBG_STAGE_OBJS
+
+ ifdef FUJI_STAGE_OBJS
+  define FUJI_STAGE_GOAL_RULES
+   BUILD_FUJI_STAGE$$(1)_OBJS := $$$$(call objs-attach-stage,$$(1),\
+		$$$$(BUILD_FUJI_OBJS),$$$$(BUILD_FUJI_STAGE_OBJS))
+   BUILD_FUJI_STAGE$$(1)_GOAL := $$$$(BUILD_FUJI_GOAL:.ff.a=.ff.stage$$(1).a)
+
+   $$$$(BUILD_FUJI_STAGE$$(1)_GOAL): $$$$(BUILD_FUJI_STAGE$$(1)_OBJS) $$$$(BUILD_REV_OBJS) $$$$(BUILD_EMPTY_IMPL_OBJS)
+  endef #STAGE_GOAL_RULES
+
+  $$(foreach stage,$$(FUJI_STAGE_LIST),$$(eval $$(call FUJI_STAGE_GOAL_RULES,$$(stage))))
+ endif #FUJI_STAGE_OBJS
+
+ ifdef HSUART_DBG_STAGE_OBJS
+  define HSUART_DBG_STAGE_GOAL_RULES
+   BUILD_HSUART_DBG_STAGE$$(1)_OBJS := $$$$(call objs-attach-stage,$$(1),\
+		$$$$(BUILD_HSUART_DBG_OBJS),$$$$(BUILD_HSUART_DBG_STAGE_OBJS))
+   BUILD_HSUART_DBG_STAGE$$(1)_GOAL := $$$$(BUILD_HSUART_DBG_GOAL:.hsuart.dbg.a=.hsuart.dbg.stage$$(1).a)
+
+   $$$$(BUILD_HSUART_DBG_STAGE$$(1)_GOAL): $$$$(BUILD_HSUART_DBG_STAGE$$(1)_OBJS) $$$$(BUILD_REV_OBJS) $$$$(BUILD_EMPTY_IMPL_OBJS)
+  endef #HSUART_DBG_STAGE_GOAL_RULES
+
+  $$(foreach stage,$$(HSUART_DBG_STAGE_LIST),$$(eval $$(call HSUART_DBG_STAGE_GOAL_RULES,$$(stage))))
+ endif #HSUART_DBG_STAGE_OBJS
+
+ ifdef HSUART_STAGE_OBJS
+  define HSUART_STAGE_GOAL_RULES
+   BUILD_HSUART_STAGE$$(1)_OBJS := $$$$(call objs-attach-stage,$$(1),\
+		$$$$(BUILD_HSUART_OBJS),$$$$(BUILD_HSUART_STAGE_OBJS))
+   BUILD_HSUART_STAGE$$(1)_GOAL := $$$$(BUILD_HSUART_GOAL:.hsuart.a=.hsuart.stage$$(1).a)
+
+   $$$$(BUILD_HSUART_STAGE$$(1)_GOAL): $$$$(BUILD_HSUART_STAGE$$(1)_OBJS) $$$$(BUILD_REV_OBJS) $$$$(BUILD_EMPTY_IMPL_OBJS)
+  endef #STAGE_GOAL_RULES
+
+  $$(foreach stage,$$(HSUART_STAGE_LIST),$$(eval $$(call HSUART_STAGE_GOAL_RULES,$$(stage))))
+ endif #HSUART_STAGE_OBJS
+
+ ifdef ISP_OBJS
+  $$(BUILD_ISP_GOAL): $$(BUILD_ISP_ALL_OBJS) $$(BUILD_REV_OBJS)
+ endif #ISP_OBJS
+
+ ifdef MASK_OBJS
+  $$(BUILD_MASK_GOAL): $$(BUILD_MASK_ALL_OBJS) $$(BUILD_REV_OBJS)
+ endif #MASK_OBJS
+
+ ifdef GDB_OBJS
+  $$(BUILD_GDB_GOAL): $$(BUILD_GDB_ALL_OBJS) $$(BUILD_REV_OBJS)
+ endif #GDB_OBJS
+
+ ifdef DBG_OBJS
+  $$(BUILD_DBG_GOAL): $$(BUILD_DBG_ALL_OBJS) $$(BUILD_REV_OBJS)
+ endif #DBG_OBJS
+
+ ifdef FUJI_DBG_OBJS
+  $$(BUILD_FUJI_DBG_GOAL): $$(BUILD_FUJI_DBG_ALL_OBJS) $$(BUILD_REV_OBJS)
+ endif #FUJI_DBG_OBJS
+
+ ifdef FUJI_OBJS
+  $$(BUILD_FUJI_GOAL): $$(BUILD_FUJI_ALL_OBJS) $$(BUILD_REV_OBJS)
+ endif #FUJI_OBJS
+
+ ifdef HSUART_DBG_OBJS
+  $$(BUILD_HSUART_DBG_GOAL): $$(BUILD_HSUART_DBG_ALL_OBJS) $$(BUILD_REV_OBJS)
+ endif #HSUART_DBG_OBJS
+
+ ifdef HSUART_OBJS
+  $$(BUILD_HSUART_GOAL): $$(BUILD_HSUART_ALL_OBJS) $$(BUILD_REV_OBJS)
+ endif #HSUART_OBJS
+
+ ifdef REV_OBJS
+  $$(BUILD_REV_OBJS): $$(BUILD_REV_OBJS:.o=.c)
+	$$(MSG_SPLIT_LINE)
+	$$(MSG_COMPILING)
+	@$$(CC) -c $$(CFLAGS) -o $$@ $$<
+
+  $$(BUILD_REV_OBJS:.o=.c): \
+  $$(SRC_DIR)/$$(REV_OBJS:.o=.tmpl) $$(BUILD_REV_OBJS:.o=.rev.bak)
+	@$$(SED) -e 's/\$$$$Rev.*\$$$$/'"`$$(CAT) $$(@:.c=.rev.bak)`/" $$< > $$@.bak
+	@$$(MV) -u $$@.bak $$@
+
+  $$(BUILD_REV_OBJS:.o=.rev.bak): $$(BUILD_DEP_OBJS) #all versioned resources
+	@$$(MKDIR) $$(dir $$@)
+	@$$(ROOT)/findrev.sh . $$@
+ endif #REV_OBJS
+
+ ifdef EMPTY_IMPL_OBJS
+  $$(BUILD_EMPTY_IMPL_OBJS): CFLAGS += -I.
+
+  $$(BUILD_EMPTY_IMPL_OBJS): $$(BUILD_DIR)/%.o : $$(BUILD_DIR)/%.c $$(BUILD_DIR)/%.d
+	$$(MSG_SPLIT_LINE)
+	$$(MSG_COMPILING)
+	@$$(CC) -c $$(CFLAGS) -o $$@ $$<
+
+  $$(BUILD_EMPTY_IMPL_OBJS:.o=.d): $$(BUILD_DIR)/%.d: $$(BUILD_DIR)/%.c
+	@$$(CC) $$(CFLAGS) -MM -MT '$$(@:.d=.o) $$@' -o $$@ $$<
+
+  $$(BUILD_EMPTY_IMPL_OBJS:.o=.c): $$(BUILD_DIR)/%.c: $$(SRC_DIR)/%.tmpl
+	@$$(MKDIR) $$(dir $$@)
+	@$$(CP) $$< $$@
+ endif #EMPTY_IMPL_OBJS
+
+ ifndef HOST_ROOT
+ ifdef GOAL
+ ifndef APP_BUILD
+  # to remove outdated stage builds if stage list changed
+  BUILD_OUTDATE_GOALS := $$(filter-out $$(foreach stage,$$(STAGE_LIST),\
+	$$(addprefix $$(INST_GOAL_DIR)/,$$(notdir $$(GOAL:.a=.stage$$(stage).a)))), \
+	$$(wildcard $$(INST_GOAL_DIR)/$$(notdir $$(GOAL:.a=.stage*.a))))
+
+  ifneq (,$$(strip $$(BUILD_OUTDATE_GOALS)))
+   RM_OUTDATE_GOALS := $$(RM) $$(BUILD_OUTDATE_GOALS) ;
+  else
+   RM_OUTDATE_GOALS :=
+  endif #BUILD_OUTDATE_GOALS
+
+  .PHONY: $$(BUILD_STAGE_LIST).bak
+  $$(BUILD_STAGE_LIST).bak:
+	@$$(MKDIR) $$(dir $$@)
+	@$$(RM) $$@
+	@$$(ECHO) $$(STAGE_LIST) > $$@
+
+  $$(BUILD_STAGE_LIST): $$(BUILD_STAGE_LIST).bak
+	@if ! $$(DIFF) -q -N $$@ $$< ; then \
+		$$(RM_OUTDATE_GOALS) \
+		$$(CP) $$< $$@ ; \
+	fi
+
+  ifdef GDB_OBJS
+  # to remove outdated stage builds if stage list changed
+  BUILD_GDB_OUTDATE_GOALS := $$(filter-out $$(foreach stage,$$(GDB_STAGE_LIST),\
+	$$(addprefix $$(INST_GDB_DIR)/,$$(notdir $$(GDB_GOAL:.gdb.a=.gdb.stage$$(stage).a)))), \
+	$$(wildcard $$(INST_GDB_DIR)/$$(notdir $$(GDB_GOAL:.gdb.a=.gdb.stage*.a))))
+
+  ifneq (,$$(strip $$(BUILD_GDB_OUTDATE_GOALS)))
+   RM_GDB_OUTDATE_GOALS := $$(RM) $$(BUILD_GDB_OUTDATE_GOALS) ;
+  else
+   RM_GDB_OUTDATE_GOALS :=
+  endif #BUILD_GDB_OUTDATE_GOALS
+
+  .PHONY: $$(BUILD_GDB_STAGE_LIST).bak
+  $$(BUILD_GDB_STAGE_LIST).bak:
+	@$$(MKDIR) $$(dir $$@)
+	@$$(RM) $$@
+	@$$(ECHO) $$(GDB_STAGE_LIST) > $$@
+
+  $$(BUILD_GDB_STAGE_LIST): $$(BUILD_GDB_STAGE_LIST).bak
+	@if ! $$(DIFF) -q -N $$@ $$< ; then \
+		$$(RM_GDB_OUTDATE_GOALS) \
+		$$(CP) $$< $$@ ; \
+	fi
+  endif #ifdef GDB_OBJS
+
+  ifdef DBG_OBJS
+  # to remove outdated stage builds if stage list changed
+  BUILD_DBG_OUTDATE_GOALS := $$(filter-out $$(foreach stage,$$(DBG_STAGE_LIST),\
+	$$(addprefix $$(INST_DBG_DIR)/,$$(notdir $$(DBG_GOAL:.dbg.a=.dbg.stage$$(stage).a)))), \
+	$$(wildcard $$(INST_DBG_DIR)/$$(notdir $$(DBG_GOAL:.dbg.a=.dbg.stage*.a))))
+
+  ifneq (,$$(strip $$(BUILD_DBG_OUTDATE_GOALS)))
+   RM_DBG_OUTDATE_GOALS := $$(RM) $$(BUILD_DBG_OUTDATE_GOALS) ;
+  else
+   RM_DBG_OUTDATE_GOALS :=
+  endif #BUILD_DBG_OUTDATE_GOALS
+
+  .PHONY: $$(BUILD_DBG_STAGE_LIST).bak
+  $$(BUILD_DBG_STAGE_LIST).bak:
+	@$$(MKDIR) $$(dir $$@)
+	@$$(RM) $$@
+	@$$(ECHO) $$(DBG_STAGE_LIST) > $$@
+
+  $$(BUILD_DBG_STAGE_LIST): $$(BUILD_DBG_STAGE_LIST).bak
+	@if ! $$(DIFF) -q -N $$@ $$< ; then \
+		$$(RM_DBG_OUTDATE_GOALS) \
+		$$(CP) $$< $$@ ; \
+	fi
+  endif #ifdef DBG_OBJS
+
+  ifdef FUJI_DBG_OBJS
+  # to remove outdated stage builds if stage list changed
+  BUILD_FUJI_DBG_OUTDATE_GOALS := $$(filter-out $$(foreach stage,$$(FUJI_DBG_STAGE_LIST),\
+	$$(addprefix $$(INST_FUJI_DBG_DIR)/,$$(notdir $$(FUJI_DBG_GOAL:.ff.dbg.a=.ff.dbg.stage$$(stage).a)))), \
+	$$(wildcard $$(INST_FUJI_DBG_DIR)/$$(notdir $$(FUJI_DBG_GOAL:.ff.dbg.a=.ff.dbg.stage*.a))))
+
+  ifneq (,$$(strip $$(BUILD_FUJI_DBG_OUTDATE_GOALS)))
+   RM_FUJI_DBG_OUTDATE_GOALS := $$(RM) $$(BUILD_FUJI_DBG_OUTDATE_GOALS) ;
+  else
+   RM_FUJI_DBG_OUTDATE_GOALS :=
+  endif #BUILD_FUJI_DBG_OUTDATE_GOALS
+
+  .PHONY: $$(BUILD_FUJI_DBG_STAGE_LIST).bak
+  $$(BUILD_FUJI_DBG_STAGE_LIST).bak:
+	@$$(MKDIR) $$(dir $$@)
+	@$$(RM) $$@
+	@$$(ECHO) $$(FUJI_DBG_STAGE_LIST) > $$@
+
+  $$(BUILD_FUJI_DBG_STAGE_LIST): $$(BUILD_FUJI_DBG_STAGE_LIST).bak
+	@if ! $$(DIFF) -q -N $$@ $$< ; then \
+		$$(RM_FUJI_DBG_OUTDATE_GOALS) \
+		$$(CP) $$< $$@ ; \
+	fi
+  endif #ifdef FUJI_DBG_OBJS
+
+  ifdef FUJI_OBJS
+  # to remove outdated stage builds if stage list changed
+  BUILD_FUJI_OUTDATE_GOALS := $$(filter-out $$(foreach stage,$$(FUJI_STAGE_LIST),\
+	$$(addprefix $$(INST_FUJI_DIR)/,$$(notdir $$(FUJI_GOAL:.ff.a=.ff.stage$$(stage).a)))), \
+	$$(wildcard $$(INST_FUJI_DIR)/$$(notdir $$(FUJI_GOAL:.ff.a=.ff.stage*.a))))
+
+  ifneq (,$$(strip $$(BUILD_FUJI_OUTDATE_GOALS)))
+   RM_FUJI_OUTDATE_GOALS := $$(RM) $$(BUILD_FUJI_OUTDATE_GOALS) ;
+  else
+   RM_FUJI_OUTDATE_GOALS :=
+  endif #BUILD_FUJI_OUTDATE_GOALS
+
+  .PHONY: $$(BUILD_FUJI_STAGE_LIST).bak
+  $$(BUILD_FUJI_STAGE_LIST).bak:
+	@$$(MKDIR) $$(dir $$@)
+	@$$(RM) $$@
+	@$$(ECHO) $$(FUJI_STAGE_LIST) > $$@
+
+  $$(BUILD_FUJI_STAGE_LIST): $$(BUILD_FUJI_STAGE_LIST).bak
+	@if ! $$(DIFF) -q -N $$@ $$< ; then \
+		$$(RM_FUJI_OUTDATE_GOALS) \
+		$$(CP) $$< $$@ ; \
+	fi
+  endif #ifdef FUJI_OBJS
+
+  ifdef HSUART_DBG_OBJS
+  # to remove outdated stage builds if stage list changed
+  BUILD_HSUART_DBG_OUTDATE_GOALS := $$(filter-out $$(foreach stage,$$(HSUART_DBG_STAGE_LIST),\
+	$$(addprefix $$(INST_HSUART_DBG_DIR)/,$$(notdir $$(HSUART_DBG_GOAL:.hsuart.dbg.a=.hsuart.dbg.stage$$(stage).a)))), \
+	$$(wildcard $$(INST_HSUART_DBG_DIR)/$$(notdir $$(HSUART_DBG_GOAL:.hsuart.dbg.a=.hsuart.dbg.stage*.a))))
+
+  ifneq (,$$(strip $$(BUILD_HSUART_DBG_OUTDATE_GOALS)))
+   RM_HSUART_DBG_OUTDATE_GOALS := $$(RM) $$(BUILD_HSUART_DBG_OUTDATE_GOALS) ;
+  else
+   RM_HSUART_DBG_OUTDATE_GOALS :=
+  endif #BUILD_HSUART_DBG_OUTDATE_GOALS
+
+  .PHONY: $$(BUILD_HSUART_DBG_STAGE_LIST).bak
+  $$(BUILD_HSUART_DBG_STAGE_LIST).bak:
+	@$$(MKDIR) $$(dir $$@)
+	@$$(RM) $$@
+	@$$(ECHO) $$(HSUART_DBG_STAGE_LIST) > $$@
+
+  $$(BUILD_HSUART_DBG_STAGE_LIST): $$(BUILD_HSUART_DBG_STAGE_LIST).bak
+	@if ! $$(DIFF) -q -N $$@ $$< ; then \
+		$$(RM_HSUART_DBG_OUTDATE_GOALS) \
+		$$(CP) $$< $$@ ; \
+	fi
+  endif #ifdef HSUART_DBG_OBJS
+
+  ifdef HSUART_OBJS
+  # to remove outdated stage builds if stage list changed
+  BUILD_HSUART_OUTDATE_GOALS := $$(filter-out $$(foreach stage,$$(HSUART_STAGE_LIST),\
+	$$(addprefix $$(INST_HSUART_DIR)/,$$(notdir $$(HSUART_GOAL:.hsuart.a=.hsuart.stage$$(stage).a)))), \
+	$$(wildcard $$(INST_HSUART_DIR)/$$(notdir $$(HSUART_GOAL:.hsuart.a=.hsuart.stage*.a))))
+
+  ifneq (,$$(strip $$(BUILD_HSUART_OUTDATE_GOALS)))
+   RM_HSUART_OUTDATE_GOALS := $$(RM) $$(BUILD_HSUART_OUTDATE_GOALS) ;
+  else
+   RM_HSUART_OUTDATE_GOALS :=
+  endif #BUILD_HSUART_OUTDATE_GOALS
+
+  .PHONY: $$(BUILD_HSUART_STAGE_LIST).bak
+  $$(BUILD_HSUART_STAGE_LIST).bak:
+	@$$(MKDIR) $$(dir $$@)
+	@$$(RM) $$@
+	@$$(ECHO) $$(HSUART_STAGE_LIST) > $$@
+
+  $$(BUILD_HSUART_STAGE_LIST): $$(BUILD_HSUART_STAGE_LIST).bak
+	@if ! $$(DIFF) -q -N $$@ $$< ; then \
+		$$(RM_HSUART_OUTDATE_GOALS) \
+		$$(CP) $$< $$@ ; \
+	fi
+  endif #ifdef HSUART_OBJS
+
+ endif #ifndef APP_BUILD
+ endif #GOAL
+ endif #ifndef HOST_ROOT
+
+ #---------------------------------------------------------------------------
+ # Implicit rules
+ #---------------------------------------------------------------------------
+ ifdef STAGE_OBJS
+  define STAGE_OBJ_RULES
+   $$$$(BUILD_DIR)/%.stage$$(1).d: CFLAGS += -DMULTI_BOOT_STAGE=$$(1)
+   $$$$(BUILD_DIR)/%.stage$$(1).o: CFLAGS += -DMULTI_BOOT_STAGE=$$(1)
+
+   $$$$(BUILD_DIR)/%.stage$$(1).d: $$$$(SRC_DIR)/%.c
+	@$$$$(MKDIR) $$$$(dir $$$$@)
+	@$$$$(CC) $$$$(CFLAGS) -MM -MT '$$$$(@:.d=.o) $$$$@' -o $$$$@ $$$$<
+
+   $$$$(BUILD_DIR)/%.stage$$(1).d: $$$$(SRC_DIR)/%.S
+	@$$$$(MKDIR) $$$$(dir $$$$@)
+	@$$$$(CC) $$$$(ASFLAGS) $$$$(CFLAGS) -MM -MT '$$$$(@:.d=.o) $$$$@' -o $$$$@ $$$$<
+
+   $$$$(BUILD_DIR)/%.stage$$(1).o: $$$$(SRC_DIR)/%.c $$$$(BUILD_DIR)/%.stage$$(1).d
+	$$$$(MSG_SPLIT_LINE)
+	$$$$(MSG_COMPILING)
+	@$$$$(CC) -c $$$$(CFLAGS) -o $$$$@ $$$$<
+
+   $$$$(BUILD_DIR)/%.stage$$(1).o: $$$$(SRC_DIR)/%.S $$$$(BUILD_DIR)/%.stage$$(1).d
+	$$$$(MSG_SPLIT_LINE)
+	$$$$(MSG_COMPILING)
+	@$$$$(CC) -c $$$$(ASFLAGS) $$$$(CFLAGS) -o $$$$@ $$$$<
+  endef #STAGE_OBJ_RULES
+
+  $$(foreach stage,$$(STAGE_LIST),$$(eval $$(call STAGE_OBJ_RULES,$$(stage))))
+ endif #STAGE_OBJS
+
+ ifdef GDB_STAGE_OBJS
+  define GDB_STAGE_OBJ_RULES
+   $$$$(BUILD_DIR)/%.gdb.stage$$(1).d: CFLAGS += -DMULTI_BOOT_STAGE=$$(1) -DBASEFW_GDB_SUPPORT=1
+   $$$$(BUILD_DIR)/%.gdb.stage$$(1).o: CFLAGS += -DMULTI_BOOT_STAGE=$$(1) -DBASEFW_GDB_SUPPORT=1
+
+   $$$$(BUILD_DIR)/%.gdb.stage$$(1).d: $$$$(SRC_DIR)/%.c
+	@$$$$(MKDIR) $$$$(dir $$$$@)
+	@$$$$(CC) $$$$(CFLAGS) -MM -MT '$$$$(@:.d=.o) $$$$@' -o $$$$@ $$$$<
+
+   $$$$(BUILD_DIR)/%.gdb.stage$$(1).d: $$$$(SRC_DIR)/%.S
+	@$$$$(MKDIR) $$$$(dir $$$$@)
+	@$$$$(CC) $$$$(ASFLAGS) $$$$(CFLAGS) -MM -MT '$$$$(@:.d=.o) $$$$@' -o $$$$@ $$$$<
+
+   $$$$(BUILD_DIR)/%.gdb.stage$$(1).o: $$$$(SRC_DIR)/%.c $$$$(BUILD_DIR)/%.gdb.stage$$(1).d
+	$$$$(MSG_SPLIT_LINE)
+	$$$$(MSG_COMPILING)
+	@$$$$(CC) -c $$$$(CFLAGS) -o $$$$@ $$$$<
+
+   $$$$(BUILD_DIR)/%.gdb.stage$$(1).o: $$$$(SRC_DIR)/%.S $$$$(BUILD_DIR)/%.gdb.stage$$(1).d
+	$$$$(MSG_SPLIT_LINE)
+	$$$$(MSG_COMPILING)
+	@$$$$(CC) -c $$$$(ASFLAGS) $$$$(CFLAGS) -o $$$$@ $$$$<
+  endef #GDB_STAGE_OBJ_RULES
+
+  $$(foreach stage,$$(GDB_STAGE_LIST),$$(eval $$(call GDB_STAGE_OBJ_RULES,$$(stage))))
+ endif #GDB_STAGE_OBJS
+
+ ifdef DBG_STAGE_OBJS
+  define DBG_STAGE_OBJ_RULES
+   $$$$(BUILD_DIR)/%.dbg.stage$$(1).d: CFLAGS += -DMULTI_BOOT_STAGE=$$(1) -DBASEFW_DBG_SUPPORT=1
+   $$$$(BUILD_DIR)/%.dbg.stage$$(1).o: CFLAGS += -DMULTI_BOOT_STAGE=$$(1) -DBASEFW_DBG_SUPPORT=1
+
+   $$$$(BUILD_DIR)/%.dbg.stage$$(1).d: $$$$(SRC_DIR)/%.c
+	@$$$$(MKDIR) $$$$(dir $$$$@)
+	@$$$$(CC) $$$$(CFLAGS) -MM -MT '$$$$(@:.d=.o) $$$$@' -o $$$$@ $$$$<
+
+   $$$$(BUILD_DIR)/%.dbg.stage$$(1).d: $$$$(SRC_DIR)/%.S
+	@$$$$(MKDIR) $$$$(dir $$$$@)
+	@$$$$(CC) $$$$(ASFLAGS) $$$$(CFLAGS) -MM -MT '$$$$(@:.d=.o) $$$$@' -o $$$$@ $$$$<
+
+   $$$$(BUILD_DIR)/%.dbg.stage$$(1).o: $$$$(SRC_DIR)/%.c $$$$(BUILD_DIR)/%.dbg.stage$$(1).d
+	$$$$(MSG_SPLIT_LINE)
+	$$$$(MSG_COMPILING)
+	@$$$$(CC) -c $$$$(CFLAGS) -o $$$$@ $$$$<
+
+   $$$$(BUILD_DIR)/%.dbg.stage$$(1).o: $$$$(SRC_DIR)/%.S $$$$(BUILD_DIR)/%.dbg.stage$$(1).d
+	$$$$(MSG_SPLIT_LINE)
+	$$$$(MSG_COMPILING)
+	@$$$$(CC) -c $$$$(ASFLAGS) $$$$(CFLAGS) -o $$$$@ $$$$<
+  endef #DBG_STAGE_OBJ_RULES
+
+  $$(foreach stage,$$(DBG_STAGE_LIST),$$(eval $$(call DBG_STAGE_OBJ_RULES,$$(stage))))
+ endif #DBG_STAGE_OBJS
+
+ ifdef FUJI_DBG_STAGE_OBJS
+  define FUJI_DBG_STAGE_OBJ_RULES
+   $$$$(BUILD_DIR)/%.ff.dbg.stage$$(1).d: CFLAGS += -DMULTI_BOOT_STAGE=$$(1) -DBASEFW_DBG_SUPPORT=1
+   $$$$(BUILD_DIR)/%.ff.dbg.stage$$(1).o: CFLAGS += -DMULTI_BOOT_STAGE=$$(1) -DBASEFW_DBG_SUPPORT=1
+
+   $$$$(BUILD_DIR)/%.ff.dbg.stage$$(1).d: $$$$(SRC_DIR)/%.c
+	@$$$$(MKDIR) $$$$(dir $$$$@)
+	@$$$$(CC) $$$$(CFLAGS) -MM -MT '$$$$(@:.d=.o) $$$$@' -o $$$$@ $$$$<
+
+   $$$$(BUILD_DIR)/%.ff.dbg.stage$$(1).d: $$$$(SRC_DIR)/%.S
+	@$$$$(MKDIR) $$$$(dir $$$$@)
+	@$$$$(CC) $$$$(ASFLAGS) $$$$(CFLAGS) -MM -MT '$$$$(@:.d=.o) $$$$@' -o $$$$@ $$$$<
+
+   $$$$(BUILD_DIR)/%.ff.dbg.stage$$(1).o: $$$$(SRC_DIR)/%.c $$$$(BUILD_DIR)/%.ff.dbg.stage$$(1).d
+	$$$$(MSG_SPLIT_LINE)
+	$$$$(MSG_COMPILING)
+	@$$$$(CC) -c $$$$(CFLAGS) -o $$$$@ $$$$<
+
+   $$$$(BUILD_DIR)/%.ff.dbg.stage$$(1).o: $$$$(SRC_DIR)/%.S $$$$(BUILD_DIR)/%.ff.dbg.stage$$(1).d
+	$$$$(MSG_SPLIT_LINE)
+	$$$$(MSG_COMPILING)
+	@$$$$(CC) -c $$$$(ASFLAGS) $$$$(CFLAGS) -o $$$$@ $$$$<
+  endef #FUJI_DBG_STAGE_OBJ_RULES
+
+  $$(foreach stage,$$(FUJI_DBG_STAGE_LIST),$$(eval $$(call FUJI_DBG_STAGE_OBJ_RULES,$$(stage))))
+ endif #FUJI_DBG_STAGE_OBJS
+
+ ifdef FUJI_STAGE_OBJS
+  define FUJI_STAGE_OBJ_RULES
+   $$$$(BUILD_DIR)/%.ff.stage$$(1).d: CFLAGS += -DMULTI_BOOT_STAGE=$$(1) -DBASEFW_FUJI_SUPPORT=1
+   $$$$(BUILD_DIR)/%.ff.stage$$(1).o: CFLAGS += -DMULTI_BOOT_STAGE=$$(1) -DBASEFW_FUJI_SUPPORT=1
+
+   $$$$(BUILD_DIR)/%.ff.stage$$(1).d: $$$$(SRC_DIR)/%.c
+	@$$$$(MKDIR) $$$$(dir $$$$@)
+	@$$$$(CC) $$$$(CFLAGS) -MM -MT '$$$$(@:.d=.o) $$$$@' -o $$$$@ $$$$<
+
+   $$$$(BUILD_DIR)/%.ff.stage$$(1).d: $$$$(SRC_DIR)/%.S
+	@$$$$(MKDIR) $$$$(dir $$$$@)
+	@$$$$(CC) $$$$(ASFLAGS) $$$$(CFLAGS) -MM -MT '$$$$(@:.d=.o) $$$$@' -o $$$$@ $$$$<
+
+   $$$$(BUILD_DIR)/%.ff.stage$$(1).o: $$$$(SRC_DIR)/%.c $$$$(BUILD_DIR)/%.ff.stage$$(1).d
+	$$$$(MSG_SPLIT_LINE)
+	$$$$(MSG_COMPILING)
+	@$$$$(CC) -c $$$$(CFLAGS) -o $$$$@ $$$$<
+
+   $$$$(BUILD_DIR)/%.ff.stage$$(1).o: $$$$(SRC_DIR)/%.S $$$$(BUILD_DIR)/%.ff.stage$$(1).d
+	$$$$(MSG_SPLIT_LINE)
+	$$$$(MSG_COMPILING)
+	@$$$$(CC) -c $$$$(ASFLAGS) $$$$(CFLAGS) -o $$$$@ $$$$<
+  endef #FUJI_STAGE_OBJ_RULES
+
+  $$(foreach stage,$$(FUJI_STAGE_LIST),$$(eval $$(call FUJI_STAGE_OBJ_RULES,$$(stage))))
+ endif #FUJI_STAGE_OBJS
+
+ ifdef HSUART_DBG_STAGE_OBJS
+  define HSUART_DBG_STAGE_OBJ_RULES
+   $$$$(BUILD_DIR)/%.hsuart.dbg.stage$$(1).d: CFLAGS += -DMULTI_BOOT_STAGE=$$(1) -DBASEFW_DBG_SUPPORT=1
+   $$$$(BUILD_DIR)/%.hsuart.dbg.stage$$(1).o: CFLAGS += -DMULTI_BOOT_STAGE=$$(1) -DBASEFW_DBG_SUPPORT=1
+
+   $$$$(BUILD_DIR)/%.hsuart.dbg.stage$$(1).d: $$$$(SRC_DIR)/%.c
+	@$$$$(MKDIR) $$$$(dir $$$$@)
+	@$$$$(CC) $$$$(CFLAGS) -MM -MT '$$$$(@:.d=.o) $$$$@' -o $$$$@ $$$$<
+
+   $$$$(BUILD_DIR)/%.hsuart.dbg.stage$$(1).d: $$$$(SRC_DIR)/%.S
+	@$$$$(MKDIR) $$$$(dir $$$$@)
+	@$$$$(CC) $$$$(ASFLAGS) $$$$(CFLAGS) -MM -MT '$$$$(@:.d=.o) $$$$@' -o $$$$@ $$$$<
+
+   $$$$(BUILD_DIR)/%.hsuart.dbg.stage$$(1).o: $$$$(SRC_DIR)/%.c $$$$(BUILD_DIR)/%.hsuart.dbg.stage$$(1).d
+	$$$$(MSG_SPLIT_LINE)
+	$$$$(MSG_COMPILING)
+	@$$$$(CC) -c $$$$(CFLAGS) -o $$$$@ $$$$<
+
+   $$$$(BUILD_DIR)/%.hsuart.dbg.stage$$(1).o: $$$$(SRC_DIR)/%.S $$$$(BUILD_DIR)/%.hsuart.dbg.stage$$(1).d
+	$$$$(MSG_SPLIT_LINE)
+	$$$$(MSG_COMPILING)
+	@$$$$(CC) -c $$$$(ASFLAGS) $$$$(CFLAGS) -o $$$$@ $$$$<
+  endef #HSUART_DBG_STAGE_OBJ_RULES
+
+  $$(foreach stage,$$(HSUART_DBG_STAGE_LIST),$$(eval $$(call HSUART_DBG_STAGE_OBJ_RULES,$$(stage))))
+ endif #HSUART_DBG_STAGE_OBJS
+
+ ifdef HSUART_STAGE_OBJS
+  define HSUART_STAGE_OBJ_RULES
+   $$$$(BUILD_DIR)/%.hsuart.stage$$(1).d: CFLAGS += -DMULTI_BOOT_STAGE=$$(1) -DBASEFW_HSUART_SUPPORT=1
+   $$$$(BUILD_DIR)/%.hsuart.stage$$(1).o: CFLAGS += -DMULTI_BOOT_STAGE=$$(1) -DBASEFW_HSUART_SUPPORT=1
+
+   $$$$(BUILD_DIR)/%.hsuart.stage$$(1).d: $$$$(SRC_DIR)/%.c
+	@$$$$(MKDIR) $$$$(dir $$$$@)
+	@$$$$(CC) $$$$(CFLAGS) -MM -MT '$$$$(@:.d=.o) $$$$@' -o $$$$@ $$$$<
+
+   $$$$(BUILD_DIR)/%.hsuart.stage$$(1).d: $$$$(SRC_DIR)/%.S
+	@$$$$(MKDIR) $$$$(dir $$$$@)
+	@$$$$(CC) $$$$(ASFLAGS) $$$$(CFLAGS) -MM -MT '$$$$(@:.d=.o) $$$$@' -o $$$$@ $$$$<
+
+   $$$$(BUILD_DIR)/%.hsuart.stage$$(1).o: $$$$(SRC_DIR)/%.c $$$$(BUILD_DIR)/%.hsuart.stage$$(1).d
+	$$$$(MSG_SPLIT_LINE)
+	$$$$(MSG_COMPILING)
+	@$$$$(CC) -c $$$$(CFLAGS) -o $$$$@ $$$$<
+
+   $$$$(BUILD_DIR)/%.hsuart.stage$$(1).o: $$$$(SRC_DIR)/%.S $$$$(BUILD_DIR)/%.hsuart.stage$$(1).d
+	$$$$(MSG_SPLIT_LINE)
+	$$$$(MSG_COMPILING)
+	@$$$$(CC) -c $$$$(ASFLAGS) $$$$(CFLAGS) -o $$$$@ $$$$<
+  endef #HSUART_STAGE_OBJ_RULES
+
+  $$(foreach stage,$$(HSUART_STAGE_LIST),$$(eval $$(call HSUART_STAGE_OBJ_RULES,$$(stage))))
+ endif #HSUART_STAGE_OBJS
+
+ ifdef ISP_OBJS
+  $$(BUILD_DIR)/%.isp.d: $$(SRC_DIR)/%.c
+	@$$(MKDIR) $$(dir $$@)
+	@$$(CC) $$(CFLAGS) -MM -MT '$$(@:.d=.o) $$@' -o $$@ $$<
+
+  $$(BUILD_DIR)/%.isp.o: $$(SRC_DIR)/%.c $$(BUILD_DIR)/%.isp.d
+	$$(MSG_SPLIT_LINE)
+	$$(MSG_COMPILING)
+	@$$(CC) -c $$(CFLAGS) -o $$@ $$<
+ endif #ISP_OBJS
+
+ ifdef MASK_OBJS
+  $$(BUILD_DIR)/%.mask.d: $$(SRC_DIR)/%.c
+	@$$(MKDIR) $$(dir $$@)
+	@$$(CC) $$(CFLAGS) -MM -MT '$$(@:.d=.o) $$@' -o $$@ $$<
+
+  $$(BUILD_DIR)/%.mask.o: $$(SRC_DIR)/%.c $$(BUILD_DIR)/%.mask.d
+	$$(MSG_SPLIT_LINE)
+	$$(MSG_COMPILING)
+	@$$(CC) -c $$(CFLAGS) -o $$@ $$<
+ endif #MASK_OBJS
+
+ ifdef GDB_OBJS
+  $$(BUILD_DIR)/%.gdb.d: $$(SRC_DIR)/%.c
+	@$$(MKDIR) $$(dir $$@)
+	@$$(CC) $$(CFLAGS) -MM -MT '$$(@:.d=.o) $$@' -o $$@ $$<
+
+  $$(BUILD_DIR)/%.gdb.o: $$(SRC_DIR)/%.c $$(BUILD_DIR)/%.gdb.d
+	$$(MSG_SPLIT_LINE)
+	$$(MSG_COMPILING)
+	@$$(CC) -c $$(CFLAGS) -o $$@ $$<
+ endif #GDB_OBJS
+
+ ifdef DBG_OBJS
+  $$(BUILD_DIR)/%.dbg.d: $$(SRC_DIR)/%.c
+	@$$(MKDIR) $$(dir $$@)
+	@$$(CC) $$(CFLAGS) -MM -MT '$$(@:.d=.o) $$@' -o $$@ $$<
+
+  $$(BUILD_DIR)/%.dbg.o: $$(SRC_DIR)/%.c $$(BUILD_DIR)/%.dbg.d
+	$$(MSG_SPLIT_LINE)
+	$$(MSG_COMPILING)
+	@$$(CC) -c $$(CFLAGS) -o $$@ $$<
+ endif #DBG_OBJS
+
+ ifdef FUJI_DBG_OBJS
+  $$(BUILD_DIR)/%.ff.dbg.d: $$(SRC_DIR)/%.c
+	@$$(MKDIR) $$(dir $$@)
+	@$$(CC) $$(CFLAGS) -MM -MT '$$(@:.d=.o) $$@' -o $$@ $$<
+
+  $$(BUILD_DIR)/%.ff.dbg.o: $$(SRC_DIR)/%.c $$(BUILD_DIR)/%.ff.dbg.d
+	$$(MSG_SPLIT_LINE)
+	$$(MSG_COMPILING)
+	@$$(CC) -c $$(CFLAGS) -o $$@ $$<
+ endif #FUJI_DBG_OBJS
+
+ ifdef FUJI_OBJS
+  $$(BUILD_DIR)/%.ff.d: $$(SRC_DIR)/%.c
+	@$$(MKDIR) $$(dir $$@)
+	@$$(CC) $$(CFLAGS) -MM -MT '$$(@:.d=.o) $$@' -o $$@ $$<
+
+  $$(BUILD_DIR)/%.ff.o: $$(SRC_DIR)/%.c $$(BUILD_DIR)/%.ff.d
+	$$(MSG_SPLIT_LINE)
+	$$(MSG_COMPILING)
+	@$$(CC) -c $$(CFLAGS) -o $$@ $$<
+ endif #FUJI_OBJS
+
+ ifdef HSUART_DBG_OBJS
+  $$(BUILD_DIR)/%.hsuart.dbg.d: $$(SRC_DIR)/%.c
+	@$$(MKDIR) $$(dir $$@)
+	@$$(CC) $$(CFLAGS) -MM -MT '$$(@:.d=.o) $$@' -o $$@ $$<
+
+  $$(BUILD_DIR)/%.hsuart.dbg.o: $$(SRC_DIR)/%.c $$(BUILD_DIR)/%.hsuart.dbg.d
+	$$(MSG_SPLIT_LINE)
+	$$(MSG_COMPILING)
+	@$$(CC) -c $$(CFLAGS) -o $$@ $$<
+ endif #HSUART_DBG_OBJS
+
+ ifdef HSUART_OBJS
+  $$(BUILD_DIR)/%.hsuart.d: $$(SRC_DIR)/%.c
+	@$$(MKDIR) $$(dir $$@)
+	@$$(CC) $$(CFLAGS) -MM -MT '$$(@:.d=.o) $$@' -o $$@ $$<
+
+  $$(BUILD_DIR)/%.hsuart.o: $$(SRC_DIR)/%.c $$(BUILD_DIR)/%.hsuart.d
+	$$(MSG_SPLIT_LINE)
+	$$(MSG_COMPILING)
+	@$$(CC) -c $$(CFLAGS) -o $$@ $$<
+ endif #HSUART_OBJS
+
+ifeq ($(OUTPUT_C_PREPROCESS_FILE), 1)
+ $$(BUILD_DIR)/%.d: $$(SRC_DIR)/%.c
+	@$$(MKDIR) $$(dir $$@)
+	@$$(CC) $$(CFLAGS) -E -o $$*.i $$<
+	@$$(CC) $$(CFLAGS) -MM -MT '$$(@:.d=.o) $$@' -o $$@ $$<
+
+else
+ $$(BUILD_DIR)/%.d: $$(SRC_DIR)/%.c
+	@$$(MKDIR) $$(dir $$@)
+	@$$(CC) $$(CFLAGS) -MM -MT '$$(@:.d=.o) $$@' -o $$@ $$<
+
+endif
+
+ ifdef FUJI_OBJS
+  $$(BUILD_DIR)/%.ff.d: $$(SRC_DIR)/%.S
+	@$$(MKDIR) $$(dir $$@)
+	@$$(CC) $$(ASFLAGS) $$(CFLAGS) -MM -MT '$$(@:.d=.o) $$@' -o $$@ $$<
+
+  $$(BUILD_DIR)/%.ff.o: $$(SRC_DIR)/%.S $$(BUILD_DIR)/%.ff.d
+	$$(MSG_SPLIT_LINE)
+	$$(MSG_COMPILING)
+	@$$(CC) -c $$(ASFLAGS) $$(CFLAGS) -o $$@ $$<
+ endif #FUJI_OBJS
+
+ ifdef HSUART_OBJS
+  $$(BUILD_DIR)/%.hsuart.d: $$(SRC_DIR)/%.S
+	@$$(MKDIR) $$(dir $$@)
+	@$$(CC) $$(ASFLAGS) $$(CFLAGS) -MM -MT '$$(@:.d=.o) $$@' -o $$@ $$<
+
+  $$(BUILD_DIR)/%.hsuart.o: $$(SRC_DIR)/%.S $$(BUILD_DIR)/%.hsuart.d
+	$$(MSG_SPLIT_LINE)
+	$$(MSG_COMPILING)
+	@$$(CC) -c $$(ASFLAGS) $$(CFLAGS) -o $$@ $$<
+ endif #HSUART_OBJS
+
+ ifdef GDB_OBJS
+  $$(BUILD_DIR)/%.gdb.d: $$(SRC_DIR)/%.S
+	@$$(MKDIR) $$(dir $$@)
+	@$$(CC) $$(ASFLAGS) $$(CFLAGS) -MM -MT '$$(@:.d=.o) $$@' -o $$@ $$<
+
+  $$(BUILD_DIR)/%.gdb.o: $$(SRC_DIR)/%.S $$(BUILD_DIR)/%.gdb.d
+	$$(MSG_SPLIT_LINE)
+	$$(MSG_COMPILING)
+	@$$(CC) -c $$(ASFLAGS) $$(CFLAGS) -o $$@ $$<
+ endif #GDB_OBJS
+
+ ifdef DBG_OBJS
+  $$(BUILD_DIR)/%.dbg.d: $$(SRC_DIR)/%.S
+	@$$(MKDIR) $$(dir $$@)
+	@$$(CC) $$(ASFLAGS) $$(CFLAGS) -MM -MT '$$(@:.d=.o) $$@' -o $$@ $$<
+
+  $$(BUILD_DIR)/%.dbg.o: $$(SRC_DIR)/%.S $$(BUILD_DIR)/%.dbg.d
+	$$(MSG_SPLIT_LINE)
+	$$(MSG_COMPILING)
+	@$$(CC) -c $$(ASFLAGS) $$(CFLAGS) -o $$@ $$<
+ endif #DBG_OBJS
+
+ ifdef FUJI_DBG_OBJS
+  $$(BUILD_DIR)/%.ff.dbg.d: $$(SRC_DIR)/%.S
+	@$$(MKDIR) $$(dir $$@)
+	@$$(CC) $$(ASFLAGS) $$(CFLAGS) -MM -MT '$$(@:.d=.o) $$@' -o $$@ $$<
+
+  $$(BUILD_DIR)/%.ff.dbg.o: $$(SRC_DIR)/%.S $$(BUILD_DIR)/%.ff.dbg.d
+	$$(MSG_SPLIT_LINE)
+	$$(MSG_COMPILING)
+	@$$(CC) -c $$(ASFLAGS) $$(CFLAGS) -o $$@ $$<
+ endif #FUJI_DBG_OBJS
+
+ ifdef HSUART_DBG_OBJS
+  $$(BUILD_DIR)/%.hsuart.dbg.d: $$(SRC_DIR)/%.S
+	@$$(MKDIR) $$(dir $$@)
+	@$$(CC) $$(ASFLAGS) $$(CFLAGS) -MM -MT '$$(@:.d=.o) $$@' -o $$@ $$<
+
+  $$(BUILD_DIR)/%.hsuart.dbg.o: $$(SRC_DIR)/%.S $$(BUILD_DIR)/%.hsuart.dbg.d
+	$$(MSG_SPLIT_LINE)
+	$$(MSG_COMPILING)
+	@$$(CC) -c $$(ASFLAGS) $$(CFLAGS) -o $$@ $$<
+ endif #HSUART_DBG_OBJS
+
+ $$(BUILD_DIR)/%.d: $$(SRC_DIR)/%.S
+	@$$(MKDIR) $$(dir $$@)
+	@$$(CC) $$(ASFLAGS) $$(CFLAGS) -MM -MT '$$(@:.d=.o) $$@' -o $$@ $$<
+
+ $$(BUILD_DIR)/%.o: $$(SRC_DIR)/%.c $$(BUILD_DIR)/%.d
+	$$(MSG_SPLIT_LINE)
+	$$(MSG_COMPILING)
+	@$$(CC) -c $$(CFLAGS) -o $$@ $$<
+
+ $$(BUILD_DIR)/%.o: $$(SRC_DIR)/%.S $$(BUILD_DIR)/%.d
+	$$(MSG_SPLIT_LINE)
+	$$(MSG_COMPILING)
+	@$$(CC) -c $$(ASFLAGS) $$(CFLAGS) -o $$@ $$<
+
+
+ ifndef HOST_ROOT
+ .PHONY: install
+ install: all $$(INSTALL_PRIVATE) $$(BUILD_STAGE_LIST) $$(BUILD_DBG_STAGE_LIST) $$(BUILD_FUJI_DBG_STAGE_LIST) $$(BUILD_FUJI_STAGE_LIST) $$(BUILD_HSUART_DBG_STAGE_LIST) $$(BUILD_HSUART_STAGE_LIST)
+	$$(MSG_SPLIT_LINE)
+	$$(MKDIR) $$(INST_GOAL_DIR)/
+ ifdef GOAL
+	$$(CP) -u $$(BUILD_GOAL) $$(INST_GOAL_DIR)/
+  ifndef APP_BUILD
+	$$(MKDIR) $$(INST_STAGE_DIR)/
+	$$(CP) -u $$(BUILD_OBJS) $$(BUILD_STAGE_ALL_OBJS) $$(BUILD_REV_OBJS) $$(BUILD_EMPTY_IMPL_OBJS) $$(BUILD_DBG_ALL_OBJS) $$(BUILD_FUJI_DBG_ALL_OBJS) $$(BUILD_FUJI_ALL_OBJS) \
+			$$(BUILD_HSUART_DBG_ALL_OBJS) $$(BUILD_HSUART_ALL_OBJS) $$(INST_STAGE_DIR)/
+    ifdef GDB_OBJS
+	$$(MKDIR) $$(GDB_INST_STAGE_DIR)/
+	$$(CP) -u $$(BUILD_GDB_STAGE_ALL_OBJS) $$(BUILD_REV_OBJS) $$(BUILD_EMPTY_IMPL_OBJS) $$(BUILD_GDB_ALL_OBJS) $$(GDB_INST_STAGE_DIR)/
+    endif #ifdef GDB_OBJS
+    ifdef DBG_OBJS
+	$$(MKDIR) $$(DBG_INST_STAGE_DIR)/
+	$$(CP) -u $$(BUILD_DBG_STAGE_ALL_OBJS) $$(BUILD_REV_OBJS) $$(BUILD_EMPTY_IMPL_OBJS) $$(BUILD_DBG_ALL_OBJS) $$(DBG_INST_STAGE_DIR)/
+    endif #ifdef DBG_OBJS
+    ifdef FUJI_DBG_OBJS
+	$$(MKDIR) $$(FUJI_DBG_INST_STAGE_DIR)/
+	$$(CP) -u $$(BUILD_FUJI_DBG_STAGE_ALL_OBJS) $$(BUILD_REV_OBJS) $$(BUILD_EMPTY_IMPL_OBJS) $$(BUILD_FUJI_DBG_ALL_OBJS) $$(FUJI_DBG_INST_STAGE_DIR)/
+    endif #ifdef FUJI_DBG_OBJS
+    ifdef FUJI_OBJS
+	$$(MKDIR) $$(FUJI_INST_STAGE_DIR)/
+	$$(CP) -u $$(BUILD_FUJI_STAGE_ALL_OBJS) $$(BUILD_REV_OBJS) $$(BUILD_EMPTY_IMPL_OBJS) $$(BUILD_FUJI_ALL_OBJS) $$(FUJI_INST_STAGE_DIR)/
+    endif #ifdef FUJI_OBJS
+    ifdef HSUART_DBG_OBJS
+	$$(MKDIR) $$(HSUART_DBG_INST_STAGE_DIR)/
+	$$(CP) -u $$(BUILD_HSUART_DBG_STAGE_ALL_OBJS) $$(BUILD_REV_OBJS) $$(BUILD_EMPTY_IMPL_OBJS) $$(BUILD_HSUART_DBG_ALL_OBJS) $$(HSUART_DBG_INST_STAGE_DIR)/
+    endif #ifdef HSUART_DBG_OBJS
+    ifdef HSUART_OBJS
+	$$(MKDIR) $$(HSUART_INST_STAGE_DIR)/
+	$$(CP) -u $$(BUILD_HSUART_STAGE_ALL_OBJS) $$(BUILD_REV_OBJS) $$(BUILD_EMPTY_IMPL_OBJS) $$(BUILD_HSUART_ALL_OBJS) $$(HSUART_INST_STAGE_DIR)/
+    endif #ifdef HSUART_OBJS
+  endif #ifndef APP_BUILD
+ endif #GOAL
+ ifdef EXT_OBJS
+	$$(CP) -u $$(BUILD_EXT_OBJS) $$(INST_GOAL_DIR)/
+ endif #EXT_OBJS
+ ifdef STAGE_OBJS
+	$$(CP) -u $$(BUILD_STAGE_GOALS) $$(INST_GOAL_DIR)/
+ endif
+ ifdef GDB_STAGE_OBJS
+	$$(CP) -u $$(BUILD_GDB_STAGE_GOALS) $$(INST_GDB_DIR)/
+ endif
+ ifdef DBG_STAGE_OBJS
+	$$(CP) -u $$(BUILD_DBG_STAGE_GOALS) $$(INST_DBG_DIR)/
+ endif
+ ifdef FUJI_DBG_STAGE_OBJS
+	$$(CP) -u $$(BUILD_FUJI_DBG_STAGE_GOALS) $$(INST_FUJI_DBG_DIR)/
+ endif
+ ifdef FUJI_STAGE_OBJS
+	$$(CP) -u $$(BUILD_FUJI_STAGE_GOALS) $$(INST_FUJI_DIR)/
+ endif
+ ifdef HSUART_DBG_STAGE_OBJS
+	$$(CP) -u $$(BUILD_HSUART_DBG_STAGE_GOALS) $$(INST_HSUART_DBG_DIR)/
+ endif
+ ifdef HSUART_STAGE_OBJS
+	$$(CP) -u $$(BUILD_HSUART_STAGE_GOALS) $$(INST_HSUART_DIR)/
+ endif
+ ifdef ISP_OBJS
+	$$(MKDIR) $$(INST_ISP_DIR)/
+	$$(CP) -u $$(BUILD_ISP_GOAL) $$(INST_ISP_DIR)/
+ endif
+ ifdef MASK_OBJS
+	$$(MKDIR) $$(INST_MASK_DIR)/
+	$$(CP) -u $$(BUILD_MASK_GOAL) $$(INST_MASK_DIR)/
+ endif
+ ifdef GDB_OBJS
+	$$(MKDIR) $$(INST_GDB_DIR)/
+	$$(CP) -u $$(BUILD_GDB_GOAL) $$(INST_GDB_DIR)/
+ endif
+ ifdef DBG_OBJS
+	$$(MKDIR) $$(INST_DBG_DIR)/
+	$$(CP) -u $$(BUILD_DBG_GOAL) $$(INST_DBG_DIR)/
+ endif
+ ifdef FUJI_DBG_OBJS
+	$$(MKDIR) $$(INST_FUJI_DBG_DIR)/
+	$$(CP) -u $$(BUILD_FUJI_DBG_GOAL) $$(INST_FUJI_DBG_DIR)/
+ endif
+ ifdef FUJI_OBJS
+	$$(MKDIR) $$(INST_FUJI_DIR)/
+	$$(CP) -u $$(BUILD_FUJI_GOAL) $$(INST_FUJI_DIR)/
+ endif
+ ifdef HSUART_DBG_OBJS
+	$$(MKDIR) $$(INST_HSUART_DBG_DIR)/
+	$$(CP) -u $$(BUILD_HSUART_DBG_GOAL) $$(INST_HSUART_DBG_DIR)/
+ endif
+ ifdef HSUART_OBJS
+	$$(MKDIR) $$(INST_HSUART_DIR)/
+	$$(CP) -u $$(BUILD_HSUART_GOAL) $$(INST_HSUART_DIR)/
+ endif
+ ifdef INST_HEADERS
+	$$(MKDIR) $$(INST_HEADER_DIR)/
+	$$(CP) -u $$(addprefix $$(SRC_DIR)/,$$(INST_HEADERS)) $$(INST_HEADER_DIR)/
+ endif
+ ifdef INST_HEADERS2
+	$$(MKDIR) $$(INST_HEADER_DIR2)/
+	$$(CP) -u $$(addprefix $$(SRC_DIR)/,$$(INST_HEADERS2)) $$(INST_HEADER_DIR2)/
+ endif
+ ifdef EXT_HEADERS
+	$$(MKDIR) $$(INST_HEADER_DIR)/
+	$$(MKDIR) $$(EXT_HEADER_DIR)/
+	$$(CP) -u $$(addprefix $$(SRC_DIR)/,$$(EXT_HEADERS)) $$(INST_HEADER_DIR)/
+	$$(CP) -u $$(addprefix $$(SRC_DIR)/,$$(EXT_HEADERS)) $$(EXT_HEADER_DIR)/
+ endif
+ ifdef EXT_HEADERS2
+	$$(MKDIR) $$(INST_HEADER_DIR2)/
+	$$(MKDIR) $$(EXT_HEADER_DIR2)/
+	$$(CP) -u $$(addprefix $$(SRC_DIR)/,$$(EXT_HEADERS2)) $$(INST_HEADER_DIR2)/
+	$$(CP) -u $$(addprefix $$(SRC_DIR)/,$$(EXT_HEADERS2)) $$(EXT_HEADER_DIR2)/
+ endif
+ ifdef INST_EXTLIB
+	$$(CP) -u $$(addprefix $$(SRC_DIR)/,$$(INST_EXTLIB)) $$(INST_GOAL_DIR)/
+ endif
+
+ .PHONY: doc
+ doc:
+	@/bin/sh $$(ROOT)/gendoc.sh $$(ROOT) $$(REL_SRC_DIR) $$(CFLAGS)
+	@$$(DOXYGEN) doxycfg
+	@$$(RM) doxycfg
+
+ endif #ifndef HOST_ROOT
+
+ .PHONY: clean
+ clean: $$(CLEAN_PRIVATE)
+	$$(MSG_SPLIT_LINE)
+	$$(RMR) $$(BUILD_DIR)
+ ifndef HOST_ROOT
+ ifdef GOAL
+	$$(RM) $$(addprefix $$(INST_GOAL_DIR)/,$$(notdir $$(GOAL)))
+  ifndef APP_BUILD
+	$$(RM) $$(wildcard $$(INST_GOAL_DIR)/$$(notdir $$(GOAL:.a=.stage*.a)))
+	$$(RMR) $$(INST_STAGE_DIR)
+    ifdef GDB_INST_STAGE_DIR
+	$$(RM) $$(wildcard $$(INST_GDB_DIR)/$$(notdir $$(GDB_GOAL:.gdb.a=.gdb.stage*.a)))
+	$$(RMR) $$(GDB_INST_STAGE_DIR)
+    endif #ifdef GDB_INST_STAGE_DIR
+    ifdef DBG_INST_STAGE_DIR
+	$$(RM) $$(wildcard $$(INST_DBG_DIR)/$$(notdir $$(DBG_GOAL:.dbg.a=.dbg.stage*.a)))
+	$$(RMR) $$(DBG_INST_STAGE_DIR)
+    endif #ifdef DBG_INST_STAGE_DIR
+    ifdef FUJI_DBG_INST_STAGE_DIR
+	$$(RM) $$(wildcard $$(INST_FUJI_DBG_DIR)/$$(notdir $$(FUJI_DBG_GOAL:.ff.dbg.a=.ff.dbg.stage*.a)))
+	$$(RMR) $$(FUJI_DBG_INST_STAGE_DIR)
+    endif #ifdef FUJI_DBG_INST_STAGE_DIR
+    ifdef FUJI_INST_STAGE_DIR
+	$$(RM) $$(wildcard $$(INST_FUJI_DIR)/$$(notdir $$(FUJI_GOAL:.ff.a=.ff.stage*.a)))
+	$$(RMR) $$(FUJI_INST_STAGE_DIR)
+    endif #ifdef FUJI_INST_STAGE_DIR
+    ifdef HSUART_DBG_INST_STAGE_DIR
+	$$(RM) $$(wildcard $$(INST_HSUART_DBG_DIR)/$$(notdir $$(HSUART_DBG_GOAL:.hsuart.dbg.a=.hsuart.dbg.stage*.a)))
+	$$(RMR) $$(HSUART_DBG_INST_STAGE_DIR)
+    endif #ifdef HSUART_DBG_INST_STAGE_DIR
+    ifdef HSUART_INST_STAGE_DIR
+	$$(RM) $$(wildcard $$(INST_HSUART_DIR)/$$(notdir $$(HSUART_GOAL:.hsuart.a=.hsuart.stage*.a)))
+	$$(RMR) $$(HSUART_INST_STAGE_DIR)
+    endif #ifdef HSUART_INST_STAGE_DIR
+  endif #ifndef APP_BUILD
+ endif #GOAL
+ ifdef EXT_OBJS
+	$$(RM) $$(addprefix $$(INST_GOAL_DIR)/,$$(notdir $$(EXT_OBJS)))
+ endif #EXT_OBJS
+ ifdef ISP_OBJS
+	$$(RM) $$(addprefix $$(INST_ISP_DIR)/,$$(notdir $$(ISP_GOAL)))
+ endif
+ ifdef MASK_OBJS
+	$$(RM) $$(addprefix $$(INST_MASK_DIR)/,$$(notdir $$(MASK_GOAL)))
+ endif
+ ifdef GDB_OBJS
+	$$(RM) $$(addprefix $$(INST_GDB_DIR)/,$$(notdir $$(GDB_GOAL)))
+ endif
+ ifdef DBG_OBJS
+	$$(RM) $$(addprefix $$(INST_DBG_DIR)/,$$(notdir $$(DBG_GOAL)))
+ endif
+ ifdef FUJI_DBG_OBJS
+	$$(RM) $$(addprefix $$(INST_FUJI_DBG_DIR)/,$$(notdir $$(FUJI_DBG_GOAL)))
+ endif
+ ifdef FUJI_OBJS
+	$$(RM) $$(addprefix $$(INST_FUJI_DIR)/,$$(notdir $$(FUJI_GOAL)))
+ endif
+ ifdef HSUART_DBG_OBJS
+	$$(RM) $$(addprefix $$(INST_HSUART_DBG_DIR)/,$$(notdir $$(HSUART_DBG_GOAL)))
+ endif
+ ifdef HSUART_OBJS
+	$$(RM) $$(addprefix $$(INST_HSUART_DIR)/,$$(notdir $$(HSUART_GOAL)))
+ endif
+ ifdef INST_HEADERS
+	$$(RM) $$(addprefix $$(INST_HEADER_DIR)/,$$(notdir $$(INST_HEADERS)))
+ endif
+ ifdef INST_HEADERS2
+	$$(RM) $$(addprefix $$(INST_HEADER_DIR2)/,$$(notdir $$(INST_HEADERS2)))
+ endif
+ ifdef EXT_HEADERS
+	$$(RM) $$(addprefix $$(INST_HEADER_DIR)/,$$(notdir $$(EXT_HEADERS)))
+	$$(RM) $$(addprefix $$(EXT_HEADER_DIR)/,$$(notdir $$(EXT_HEADERS)))
+ endif
+ ifdef EXT_HEADERS2
+	$$(RM) $$(addprefix $$(INST_HEADER_DIR2)/,$$(notdir $$(EXT_HEADERS2)))
+	$$(RM) $$(addprefix $$(EXT_HEADER_DIR2)/,$$(notdir $$(EXT_HEADERS2)))
+ endif
+ ifdef INST_EXTLIB
+	$$(RM) $$(addprefix $$(INST_GOAL_DIR)/,$$(notdir $$(INST_EXTLIB)))
+ endif
+ ifeq ($(OUTPUT_C_PREPROCESS_FILE), 1)
+	$$(RM) $$(OBJS:.o=.i)
+ endif
+ endif #ifndef HOST_ROOT
+
+
+ GOAL_DEPS := $$(filter $$(BUILD_ALL_GOALS) $$(ALL_GOALS) all install,$$(MAKECMDGOALS))
+ BUILD_DEPS := $$(filter $$(BUILD_DEP_OBJS),$$(MAKECMDGOALS))
+ OBJ_DEPS := $$(filter $$(DEP_OBJS),$$(MAKECMDGOALS))
+ CLEAN_DEPS := $$(filter clean,$$(MAKECMDGOALS))
+ NO_DEPS := $$(filter $$(BUILD_REV_OBJS) $$(REV_OBJS),$$(MAKECMDGOALS))
+ ifeq (,$$(CLEAN_DEPS))
+  ifeq (,$$(GOAL_DEPS))
+   ifeq (,$$(strip $$(BUILD_DEPS) $$(OBJ_DEPS)))
+    ifeq (,$$(NO_DEPS))
+     -include $$(BUILD_DEP_OBJS:.o=.d)
+    endif
+   else
+    ifneq (,$$(BUILD_DEPS))
+     -include $$(BUILD_DEPS:.o=.d)
+    endif
+    ifneq (,$$(OBJ_DEPS))
+     -include $$(addprefix $$(BUILD_DIR)/,$$(OBJ_DEPS:.o=.d))
+    endif
+   endif
+  else
+   -include $$(BUILD_DEP_OBJS:.o=.d)
+  endif
+ endif
+
+endef #GEN_GOAL_RULES

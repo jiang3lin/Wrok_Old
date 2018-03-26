@@ -1,0 +1,6 @@
+Modules: libnet wlan/wpas-hapd-0.8 wlan/tools lwip-1.4.0.rc2 mDNSResponder-320.10.80 liveStreaming
+PLATFORM: spca6330
+TCPIP: lwip
+BaseFW Rev: 15612
+NDK Rev: 15617
+Building Data: Fri Apr 19 10:46:03     2013

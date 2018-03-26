@@ -1,0 +1,596 @@
+#/**************************************************************************
+# *
+# *      Copyright (c) 2002-2010 by Sunplus mMedia Inc., Ltd.
+# *
+# *  This software is copyrighted by and is the property of Sunplus
+# *  mMedia Inc., Ltd. All rights are reserved by Sunplus mMedia
+# *  Inc., Ltd. This software may only be used in accordance with the
+# *  corresponding license agreement. Any unauthorized use, duplication,
+# *  distribution, or disclosure of this software is expressly forbidden.
+# *
+# *  This Copyright notice MUST not be removed or modified without prior
+# *  written consent of Sunplus mMedia Inc., Ltd.
+# *
+# *  Sunplus mMedia Inc., Ltd. reserves the right to modify this
+# *  software without notice.
+# *
+# *  Sunplus mMedia Inc., Ltd.
+# *  19-1, Innovation First Road, Science-Based Industrial Park,
+# *  Hsin-Chu, Taiwan.
+# *
+# *  Author: Anmin Deng
+# *
+# **************************************************************************/
+
+# this file included by $host/Makefile for manual config sensor devices
+
+ifneq ($(SENSOR_CUSTOM_DEFINE), YES) # not config in host or project .def
+
+# if not config in host.def or individual project .def, manual config here
+
+# CISPLUS CMOS Image Sensor
+  SENSOR_TT3131 := NO
+
+# OmniVision CMOS Image Sensor
+  SENSOR_OV5610 := NO
+  SENSOR_OV5620 := NO
+  SENSOR_OV5633 := NO
+  SENSOR_OV5653 := NO
+  SENSOR_OV9712 := NO
+  SENSOR_OV5633 := NO
+  SENSOR_OV5653 := NO
+  SENSOR_OV14810 := NO
+  SENSOR_OV7740 := NO
+  SENSOR_OV7740_YUV := NO
+  SENSOR_OV16820 := NO
+  SENSOR_OV8810 := NO
+  SENSOR_OV8825 := NO
+  SENSOR_OV8830 := NO
+  SENSOR_OV8833 := NO
+  SENSOR_OV9714 := NO
+  SENSOR_OV9713 := NO
+
+# Micro CMOS Image Sensor
+  SENSOR_MI5100 := NO
+  SENSOR_MT9V136 := NO
+  SENSOR_MT9J003 := NO
+  SENSOR_AR0130 := NO
+  SENSOR_AR0130_DUAL := NO
+  SENSOR_AR0330 := NO
+  SENSOR_AR0331 := NO
+  SENSOR_MI1600 := NO
+  SENSOR_MI1320 := NO
+  SENSOR_MI5100p := NO
+  SENSOR_MT9F002 := NO
+
+# Others CMOS Image Sensor
+  SENSOR_KAC5010 := NO
+  SENSOR_CP3200 := NO
+
+# Sony CCD Image Sensor
+  SENSOR_XTG3626_SONY455 := NO
+  SENSOR_XTG4805_SONY624 := NO
+  SENSOR_XTG9923_SONY629 := NO
+  SENSOR_AD9920_SONY636 := NO
+  SENSOR_AD9920_SONY646 := NO
+  SENSOR_AD9000_SONY675 := NO
+  SENSOR_AD9000_SONY677 := NO
+  SENSOR_VSP6244_SONY636 := NO
+  SENSOR_VSP6244_SONY675 := NO
+  SENSOR_VSP6244_SONY675_BIN := NO
+  SENSOR_VSP6244_SONY677 := NO
+  SENSOR_VSP6244_SONY681 := NO
+  SENSOR_VSP6244_SONY631 := NO
+
+# Sharp CCD Image Sensor
+  SENSOR_AD9920_SHARPRJ23T3A := NO
+  SENSOR_AD9920_SHARPRJ23V3B := NO
+  SENSOR_AD9920_SHARPRJ23U3B := NO
+  SENSOR_AD9000_SHARPRJ23V3B := NO
+  SENSOR_AD9000_SHARPRJ23U3B := NO
+  SENSOR_AD9000_SHARPRJ23W3B := NO
+  SENSOR_VSP6244_SHARPRJ23W3B := NO
+  SENSOR_VSP6244_SHARPRJ23Y3B := NO
+
+# Panasonic CCD Image Sensor
+  SENSOR_XTG12067_PANX39830 := NO
+  SENSOR_XTG12069_PANX39830 := NO
+  SENSOR_XTG12068_PANX39850 := NO
+  SENSOR_VSP6244_PANAMN34571 := NO
+  SENSOR_AD9007_PANAMN34591 := NO
+
+# TV decoder
+  #TVINDEC_TVP5150 := NO
+  SENSOR_TVP5150 := NO 
+
+# end of manual sensor config block
+
+endif
+
+
+EVTBL_PATH := $(RO_RES_PATH)/SENSOR
+
+ifeq ($(SENSOR_TT3131), YES)
+  EXPTBL_DEF := $(RO_RES_PATH)/TT3131/exptbl_tt3131.dat
+  AGCTBL_DEF := $(RO_RES_PATH)/TT3131/agctbl_tt3131.dat
+  SENSORSET := YES
+endif
+
+ifeq ($(SENSOR_AD9920_SHARPRJ23T3A), YES)
+  EXPTBL_DEF := $(RO_RES_PATH)/SHARPRJ23T3A/exptbl_ad9920_sharprj23t3a.dat
+  AGCTBL_DEF := $(RO_RES_PATH)/SHARPRJ23T3A/agctbl_ad9920.dat
+  SENSORSET := YES
+endif
+
+ifeq ($(SENSOR_AD9920_SHARPRJ23U3B), YES)
+  EXPTBL_DEF := $(RO_RES_PATH)/SHARPRJ23U3B/exptbl_ad9920_sharprj23u3b.dat
+  AGCTBL_DEF := $(RO_RES_PATH)/SHARPRJ23U3B/agctbl_ad9920.dat
+  SENSORSET := YES
+endif
+
+ifeq ($(SENSOR_AD9920_SHARPRJ23V3B), YES)
+  EXPTBL_DEF := $(RO_RES_PATH)/SHARPRJ23V3B/exptbl_ad9920_sharprj23v3b.dat
+  AGCTBL_DEF := $(RO_RES_PATH)/SHARPRJ23V3B/agctbl_ad9920.dat
+  SENSORSET := YES
+endif
+
+ifeq ($(SENSOR_AD9000_SHARPRJ23V3B), YES)
+  EXPTBL_DEF := $(RO_RES_PATH)/SHARPRJ23V3B/exptbl_ad9000_sharprj23v3b.dat
+  AGCTBL_DEF := $(RO_RES_PATH)/SHARPRJ23V3B/agctbl_ad9000.dat
+  AFEINITTBL_DEF := $(RO_RES_PATH)/SHARPRJ23V3B/init_ad9000_sharprj23v3b.dat
+  SENSORSET := YES
+endif
+
+ifeq ($(SENSOR_AD9000_SHARPRJ23U3B), YES)
+  EXPTBL_DEF := $(RO_RES_PATH)/SHARPRJ23U3B/exptbl_ad9000_sharprj23u3b.dat
+  AGCTBL_DEF := $(RO_RES_PATH)/SHARPRJ23U3B/agctbl_ad9000.dat
+  AFEINITTBL_DEF := $(RO_RES_PATH)/SHARPRJ23U3B/init_ad9000_sharprj23u3b.dat
+  SENSORSET := YES
+endif
+
+ifeq ($(SENSOR_AD9000_SHARPRJ23W3B), YES)
+  EXPTBL_DEF := $(RO_RES_PATH)/SHARPRJ23W3B/exptbl_ad9000_sharprj23w3b.dat
+  AGCTBL_DEF := $(RO_RES_PATH)/SHARPRJ23W3B/agctbl_ad9000.dat
+  AFEINITTBL_DEF := $(RO_RES_PATH)/SHARPRJ23W3B/init_ad9000_sharprj23w3b.dat
+  SENSORSET := YES
+endif
+
+ifeq ($(SENSOR_VSP6244_SHARPRJ23W3B), YES)
+  EXPTBL_DEF := $(RO_RES_PATH)/SHARPRJ23W3B/exptbl_vsp6244_sharprj23w3b.dat
+  ifeq ($(AGCTBL_MIX), YES)
+    AGCTBL_DEF := $(RO_RES_PATH)/SHARPRJ23W3B/agctbl_vsp6244_mix.dat
+  else
+    AGCTBL_DEF := $(RO_RES_PATH)/SHARPRJ23W3B/agctbl_vsp6244.dat
+  endif
+  AFEINITTBL_DEF := $(RO_RES_PATH)/SHARPRJ23W3B/init_vsp6244_sharprj23w3b.dat
+  AFEVIEWTBL_DEF := $(RO_RES_PATH)/SHARPRJ23W3B/view_vsp6244_sharprj23w3b.dat
+  AFESNAPTBL_DEF := $(RO_RES_PATH)/SHARPRJ23W3B/snap_vsp6244_sharprj23w3b.dat
+  SENSORSET := YES
+endif
+
+ifeq ($(SENSOR_VSP6244_SHARPRJ23Y3B), YES)
+  EXPTBL_DEF := $(RO_RES_PATH)/SHARPRJ23Y3B/exptbl_vsp6244_sharprj23y3b.dat
+  AGCTBL_DEF := $(RO_RES_PATH)/SHARPRJ23Y3B/agctbl_vsp6244.dat
+  AFEINITTBL_DEF := $(RO_RES_PATH)/SHARPRJ23Y3B/init_vsp6244_sharprj23y3b.dat
+  AFEVIEWTBL_DEF := $(RO_RES_PATH)/SHARPRJ23Y3B/view_vsp6244_sharprj23y3b.dat
+  AFESNAPTBL_DEF := $(RO_RES_PATH)/SHARPRJ23Y3B/snap_vsp6244_sharprj23y3b.dat
+  AFEVIE2TBL_DEF := $(RO_RES_PATH)/SHARPRJ23Y3B/view_vsp6244_sharprj23y3btg2.dat
+  SENSORSET := YES
+endif
+
+ifeq ($(SENSOR_VSP6244_SONY675), YES)
+  EXPTBL_DEF := $(RO_RES_PATH)/SONY675/exptbl_vsp6244_sony675.dat
+  AGCTBL_DEF := $(RO_RES_PATH)/SONY675/agctbl_vsp6244.dat
+  AFEINITTBL_DEF := $(RO_RES_PATH)/SONY675/init_vsp6244_sony675.dat
+  SENSORSET := YES
+endif
+
+ifeq ($(SENSOR_VSP6244_SONY675_BIN), YES)
+  EXPTBL_DEF := $(RO_RES_PATH)/SONY675/exptbl_vsp6244_sony675bin.dat
+  AGCTBL_DEF := $(RO_RES_PATH)/SONY675/agctbl_vsp6244bin.dat
+  AFEINITTBL_DEF := $(RO_RES_PATH)/SONY675/init_vsp6244_sony675bin.dat
+  SENSORSET := YES
+endif
+
+ifeq ($(SENSOR_VSP6244_SONY677), YES)
+  EXPTBL_DEF := $(RO_RES_PATH)/SONY677/exptbl_vsp6244_sony677.dat
+  AGCTBL_DEF := $(RO_RES_PATH)/SONY677/agctbl_vsp6244.dat
+  AFEINITTBL_DEF := $(RO_RES_PATH)/SONY677/init_vsp6244_sony677.dat
+  AFEVIEWTBL_DEF := $(RO_RES_PATH)/SONY677/view_vsp6244_sony677.dat
+  AFESNAPTBL_DEF := $(RO_RES_PATH)/SONY677/snap_vsp6244_sony677.dat
+  AFESNAP1TBL_DEF := $(RO_RES_PATH)/SONY677/snap1_vsp6244_sony677.dat
+  SENSORSET := YES
+endif
+
+ifeq ($(SENSOR_VSP6244_SONY681), YES)
+  EXPTBL_DEF := $(RO_RES_PATH)/SONY681/exptbl_vsp6244_sony681.dat
+  AGCTBL_DEF := $(RO_RES_PATH)/SONY681/agctbl_vsp6244.dat
+  AFEINITTBL_DEF := $(RO_RES_PATH)/SONY681/init_vsp6244_sony681.dat
+  AFEVIEWTBL_DEF := $(RO_RES_PATH)/SONY681/view_vsp6244_sony681.dat
+  AFESNAPTBL_DEF := $(RO_RES_PATH)/S8ONY681/snap_vsp6244_sony681.dat
+  AFEVIE2TBL_DEF := $(RO_RES_PATH)/SONY681/view_vsp6244_sony681tg2.dat
+  SENSORSET := YES
+endif
+
+ifeq ($(SENSOR_VSP6244_SONY631), YES)
+  EXPTBL_DEF := $(RO_RES_PATH)/SONY631/exptbl_vsp6244_sony631.dat
+  AGCTBL_DEF := $(RO_RES_PATH)/SONY631/agctbl_vsp6244.dat
+  AFEINITTBL_DEF := $(RO_RES_PATH)/SONY631/init_vsp6244_sony631.dat
+  AFEVIEWTBL_DEF := $(RO_RES_PATH)/SONY631/view_vsp6244_sony631.dat
+  AFESNAPTBL_DEF := $(RO_RES_PATH)/SONY631/snap_vsp6244_sony631.dat
+  AFEVIE2TBL_DEF := $(RO_RES_PATH)/SONY631/view_vsp6244_sony631tg2.dat
+  AFESNAP1TBL_DEF := $(RO_RES_PATH)/SONY631/snap1_vsp6244_sony631.dat
+  AFESNAP2TBL_DEF := $(RO_RES_PATH)/SONY631/snap2_vsp6244_sony631.dat
+  SENSORSET := YES
+endif
+
+ifeq ($(SENSOR_AD9000_SONY675), YES)
+  EXPTBL_DEF := $(RO_RES_PATH)/SONY675/exptbl_ad9000_sony675.dat
+  AGCTBL_DEF := $(RO_RES_PATH)/SONY675/agctbl_ad9000.dat
+  AFEINITTBL_DEF := $(RO_RES_PATH)/SONY675/init_ad9000_sony675.dat
+  SENSORSET := YES
+endif
+
+ifeq ($(SENSOR_AD9000_SONY677), YES)
+  EXPTBL_DEF := $(RO_RES_PATH)/SONY677/exptbl_ad9000_sony677.dat
+  AGCTBL_DEF := $(RO_RES_PATH)/SONY677/agctbl_ad9000.dat
+  AFEINITTBL_DEF := $(RO_RES_PATH)/SONY677/init_ad9000_sony677.dat
+  SENSORSET := YES
+endif
+
+ifeq ($(SENSOR_AD9920_SONY636), YES)
+  EXPTBL_DEF := $(RO_RES_PATH)/SONY636/exptbl_ad9920_sony636.dat
+  AGCTBL_DEF := $(RO_RES_PATH)/SONY636/agctbl_ad9920.dat
+  SENSORSET := YES
+endif
+
+ifeq ($(SENSOR_VSP6244_SONY636), YES)
+  EXPTBL_DEF := $(RO_RES_PATH)/SONY636/exptbl_vsp6244_sony636.dat
+  AGCTBL_DEF := $(RO_RES_PATH)/SONY636/agctbl_vsp6244.dat
+  SENSORSET := YES
+endif
+
+ifeq ($(SENSOR_AD9920_SONY646), YES)
+#  CDSPPARA_PATH := $(RO_RES_PATH)/SONY646
+  EXPTBL_DEF := $(RO_RES_PATH)/SONY646/exptbl_ad9920_sony646.dat
+  AGCTBL_DEF := $(RO_RES_PATH)/SONY646/agctbl_ad9920.dat
+  SENSORSET := YES
+endif
+
+ifeq ($(SENSOR_OV5610), YES)
+  EXPTBL_DEF := $(RO_RES_PATH)/OV5610/exptbl_ov5610.dat
+  AGCTBL_DEF := $(RO_RES_PATH)/OV5610/agctbl_ov5610.dat
+  SENSORSET := YES
+endif
+
+ifeq ($(SENSOR_OV5620), YES)
+  EXPTBL_DEF := $(RO_RES_PATH)/OV5620/exptbl_ov5620.dat
+  AGCTBL_DEF := $(RO_RES_PATH)/OV5620/agctbl_ov5620.dat
+  SENSORSET := YES
+endif
+
+ifeq ($(SENSOR_OV9712), YES)
+		EXPTBL = $(RO_RES_PATH)/OV9712/exptbl_ov9712.dat
+		AGCTBL = $(RO_RES_PATH)/OV9712/agctbl_ov9712.dat
+		SENSORSET = YES
+endif
+
+ifeq ($(SENSOR_OV5633), YES)
+		EXPTBL = $(RO_RES_PATH)/OV5633/exptbl_ov5633.dat
+		AGCTBL = $(RO_RES_PATH)/OV5633/agctbl_ov5633.dat
+		SENSORSET = YES
+endif
+	
+ifeq ($(SENSOR_OV5653), YES)
+		EXPTBL = $(RO_RES_PATH)/OV5653/exptbl_ov5653.dat
+		AGCTBL = $(RO_RES_PATH)/OV5653/agctbl_ov5653.dat
+		SENSORSET = YES
+endif
+
+ifeq ($(SENSOR_OV16820), YES)
+		EXPTBL = $(RO_RES_PATH)/OV16820/exptbl_ov16820.dat
+		AGCTBL = $(RO_RES_PATH)/OV16820/agctbl_ov16820.dat
+		SENSORSET = YES
+endif
+
+ifeq ($(SENSOR_OV8810), YES)
+		EXPTBL = $(RO_RES_PATH)/OV8810/exptbl_ov8810.dat
+		AGCTBL = $(RO_RES_PATH)/OV8810/agctbl_ov8810.dat
+		SENSORSET = YES
+endif
+
+ifeq ($(SENSOR_OV8825), YES)
+		EXPTBL = $(RO_RES_PATH)/OV8825/exptbl_ov8825.dat
+		AGCTBL = $(RO_RES_PATH)/OV8825/agctbl_ov8825.dat
+		SENSORSET = YES
+endif
+
+ifeq ($(SENSOR_OV8830), YES)
+		EXPTBL = $(RO_RES_PATH)/OV8830/exptbl_ov8830.dat
+		AGCTBL = $(RO_RES_PATH)/OV8830/agctbl_ov8830.dat
+		SENSORSET = YES
+endif
+
+ifeq ($(SENSOR_OV8833), YES)
+		EXPTBL = $(RO_RES_PATH)/OV8833/exptbl_ov8833.dat
+		AGCTBL = $(RO_RES_PATH)/OV8833/agctbl_ov8833.dat
+		SENSORSET = YES
+endif
+
+ifeq ($(SENSOR_OV9714), YES)
+		EXPTBL = $(RO_RES_PATH)/OV9714/exptbl_ov9714.dat
+		AGCTBL = $(RO_RES_PATH)/OV9714/agctbl_ov9714.dat
+		SENSORSET = YES
+endif
+
+ifeq ($(SENSOR_OV9713), YES)
+        EXPTBL = $(RO_RES_PATH)/OV9713/exptbl_ov9713.dat
+        AGCTBL = $(RO_RES_PATH)/OV9713/agctbl_ov9713.dat
+        SENSORSET = YES
+endif
+
+ifeq ($(SENSOR_PANAMN34110), YES)
+		EXPTBL = $(RO_RES_PATH)/PANAMN34110/exptbl_panamn34110.dat
+		AGCTBL = $(RO_RES_PATH)/PANAMN34110/agctbl_panamn34110.dat
+		SENSORSET = YES
+endif
+
+ifeq ($(SENSOR_PANAMN34120), YES)
+		EXPTBL = $(RO_RES_PATH)/PANAMN34120/exptbl_panamn34120.dat
+		AGCTBL = $(RO_RES_PATH)/PANAMN34120/agctbl_panamn34120.dat
+		SENSORSET = YES
+endif
+
+
+ifeq ($(SENSOR_SONYIMX083), YES)
+		EXPTBL = $(RO_RES_PATH)/SONYIMX083/exptbl_sonyimx083.dat
+		AGCTBL = $(RO_RES_PATH)/SONYIMX083/agctbl_sonyimx083.dat
+		SENSORSET = YES
+endif
+
+	
+ifeq ($(SENSOR_OV5633), YES)
+		EXPTBL = $(RO_RES_PATH)/OV5633/exptbl_ov5633.dat
+		AGCTBL = $(RO_RES_PATH)/OV5633/agctbl_ov5633.dat
+		SENSORSET = YES
+endif
+
+ifeq ($(SENSOR_OV5653), YES)
+		EXPTBL = $(RO_RES_PATH)/OV5653/exptbl_ov5653.dat
+		AGCTBL = $(RO_RES_PATH)/OV5653/agctbl_ov5653.dat
+		SENSORSET = YES
+endif
+
+ifeq ($(SENSOR_OV14810), YES)
+  EXPTBL_DEF := $(RO_RES_PATH)/OV14810/exptbl_ov14810.dat
+  AGCTBL_DEF := $(RO_RES_PATH)/OV14810/agctbl_ov14810.dat
+  SENSORSET := YES
+endif
+
+ifeq ($(SENSOR_OV7740), YES)
+		EXPTBL = $(RO_RES_PATH)/OV7740/exptbl_ov7740.dat
+		AGCTBL = $(RO_RES_PATH)/OV7740/agctbl_ov7740.dat
+		SENSORSET = YES
+endif
+
+ifeq ($(SENSOR_OV7740_YUV), YES)
+		EXPTBL = $(RO_RES_PATH)/OV7740_YUV/exptbl_ov7740_yuv.dat
+		AGCTBL = $(RO_RES_PATH)/OV7740_YUV/agctbl_ov7740_yuv.dat
+		SENSORSET = YES
+endif
+
+ifeq ($(SENSOR_SONYIMX175), YES)
+  EXPTBL_DEF := $(RO_RES_PATH)/SONYIMX175/exptbl_sonyimx175.dat
+  AGCTBL_DEF := $(RO_RES_PATH)/SONYIMX175/agctbl_sonyimx175.dat
+  SENSORSET := YES
+endif
+
+ifeq ($(SENSOR_OV2715), YES)
+  EXPTBL_DEF := $(RO_RES_PATH)/OV2715/exptbl_ov2715.dat
+  AGCTBL_DEF := $(RO_RES_PATH)/OV2715/agctbl_ov2715.dat
+  SENSORSET := YES
+endif
+
+
+ifeq ($(SENSOR_MI5100), YES)
+  EXPTBL_DEF := $(RO_RES_PATH)/MI5100/exptbl_mi5100.dat
+  AGCTBL_DEF := $(RO_RES_PATH)/MI5100/agctbl_mi5100.dat
+  SENSORSET := YES
+endif
+
+ifeq ($(SENSOR_MI5100p), YES)
+  EXPTBL_DEF := $(RO_RES_PATH)/MI5100p/exptbl_MI5100p.dat
+  AGCTBL_DEF := $(RO_RES_PATH)/MI5100p/agctbl_MI5100p.dat
+  SENSORSET := YES
+endif
+
+ifeq ($(SENSOR_MT9V136), YES)
+  EXPTBL_DEF := $(RO_RES_PATH)/MT9V136/exptbl_mi9130.dat
+  AGCTBL_DEF := $(RO_RES_PATH)/MT9V136/agctbl_mi9130.dat
+  SENSORSET := YES
+endif
+
+ifeq ($(SENSOR_MT9J003), YES)
+  EXPTBL_DEF := $(RO_RES_PATH)/MT9J003/exptbl_mt9J003.dat
+  AGCTBL_DEF := $(RO_RES_PATH)/MT9J003/agctbl_mt9J003.dat
+  SENSORSET := YES
+endif
+
+ifeq ($(SENSOR_AR0130), YES)
+  EXPTBL_DEF := $(RO_RES_PATH)/AR0130/exptbl_ar0130.dat
+  AGCTBL_DEF := $(RO_RES_PATH)/AR0130/agctbl_ar0130.dat
+  SENSORSET := YES
+endif
+
+ifeq ($(SENSOR_AR0130_DUAL), YES)
+  EXPTBL_DEF := $(RO_RES_PATH)/AR0130_DUAL/exptbl_ar0130.dat
+  AGCTBL_DEF := $(RO_RES_PATH)/AR0130_DUAL/agctbl_ar0130.dat
+  SENSORSET := YES
+endif
+
+ifeq ($(SENSOR_AR0330), YES)
+  EXPTBL_DEF := $(RO_RES_PATH)/AR0330/exptbl_ar0330.dat
+  AGCTBL_DEF := $(RO_RES_PATH)/AR0330/agctbl_ar0330.dat
+  SENSORSET := YES
+endif
+
+ifeq ($(SENSOR_AR0330CS), YES)
+  EXPTBL_DEF := $(RO_RES_PATH)/AR0330CS/exptbl_ar0330cs.dat
+  AGCTBL_DEF := $(RO_RES_PATH)/AR0330CS/agctbl_ar0330cs.dat
+  SENSORSET := YES
+endif
+
+ifeq ($(SENSOR_AR0330CS_PLCC), YES)
+  EXPTBL_DEF := $(RO_RES_PATH)/AR0330CS_PLCC/exptbl_ar0330cs.dat
+  AGCTBL_DEF := $(RO_RES_PATH)/AR0330CS_PLCC/agctbl_ar0330cs.dat
+  SENSORSET := YES
+endif
+
+ifeq ($(SENSOR_AR0331), YES)
+  EXPTBL_DEF := $(RO_RES_PATH)/AR0331/exptbl_ar0331.dat
+  AGCTBL_DEF := $(RO_RES_PATH)/AR0331/agctbl_ar0331.dat
+  SENSORSET := YES
+endif
+
+ifeq ($(SENSOR_MT9F002), YES)
+  EXPTBL_DEF := $(RO_RES_PATH)/MT9F002/exptbl_mt9F002.dat
+  AGCTBL_DEF := $(RO_RES_PATH)/MT9F002/agctbl_mt9F002.dat
+  SENSORSET := YES
+endif
+
+ifeq ($(SENSOR_MI1600), YES)
+  EXPTBL_DEF := $(RO_RES_PATH)/MI1600/exptbl_mi1600.dat
+  AGCTBL_DEF := $(RO_RES_PATH)/MI1600/agctbl_mi1600.dat
+  SENSORSET := YES
+endif
+
+ifeq ($(SENSOR_MI1320), YES)
+  EXPTBL_DEF := $(RO_RES_PATH)/MI1320/exptbl_mi1320.dat
+  AGCTBL_DEF := $(RO_RES_PATH)/MI1320/agctbl_mi1320.dat
+  SENSORSET := YES
+endif
+
+ifeq ($(SENSOR_KAC5010), YES)
+  EXPTBL_DEF := $(RO_RES_PATH)/KAC5010/exptbl_kac5010.dat
+  AGCTBL_DEF := $(RO_RES_PATH)/KAC5010/agctbl_kac5010.dat
+  SENSORSET := YES
+endif
+
+ifeq ($(SENSOR_CP3200), YES)
+  EXPTBL_DEF := $(RO_RES_PATH)/CP3200/exptbl_cp3200.dat
+  AGCTBL_DEF := $(RO_RES_PATH)/CP3200/agctbl_cp3200.dat
+  SENSORSET := YES
+endif
+
+ifeq ($(SENSOR_XTG3626_SONY455), YES)
+  EXPTBL_DEF := $(EVTBL_PATH)/exptbl_cxd3626ga_sony455.dat
+  AGCTBL_DEF := $(EVTBL_PATH)/agctbl_ad9943.dat
+  SENSORSET := YES
+endif
+
+ifeq ($(SENSOR_XTG4805_SONY624), YES)
+  EXPTBL_DEF := $(EVTBL_PATH)/exptbl_cxd4805ga_sony624.dat
+  AGCTBL_DEF := $(EVTBL_PATH)/agctbl_cxd4805ga.dat
+  SENSORSET := YES
+endif
+
+ifeq ($(SENSOR_XTG9923_SONY629), YES)
+  EXPTBL_DEF := $(EVTBL_PATH)/exptbl_ad9923_sony629.dat
+  AGCTBL_DEF := $(EVTBL_PATH)/agctbl_ad9923.dat
+  SENSORSET := YES
+endif
+
+ifeq ($(SENSOR_XTG12067_PANX39830), YES)
+  EXPTBL_DEF := $(EVTBL_PATH)/exptbl_panx12067_mn39830.dat
+  AGCTBL_DEF := $(EVTBL_PATH)/agctbl_panx12067.dat
+  SENSORSET := YES
+endif
+
+ifeq ($(SENSOR_XTG12069_PANX39830), YES)
+  EXPTBL_DEF := $(EVTBL_PATH)/exptbl_panx12069_mn39830.dat
+  AGCTBL_DEF := $(EVTBL_PATH)/agctbl_panx12069.dat
+  SENSORSET := YES
+endif
+
+ifeq ($(SENSOR_XTG12069_PANX39600), YES)
+  EXPTBL_DEF := $(EVTBL_PATH)/exptbl_panx12069_mn39600.dat
+  AGCTBL_DEF := $(EVTBL_PATH)/agctbl_panx12069.dat
+  SENSORSET := YES
+endif
+
+ifeq ($(SENSOR_XTG12068_PANX39850), YES)
+  EXPTBL_DEF := $(RO_RES_PATH)/PANX39850/exptbl_panx12068_mn39850.dat
+  AGCTBL_DEF := $(RO_RES_PATH)/PANX39850/agctbl_panx12068.dat
+  SENSORSET := YES
+endif
+
+ifeq ($(SENSOR_VSP6244_PANAMN34571), YES)
+  EXPTBL_DEF := $(RO_RES_PATH)/PANAMN34571/exptbl_vsp6244_panamn34571.dat
+  AGCTBL_DEF := $(RO_RES_PATH)/PANAMN34571/agctbl_vsp6244.dat
+  AFEINITTBL_DEF := $(RO_RES_PATH)/PANAMN34571/init_vsp6244_panamn34571.dat
+  AFEVIEWTBL_DEF := $(RO_RES_PATH)/PANAMN34571/view_vsp6244_panamn34571.dat
+  AFESNAPTBL_DEF := $(RO_RES_PATH)/PANAMN34571/snap_vsp6244_panamn34571.dat
+  AFEVIE2TBL_DEF := $(RO_RES_PATH)/PANAMN34571/view_vsp6244_panamn34571tg2.dat
+  SENSORSET := YES
+endif
+
+ifeq ($(SENSOR_AD9007_PANAMN34591), YES)
+  EXPTBL_DEF := $(RO_RES_PATH)/PANAMN34591/exptbl_ad9007_panamn34591.dat
+  AGCTBL_DEF := $(RO_RES_PATH)/PANAMN34591/agctbl_ad9007.dat
+  AFEINITTBL_DEF := $(RO_RES_PATH)/PANAMN34591/init_ad9007_panamn34591.dat
+  SENSORSET = YES
+endif
+
+ifeq ($(SENSOR_TVP5150), YES)
+        EXPTBL = $(RO_RES_PATH)/TVP5150/exptbl_tvp5150.dat
+        AGCTBL = $(RO_RES_PATH)/TVP5150/agctbl_tvp5150.dat
+        SENSORSET = YES
+endif
+
+ifndef SENSORSET
+  EXPTBL_DEF := $(EVTBL_PATH)/exptbl_demo.dat
+  AGCTBL_DEF := $(EVTBL_PATH)/agctbl_demo.dat
+endif
+
+ifndef EXPTBL
+  EXPTBL := $(EXPTBL_DEF)
+endif
+ifndef AGCTBL
+  AGCTBL := $(AGCTBL_DEF)
+endif
+
+ifndef AFEINITTBL
+  ifdef AFEINITTBL_DEF
+    AFEINITTBL := $(AFEINITTBL_DEF)
+  endif
+endif
+ifndef AFEVIEWTBL
+  ifdef AFEVIEWTBL_DEF
+    AFEVIEWTBL := $(AFEVIEWTBL_DEF)
+  endif
+endif
+ifndef AFEVIE2TBL
+  ifdef AFEVIE2TBL_DEF
+    AFEVIE2TBL := $(AFEVIE2TBL_DEF)
+  endif
+endif
+ifndef AFEQVGAVIEWTBL
+  ifdef AFEQVGAVIEWTBL_DEF
+    AFEQVGAVIEWTBL := $(AFEQVGAVIEWTBL_DEF)
+  endif
+endif
+ifndef AFESNAPTBL
+  ifdef AFESNAPTBL_DEF
+    AFESNAPTBL := $(AFESNAPTBL_DEF)
+  endif
+endif
+ifndef AFESNAP1TBL
+  ifdef AFESNAP1TBL_DEF
+    AFESNAP1TBL := $(AFESNAP1TBL_DEF)
+  endif
+endif
+ifndef AFESNAP2TBL
+  ifdef AFESNAP2TBL_DEF
+    AFESNAP2TBL := $(AFESNAP2TBL_DEF)
+  endif
+endif

@@ -1,0 +1,460 @@
+/**************************************************************************
+ *
+ *        Copyright (c) 2006-2008 by Sunplus mMedia Inc., Ltd.
+ *
+ *  This software is copyrighted by and is the property of Sunplus
+ *  mMedia Inc., Ltd. All rights are reserved by Sunplus mMedia
+ *  Inc., Ltd. This software may only be used in accordance with the
+ *  corresponding license agreement. Any unauthorized use, duplication,
+ *  distribution, or disclosure of this software is expressly forbidden.
+ *
+ *  This Copyright notice MUST not be removed or modified without prior
+ *  written consent of Sunplus mMedia Inc., Ltd.
+ *
+ *  Sunplus mMedia Inc., Ltd. reserves the right to modify this
+ *  software without notice.
+ *
+ *  Sunplus mMedia Inc., Ltd.
+ *  19-1, Innovation First Road, Science-Based Industrial Park,
+ *  Hsin-Chu, Taiwan, R.O.C.
+ *
+ **************************************************************************/
+#if (KIT_WITH_HDMI)
+#define HOST_DBG 1
+#include "app_com_def.h"
+#include "app_com_api.h"
+#include "app_ui_para.h"
+#include "app_setup_lib.h"
+#include "gpio_custom.h"
+#include "app_tvlcd.h"
+#include "app_sound.h"
+#include "sp5k_disp_api.h"
+#include "app_aaa.h"
+#include "app_key_def.h"
+#if SPCA5310
+#include "api/sp5k_pip_api.h"
+#endif
+/*e Add by Aries 10/04/23*/
+#include "middleware/proflog.h"
+
+#include "api/sp5k_rsvblk_api.h"
+#include "api/sp5k_media_api.h"
+#include "api/sp5k_aud_api.h"
+#include "api/sp5k_cec_api.h"
+
+#include "customization/app_init.h"
+#include "customization/dev_init.h"
+#include "customization/app_still_iq.h"
+#include "app_playback_def.h"
+/*s Add by Aries 10/04/23*/
+#if SPCA5310
+#if SP5K_HDMI_ANA_ANX7150
+#include "../../drivers/disp/ANX7150_Sys7150.h"
+#endif
+#if SP5K_HDMI_EP_EP932M
+#include "../../drivers/disp/EP932_SysController.h"
+#include "../../drivers/disp/EP932_SystemConfig.h"
+#endif
+#endif
+
+#endif
+
+#include "app_osd_api_lcm.h"
+#include "app_osd_draw_lcm.h"
+#include "app_menu_tab.h"
+#include "app_icon_def.h"
+#include "app_rf_def.h"
+
+/**************************************************************************
+ *               F U N C T I O N    D E C L A R A T I O N S               *
+ **************************************************************************/
+
+extern UINT32 halPllClockSwitch(UINT32 cpuKHz,UINT32 dramKHz,UINT16 syncMode,UINT8 *ptmpBuf);
+void appHDMISwitch2LCD(void);
+void appSwitchAudio2HDMI(void);
+void appHDMIshowOSD(void);
+void appHDMIPlugStateInit(void);
+void appHDMIPlugState(UINT32 msg,UINT32 param);
+extern void appCecCtrlLogicalAlloc(void);
+extern void appCecStop(void);
+extern void appPwerOnInfoGet(BOOL *pbPowerOn,BOOL *mutePowerOn,BOOL *testModePowerOn);
+extern UINT32 _powerOnStateGet(	void);
+
+
+/**************************************************************************
+ *                         G L O B A L    D A T A                        *
+ **************************************************************************/
+
+static BOOL HDMI_PLUG_OUT = FALSE;
+extern UINT32 previousStateGet;
+extern UINT8 resolution;
+extern appDispMode_e gCurrDispMode;
+
+#define WRITE8(a,b)	*(volatile UINT8*)(a) = (b)
+#define READ8(a) (*((volatile UINT8*)(a)))
+#define PANASONIC_TV	1
+
+/**************************************************************************
+ *                             F U N C T I O N                         *
+ **************************************************************************/
+
+void appHDMIPlugLcmOsdShow(void)
+{
+	appLcmOsdClean();
+	
+	//Mode Icon
+	appLcmOsdLargeIconShow(LcmOsdIconIndex0, ID_ICON_SCDV_HDMI, FALSE);
+
+	//HDMI	
+	//appLcmOsdLargeStringShow(ID_STR_WIFI, FALSE);
+	appLcmOsdLargeTextShow("HDMI", FALSE);
+
+	//Mode Tips
+	appLcmOsdModeStringShow(ID_STR_HDMI, FALSE);
+	
+	//Tips
+	appLcmOsdTipsStringShow(ID_STR_HDMI_PB, FALSE);
+
+	//Battery
+	//appLcmOsdDrawBattery(TRUE, -1);
+
+	appLcmRefresh();
+}
+
+//UINT8 DramBuffer1[8192];
+void appHDMISwitch2LCD(void)
+{
+	/*s Modify by Aries 10/11/05*/
+	#if (KIT_WITH_HDMI)
+	
+	 extern void appDispGfxInit();
+	 extern void _dispLcdInit(void);
+	 sp5kAudActDevSet(SP5K_AUD_DEV_PLAY, SP5K_AUD_DEV_PRIMARY);
+	 appLcdTvSwitch(APP_DISP_LCD,0);
+	 sp5kDispDevAttrSet(SP5K_DISP_EDGE_ENHANCE, 1, 8, 1, 2);
+	 appDispGfxInit();
+	// LCD_PWR_ON ;
+	// LCD_BACKLIGHT_ON;
+	
+	#endif
+	/*e Modify by Aries 10/11/05*/
+}
+
+void appSwitchAudio2HDMI(void)
+{
+	WRITE8(0xb000605c, 3);
+	WRITE8(0xb0006068, 2);
+	WRITE8(0xb0006070, 1);
+	WRITE8(0xb00000b0, 0x1f);
+	WRITE8(0xb0000074, 1);
+	WRITE8(0xb0000090, 5);
+}
+
+void appSwitchImage2HDMI(UINT8 resolution)
+{
+	#if (KIT_WITH_HDMI)
+	
+	sp5kDispResolutionSet(SP5K_DISP_DEV_HDMI, resolution);
+	//sp5kDispDevSwitchDirect(SP5K_DISP_DEV_HDMI);	
+	sp5kDispDevSwitch( SP5K_DISP_DEV_HDMI);
+	sp5kAudActDevSet(SP5K_AUD_DEV_PLAY, SP5K_AUD_DEV_SECONDARY);
+	
+	#else
+	
+	#endif	/* KIT_WITH_HDMI Modify by Shang 11/11/16 */
+}
+
+void appHDMIshowOSD(void)
+{
+	/*s Modify by Aries 10/11/05*/
+	#if (KIT_WITH_HDMI)
+	
+	UINT32 dispWidth,dispHeight;
+	//extern UINT8 IsInHDMI;
+
+	sp5kGfxPageClear(SP5K_GFX_PAGE_OSD_0,0);
+	sp5kDispDevAttrSet(SP5K_DISP_IMG_WINDOW, 0, 0, 1920, 1080);
+	sp5kDispDevAttrSet(SP5K_DISP_OSD_WINDOW,0, 0, 1920, 1080);
+	
+	#if 0
+	#if SP5K_SENSOR_OV2715	/* for 16:9 */
+	sp5kDispDevAttrSet(SP5K_DISP_IMG_WINDOW, 0, 0, 1920, 1080);
+	sp5kDispDevAttrSet(SP5K_DISP_OSD_WINDOW,0, 0, 1920, 1080);
+	#else	/* For background image size 4:3 */
+	sp5kDispDevAttrSet(SP5K_DISP_IMG_WINDOW,0, 0, 1920,1080);
+	sp5kDispDevAttrSet(SP5K_DISP_OSD_WINDOW,240,0,1440,1080);
+	#endif
+	#endif
+	
+	sp5kDispDevAttrSet(SP5K_DISP_OSD_ACTIVE, 1, 0, 0, 0);
+	sp5kDispDevAttrSet(SP5K_DISP_IMG_ACTIVE, 1, 0, 0, 0);
+	sp5kDispDevAttrSet(SP5K_DISP_BG_COLOR,0,0,0, 0);
+	sp5kDispDimensionGet(&dispWidth, &dispHeight);
+	
+	#if 1  /* 20120103 mattwang fix. */
+	sp5kGfxInitCfgSet(SP5K_GFX_OSD_FRAME_SIZE, 640, 360, 0, 0);
+	sp5kGfxInitCfgSet(SP5K_GFX_OSD_WINDOW, 0, 0, 640, 360);
+	
+	sp5kGfxInitCfgSet(SP5K_GFX_PIP_FRAME_SIZE, 640, 360, 0, 0);
+	sp5kGfxInitCfgSet(SP5K_GFX_PIP_WINDOW, 0, 0, 640, 360);
+	#else
+	sp5kGfxInitCfgSet(SP5K_GFX_OSD_WINDOW, 0, 0, dispWidth, dispHeight);
+	#endif
+	
+	sp5kGfxInitCfgSet(SP5K_GFX_OSD_PAGE_TOT, 1, 0, 0, 0);
+	sp5kGfxInitCfgSet(SP5K_GFX_OSD_FMT, SP5K_GFX_FMT_IDX8, 0, 0, 0);
+	sp5kGfxInitCfgSet(SP5K_GFX_AB_FRAME_SIZE, 640, 360, 0, 0);
+
+	#if 0  /* 20120103 mattwang fix. */
+	sp5kGfxInitCfgSet(SP5K_GFX_OSD_FRAME_SIZE, dispHeight*4/3, dispHeight, 0, 0);
+	sp5kGfxInitCfgSet(SP5K_GFX_OSD_WINDOW, 5, 0, (dispHeight*4/3)-30, dispHeight-20);
+	sp5kGfxInitCfgSet(SP5K_GFX_PIP_WINDOW, 5, 0, (dispHeight*4/3)-30, dispHeight-20);
+	#endif
+	
+	/*sp5kGfxInitCfgSet(SP5K_GFX_OSD_WINDOW, 28, 0, 664, 480 );
+	sp5kGfxInitCfgSet(SP5K_GFX_PIP_WINDOW, 28, 0, 664, 480 );  */
+	sp5kGfxInitCfgSet(SP5K_GFX_OSD_WITH_ALPHA_PLANE, 1, 0, 0, 0);
+	sp5kGfxInit();
+	
+	#endif
+	/*e Modify by Aries 10/11/05*/
+}
+
+void appHDMIPlugStateInit(void)
+{
+	#if 0
+	if ((IS_HDMI_IN && (appCurrDispModeGet() == APP_DISP_HDMI)) ||
+		(!IS_HDMI_IN && (appCurrDispModeGet() == APP_DISP_LCD)) ) {
+
+			printf("\n[WARN] cancle HDMI plug action(%d,%d,%d) !!!\n",IS_HDMI_IN,pUiSetting->TV,appCurrDispModeGet());
+
+			appStateChange(appPreviousStateGet(), STATE_PARAM_NORMAL_INIT);
+
+		sp5kHostMsgSend(APP_UI_MSG_DUMMY, 0x00);
+		return;
+	}
+	#endif
+	
+	UINT32 dispWidth,dispHeight;
+	uiPara_t *puiPara = appUiParaGet();
+
+	#if SPCA5310
+	sp5kDispDevAttrSet(SP5K_DISP_IMG_ACTIVE, 0, 0, 0, 0);
+	sp5kDispDevAttrSet(SP5K_DISP_OSD_ACTIVE, 0, 0, 0, 0);
+	#endif
+
+	#if (KIT_WITH_HDMI)   /*Add by Lation@20130717*/
+
+	if(IS_HDMI_IN) 
+	{
+		#ifdef HW_DVS5M2
+		
+		appHDMIPlugLcmOsdShow();
+		
+		//Global Setting
+		appLcmPowerSaveEnable(FALSE);
+		
+		#else
+		
+		LCD_BACKLIGHT_OFF; // BL OFF here???
+		GREEN_LED_ON;
+		
+		#endif
+		
+		UINT32 value;
+		value=READ8(0xb000a874);
+		WRITE8(0xb000a874 ,value+1);
+		//appSwitchAudio2HDMI();
+		sp5kAeModeSet(SP5K_AE_MODE_OFF);
+		sp5kAwbModeSet(SP5K_AWB_MODE_OFF);
+		
+		sensorDevPowerCustomCb(SENSOR_DEV_POWER_ID_SYS_OFF);
+		sp5kModeSet(SP5K_MODE_STANDBY);
+		sp5kModeWait(SP5K_MODE_STANDBY);
+		appRfCopyBufferCallbackSet();
+		
+		appLcdTvSwitch(APP_DISP_HDMI,TRUE);
+		sp5kDispDevAttrSet(SP5K_DISP_EDGE_ENHANCE, 0, 0, 0, 0);
+		appSwitchImage2HDMI(resolution);
+		/* switch font file between LCD and HDMI		add by gx */
+		appSetupMenu_SetCurLanguage(puiPara->Language);
+		appHDMIshowOSD();
+		sp5kSystemCfgSet(SP5K_STDANDBY_FRAME_SIZE_CFG,1920, 1080);
+		sp5kModeCfgSet(SP5K_MODE_CFG_STANDBY_DUP, 0);
+		sp5kModeCfgSet(SP5K_MODE_CFG_STANDBY_FORCE, 1);/*1: enter standby mode even already in, 0: enter standby mode if not in*/
+		#if IS_CEC_ON
+ 		appCecCtrlLogicalAlloc();
+ 		#endif
+								
+	}
+	else 
+	{
+		gCurrDispMode = APP_DISP_HDMI;	/* for mantis 48377 */
+		if(STATE_GROUP(appPreviousStateGet())==APP_STATE_GROUP_PLAYBACK)
+		{
+			AppPbDestroyshowJPGInPIP();
+		}
+		#ifndef HW_DVS5M2
+		previousStateGet = appPreviousStateGet();
+		#endif
+		appCecStop();	
+		appHDMISwitch2LCD(); /*add for mantis bug 0048486 0048442*/
+		appLcdTvSwitch(APP_DISP_LCD,0);
+		/* switch font file between LCD and HDMI		add by gx */
+		appSetupMenu_SetCurLanguage(puiPara->Language);
+		sp5kDispDimensionGet(&dispWidth, &dispHeight);
+		sp5kDispDevAttrSet(SP5K_DISP_IMG_WINDOW, 0, 0, dispWidth, dispHeight);
+		sp5kDispDevAttrSet(SP5K_DISP_OSD_WINDOW,0, 0, dispWidth, dispHeight);
+		sp5kDispDevAttrSet(SP5K_DISP_OSD_ACTIVE, 1, 0, 0, 0);
+		sp5kDispDevAttrSet(SP5K_DISP_IMG_ACTIVE, 1, 0, 0, 0);
+		sp5kGfxAttrSet(SP5K_GFX_RGB565_PIC_SCALE_FACTOR, 1000, 1000, 0, 0); /*add for mantis bug 0048519 */
+		//sp5kGfxInit();
+		sp5kSystemCfgSet(SP5K_STDANDBY_FRAME_SIZE_CFG,320, 240);
+		sp5kModeCfgSet(SP5K_MODE_CFG_STANDBY_DUP, 0);
+		sp5kModeCfgSet(SP5K_MODE_CFG_STANDBY_FORCE, 1);
+		LCD_BACKLIGHT_ON; 
+		HDMI_PLUG_OUT = TRUE;
+		resolution = 0xff;
+	}	
+	
+	#endif
+ }
+
+void appHDMIPlugState(UINT32 msg, UINT32 param)
+{
+	BOOL pbPowerOn, mutePowerOn, testModePowerOn;
+	DBG_PRINT("%s : [0x%x] [0x%x]\n",__FUNCTION__,msg,param);
+
+	switch (msg)
+	{
+		case APP_STATE_MSG_INIT:
+			RPrintf("appHDMIPlugState init\n");
+			appHDMIPlugStateInit();
+			break;
+		case APP_STATE_MSG_CLOSE:
+			appStateCloseDone();
+			break;
+		case SP5K_MSG_DISP_SWITCH_READY:
+			#if (KIT_WITH_HDMI)
+			if ((!IS_HDMI_IN) && (appCurrDispModeGet() == APP_DISP_HDMI))
+			{
+				LCD_BACKLIGHT_ON;
+			}
+			#endif
+
+			BPrintf("DISP_SWITCH_READY\n");
+			if (HDMI_PLUG_OUT)
+			{
+				#ifdef HW_DVS5M2
+				appStateChange(previousStateGet, STATE_PARAM_HDMI_PLUG);
+				#else
+				if(STATE_GROUP(appPreviousStateGet())==APP_STATE_GROUP_PLAYBACK)
+				{
+					appStateChange(APP_STATE_PB_MAIN, STATE_PARAM_HDMI_PLUG);
+				}
+				else
+				{
+	              		#if CAM_TYPE_CVR
+					appStateChange(APP_STATE_VIDEO_PREVIEW, STATE_PARAM_HDMI_PLUG);
+	              		#else
+					appStateChange(previousStateGet, STATE_PARAM_HDMI_PLUG);
+	              		#endif
+				}
+				#endif
+			}
+			else
+			{
+				#if 0
+				//will go APP_UI_MSG_CEC_CB
+				BPrintf("will go APP_UI_MSG_CEC_CB\n");
+				appPwerOnInfoGet(&pbPowerOn, &mutePowerOn, &testModePowerOn);
+				if(testModePowerOn == TRUE)
+				{
+					appStateChange(APP_STATE_CALIBRATION,STATE_PARAM_HDMI_PLUG);
+				}
+				else
+				{
+					//Foucs Mode
+					if(appCheckFocusMode())
+					{
+						//appStateChange(previousStateGet, STATE_PARAM_HDMI_PLUG);
+						appStateChange(APP_STATE_SPORTDV_STILL_PREVIEW, STATE_PARAM_HDMI_PLUG);
+					}
+					else
+					{
+						//appStateChange(previousStateGet, STATE_PARAM_HDMI_PLUG);
+						appStateChange(APP_STATE_SCDV_MENU, STATE_PARAM_HDMI_PLUG);
+
+						//extern UINT8 fileTypeSelect;
+						//fileTypeSelect = TRUE;
+						//appStateChange(APP_STATE_MENU, STATE_PARAM_HDMI_PLUG);
+					}
+				}
+				#endif
+			}
+			
+			#if  !IS_CEC_ON  
+			printf("\n>>>>>>>>>>>>>>> appHDMIPlugState: Return state is	%x	after running HDMI plug <<<<<<<<<<<<<<<\n", previousStateGet);
+			appPwerOnInfoGet(&pbPowerOn, &mutePowerOn, &testModePowerOn);
+			if(previousStateGet == APP_STATE_POWER_ON)
+			{
+				previousStateGet = _powerOnStateGet();
+			}
+			if(testModePowerOn == TRUE)
+			{
+				appStateChange(APP_STATE_CALIBRATION, STATE_PARAM_HDMI_PLUG);
+			}
+			else
+			{
+		      		#if CAM_TYPE_CVR
+				if(HDMI_PLUG_OUT == FALSE)
+				{
+					appStateChange(APP_STATE_PB_MAIN, STATE_PARAM_HDMI_PLUG);	
+				}
+		     	 	#else
+				appStateChange(previousStateGet, STATE_PARAM_HDMI_PLUG);
+			  	#endif
+			}
+			#endif
+			
+			HDMI_PLUG_OUT = FALSE;
+			break;
+		case APP_UI_MSG_CEC_CB:
+			BPrintf("After DISP_SWITCH_READY\n");
+			appPwerOnInfoGet(&pbPowerOn, &mutePowerOn, &testModePowerOn);
+			if(testModePowerOn == TRUE)
+			{
+				appStateChange(APP_STATE_CALIBRATION,STATE_PARAM_HDMI_PLUG);
+			}
+			else
+			{
+
+				//Foucs Mode
+				//appStateChange(APP_STATE_SPORTDV_STILL_PREVIEW, STATE_PARAM_HDMI_PLUG);
+				#if 1
+				if(appCheckFocusMode())
+				{
+					//appStateChange(previousStateGet, STATE_PARAM_HDMI_PLUG);
+					appStateChange(APP_STATE_SPORTDV_STILL_PREVIEW, STATE_PARAM_HDMI_PLUG);
+				}
+				else
+				{
+					//appStateChange(previousStateGet, STATE_PARAM_HDMI_PLUG);
+					appStateChange(APP_STATE_SCDV_MENU, STATE_PARAM_HDMI_PLUG);
+
+					//extern UINT8 fileTypeSelect;
+					//fileTypeSelect = TRUE;
+					//appStateChange(APP_STATE_MENU, STATE_PARAM_HDMI_PLUG);
+				}
+				#endif
+				
+			}
+			break;
+		case APP_UI_MSG_DUMMY:
+			appStateChange(appPreviousStateGet(),STATE_PARAM_HDMI_PLUG);
+			break;
+		default:
+			break;
+	}
+}
+

@@ -1,0 +1,238 @@
+/**************************************************************************
+ *
+ *        Copyright (c) 2006-2008 by Sunplus mMedia Inc., Ltd.
+ *
+ *  This software is copyrighted by and is the property of Sunplus
+ *  mMedia Inc., Ltd. All rights are reserved by Sunplus mMedia
+ *  Inc., Ltd. This software may only be used in accordance with the
+ *  corresponding license agreement. Any unauthorized use, duplication,
+ *  distribution, or disclosure of this software is expressly forbidden.
+ *
+ *  This Copyright notice MUST not be removed or modified without prior
+ *  written consent of Sunplus mMedia Inc., Ltd.
+ *
+ *  Sunplus mMedia Inc., Ltd. reserves the right to modify this
+ *  software without notice.
+ *
+ *  Sunplus mMedia Inc., Ltd.
+ *  19-1, Innovation First Road, Science-Based Industrial Park,
+ *  Hsin-Chu, Taiwan, R.O.C. 
+ *
+ **************************************************************************/
+
+
+#define HOST_DBG 0
+#include "common.h"
+#include <stdio.h>
+#include <string.h>
+#include "sp5k_global_api.h"
+#include "app_hw_def.h"
+#include "app_buzzer.h"
+
+#include "sp5k_os_api.h"
+
+
+/**************************************************************************
+ *                           C O N S T A N T S                            *
+ **************************************************************************/
+#define BUZZER_PWM_CTRL	0
+
+/**************************************************************************
+ *                              M A C R O S                               *
+ **************************************************************************/
+
+/**************************************************************************
+ *                          D A T A    T Y P E S                          *
+ **************************************************************************/
+
+/**************************************************************************
+ *                         G L O B A L    D A T A                         *
+ **************************************************************************/
+UINT32 buzzerBeep =0;
+static BOOL buzzerPlay = FALSE, buzzerEnable = TRUE;
+static UINT32 buzzerDuty = 80;
+static TX_THREAD *pThreadBuzzerPlay = NULL;
+
+
+/**************************************************************************
+ *                 E X T E R N A L    R E F E R E N C E S                 *
+ **************************************************************************/
+
+
+
+/**************************************************************************
+ *               F U N C T I O N    D E C L A R A T I O N S               *
+ **************************************************************************/
+
+
+/*-------------------------------------------------------------------------
+ *  File Name : AppBuzzerOn
+ *------------------------------------------------------------------------*/
+void AppBuzzerOn(
+	UINT32 freq,UINT32 duty
+)
+{
+	if (buzzerBeep ==FALSE)
+	{
+		sp5kPwmCfgSet(BUZZER_PWM_CTRL,freq,duty);
+		sp5kPwmTrig( 1 << BUZZER_PWM_CTRL, 0 );
+		buzzerBeep =TRUE;
+	}
+}
+
+
+
+
+
+/*-------------------------------------------------------------------------
+ *  File Name : AppBuzzerOff
+ *------------------------------------------------------------------------*/
+void AppBuzzerOff(
+	void
+)
+{
+	sp5kPwmTrig( 0, 1 << BUZZER_PWM_CTRL );
+}
+
+
+/*-------------------------------------------------------------------------
+ *  File Name : AppBuzzerCB
+ *------------------------------------------------------------------------*/
+void AppBuzzerCB(
+	void
+)
+{
+	AppBuzzerOff();
+	buzzerBeep =FALSE;
+}
+
+static void appBuzzerWavform(sBuzzerParam BuzzerParam[])
+{
+	UINT32 Index = 0;
+
+	while(buzzerPlay)
+	{
+		if(	BuzzerParam[Index].frequnecy == BUZZER_PWM_OFF
+			&& BuzzerParam[Index].duty == BUZZER_PWM_OFF
+			&& BuzzerParam[Index].duration == BUZZER_PWM_OFF)
+		{
+			break;
+		}
+		else if(	BuzzerParam[Index].frequnecy == BUZZER_PWM_LOOP
+				&& BuzzerParam[Index].duty == BUZZER_PWM_LOOP
+				&& BuzzerParam[Index].duration == BUZZER_PWM_LOOP)
+		{
+			Index = 0;
+			continue;
+		}
+		else
+		{
+			if(BuzzerParam[Index].frequnecy == 0 || BuzzerParam[Index].duty == 0)
+			{
+				sp5kPwmTrig( 0, 1 << BUZZER_PWM_CTRL );
+			}
+			else
+			{
+				BuzzerParam[Index].duty = buzzerDuty;
+				sp5kPwmCfgSet(BUZZER_PWM_CTRL, BuzzerParam[Index].frequnecy, BuzzerParam[Index].duty);
+				sp5kPwmTrig( 1 << BUZZER_PWM_CTRL, 0 );
+			}
+			sp5kTimeDelay(SP5K_TIME_DELAY_1MS, BuzzerParam[Index].duration);
+			Index ++;
+		}
+	}
+	
+	sp5kPwmTrig( 0, 1 << BUZZER_PWM_CTRL );
+}
+
+static void appBuzzerPlayThread(UINT32 parm)
+{
+	if(parm == BUZZER_BEEP)
+	{
+		sBuzzerParam BuzzerParam[] = 
+		{
+			{180, 	80, 		180},
+			{BUZZER_PWM_OFF, BUZZER_PWM_OFF, BUZZER_PWM_OFF}
+		};
+		appBuzzerWavform(BuzzerParam);
+	}
+	else if(parm == BUZZER_POWER_ON)
+	{
+		sBuzzerParam BuzzerParam[] = 
+		{
+			{200, 	80, 		300},
+			{180, 	80, 		300},
+			{160, 	80, 		300},
+			{140, 	80, 		300},
+			{BUZZER_PWM_OFF, BUZZER_PWM_OFF, BUZZER_PWM_OFF}
+		};
+		appBuzzerWavform(BuzzerParam);
+	}
+	else if(parm == BUZZER_POWER_OFF)
+	{
+		sBuzzerParam BuzzerParam[] = 
+		{
+			{140, 	80, 		300},
+			{160, 	80, 		300},
+			{180, 	80, 		300},
+			{200, 	80, 		300},
+			{BUZZER_PWM_OFF, BUZZER_PWM_OFF, BUZZER_PWM_OFF}
+		};
+		appBuzzerWavform(BuzzerParam);
+	}
+	else if(parm == BUZZER_WARNING)
+	{
+		sBuzzerParam BuzzerParam[] = 
+		{
+			{180, 	80, 		100},
+			{0, 		80, 		100},
+			{180, 	80, 		100},
+			{0	, 	80, 		100},
+			{180, 	80, 		100},
+			{BUZZER_PWM_OFF, BUZZER_PWM_OFF, BUZZER_PWM_OFF}
+		};
+		appBuzzerWavform(BuzzerParam);
+	}
+	else if(parm == BUZZER_CAPTURE)
+	{
+		sBuzzerParam BuzzerParam[] = 
+		{
+			{200, 	80, 		100},
+			{BUZZER_PWM_OFF, BUZZER_PWM_OFF, BUZZER_PWM_OFF}
+		};
+		appBuzzerWavform(BuzzerParam);
+	}
+	
+	buzzerPlay = FALSE;
+	pThreadBuzzerPlay = NULL;
+}
+
+void appBuzzerPlay(UINT32 BuzzerType)
+{
+	if(pThreadBuzzerPlay == NULL && buzzerEnable == TRUE)
+	{
+		buzzerPlay = TRUE;
+		pThreadBuzzerPlay = sp5kOsThreadCreate("buzzer play", appBuzzerPlayThread, BuzzerType, 16, 16, 3, TX_AUTO_START);
+	}
+}
+
+void appBuzzerStop(UINT8 bWaitFinish)
+{
+	buzzerPlay = FALSE;
+	sp5kPwmTrig( 0, 1 << BUZZER_PWM_CTRL );
+
+	if(bWaitFinish)
+	{
+		while(pThreadBuzzerPlay != NULL)
+		{
+			sp5kTimeDelay(SP5K_TIME_DELAY_1MS, 50);	
+		}
+	}
+}
+
+void appBuzzerEnable(BOOL bEnable, UINT32 duty)
+{
+	buzzerEnable = bEnable;
+	buzzerDuty = duty;
+}
+

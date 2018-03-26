@@ -1,0 +1,10 @@
+Modules:libcpp libnet livest_131126 lwip-1.4.1 wlan/tools wlan/wpas-hapd-0.8 RTL818x_4.3.0.4_11916
+Platform: spca6330
+TCPIP: lwip
+BUS: sdio
+CONCURRENT: 0
+C++: 1
+BaseFW Rev.: 18579
+NDK Rev.: 18580
+Date: Fri, Aug 08, 2014  4:25:20 PM
+User: karen.hsu

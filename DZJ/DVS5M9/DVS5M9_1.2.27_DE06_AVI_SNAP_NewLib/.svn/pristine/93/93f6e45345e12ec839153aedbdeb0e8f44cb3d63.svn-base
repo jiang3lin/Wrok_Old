@@ -1,0 +1,36 @@
+<FRM.CONFIG>
+  <NormalInfo>
+    <Version>v0.0.1</Version>
+    <Template>V0.0.1</Template>
+  </NormalInfo>
+  <HubPortMapping value="0" />
+  <!-- Platform setting : name not only display on UI, but used for device detection and configuration -->
+  <Platform name="SPCA6330" />
+  <WorkingFolder path="..\download">
+    <Isp name="spca6330isp.bin" addr="0xa0040000" />
+    <!-- Param : Need to check the platform -->
+    <Param name="SPCA6330M_DDR3_1G_360MHz_CL6-fm_standard.prm" addr="0x00" normalIspAddr="0x00" />
+    <!-- DiskFormat flashType : 0x00 is NAND , 0x02 is Serial Flash -->
+    <DiskFormat flashType="0x3" eraseOption="0x01" allocOption="0x01" />
+    <FirstImage name="AIMG" />
+    <SecondImage name="BIMG" />
+    <UserDisk name="C" />
+    <!-- Firmware name : Need to check the platform -->
+    <Firmware name="DVS5M2.bin" />
+    <RawC name="" />
+  </WorkingFolder>
+  <Options>
+    <!-- mode: -1: NONE, 0: GPIO 1: LCD, GPIOMode: 0: TGL, 1: TGH, 4: GEN, 5: DISP, GPIOIndex: index 0-n  -->
+    <Reminder mode="GPIO" GPIOMode="GEN" GPIOIndex="6" />
+    <autoPoweroff value="1" />
+    <readverify value="1" />
+  </Options>
+  <!-- luascript name : Need to check the platform -->
+  <Luascript dir="spca5k">
+    <init name="init.lua" />
+    <ispMode name="ispMode.lua" />
+    <manufacture name="mp.lua" />
+    <FwOnly name="FwOnly.lua" />
+    <FwPartialRsv name="FwPartialRsv.lua" />
+  </Luascript>
+</FRM.CONFIG>

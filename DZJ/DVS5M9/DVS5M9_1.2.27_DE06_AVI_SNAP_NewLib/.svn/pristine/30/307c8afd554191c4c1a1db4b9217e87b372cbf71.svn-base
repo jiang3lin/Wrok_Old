@@ -1,0 +1,1017 @@
+/**************************************************************************
+ *
+ *        Copyright (c) 2006-2008 by Sunplus mMedia Inc., Ltd.
+ *
+ *  This software is copyrighted by and is the property of Sunplus
+ *  mMedia Inc., Ltd. All rights are reserved by Sunplus mMedia
+ *  Inc., Ltd. This software may only be used in accordance with the
+ *  corresponding license agreement. Any unauthorized use, duplication,
+ *  distribution, or disclosure of this software is expressly forbidden.
+ *
+ *  This Copyright notice MUST not be removed or modified without prior
+ *  written consent of Sunplus mMedia Inc., Ltd.
+ *
+ *  Sunplus mMedia Inc., Ltd. reserves the right to modify this
+ *  software without notice.
+ *
+ *  Sunplus mMedia Inc., Ltd.
+ *  19-1, Innovation First Road, Science-Based Industrial Park,
+ *  Hsin-Chu, Taiwan, R.O.C. 
+ *
+ **************************************************************************/
+#define HOST_DBG 0
+#include "app_com_def.h"
+#include "app_com_api.h"
+#include "sp5k_global_api.h"
+#include "sp5k_disp_api.h"
+#include "sp5k_dcf_api.h"
+#include "app_timer.h"
+#include "app_playback_private.h"
+#include "app_playback_def.h"
+#include "app_playback_osd.h"
+#include "app_osdfont.h"
+/**************************************************************************
+ *                           C O N S T A N T S                            *
+ **************************************************************************/
+
+#define PB_VIDEO_ELAPSED_TIMER_MS 500
+
+/**************************************************************************
+ *                              M A C R O S                               *
+ **************************************************************************/
+
+#define VIDEO_CRITICAL_OP_POST_SLEEP	APP_SLEEP_MS(500)
+#define WRITE8(a,b)	*(volatile UINT8*)(a) = (b)
+
+/**************************************************************************
+ *                          D A T A    T Y P E S                          *
+ **************************************************************************/
+typedef enum {
+	VDO_SXN_SNAPSHOT_START,
+	VDO_SXN_SNAPSHOT_END,
+} videoUIKeyCtrl_t;
+
+typedef enum {
+	VIDEO_ERR_OUT_OF_ELAPSE_TMR,
+} videoErrorCode_t;
+
+/**************************************************************************
+ *                         G L O B A L    D A T A                         *
+ **************************************************************************/
+
+static UINT32 gvideoElapTimer = TIMER_NULL;
+extern BOOL seamlessPlayEn;
+extern pbMainCB_t	gpbMainCb;
+
+/**************************************************************************
+ *                 E X T E R N A L    R E F E R E N C E S                 *
+ **************************************************************************/
+
+/**************************************************************************
+ *               F U N C T I O N    D E C L A R A T I O N S               *
+ **************************************************************************/
+static void appPbVideoStExit(UINT32 nextSt,	UINT32 stMsg);
+
+/*-------------------------------------------------------------------------
+ *  File Name : videoUIKeyControl
+ *------------------------------------------------------------------------*/
+static
+void
+videoUIKeyControl(
+	UINT8 ctrl
+)
+{
+	PB_VERBOSE("%s: ctrl(%d) \n", __FUNCTION__, ctrl);
+	switch (ctrl){
+	case VDO_SXN_SNAPSHOT_START:
+		appBtnDisable(BTN_ALL);
+		break;
+	case VDO_SXN_SNAPSHOT_END:
+		appBtnEnable(BTN_ALL);
+		break;
+	default:
+		PB_VERBOSE("VDO: undefined key session !!\n");
+		break;
+	}
+}
+
+/*-------------------------------------------------------------------------
+ *  File Name : appPbVideoValidityCheckup
+ *------------------------------------------------------------------------*/
+static
+UINT32
+videoValidityCheckup(
+	void
+)
+{
+	/*-- Minimum video length !? */
+	/*-- File Error, perhaps, we shall check this in PB_MAIN UP key */
+
+	return SUCCESS;
+}
+
+
+/*-------------------------------------------------------------------------
+ *  File Name : videoSnapValidityCheckup
+ *------------------------------------------------------------------------*/
+static
+UINT32
+videoSnapValidityCheckup(
+	void
+)
+{
+	UINT32 imgCluz, freeCluz;
+
+	if (gpbDiskCb.isCardLock) 
+	{
+		gpbMainCb.err = PB_ERR_CARD_LOCKED;
+		return FAIL;
+	} 
+	else if (gpbDiskCb.isDcfFull) 
+	{
+		gpbMainCb.err = PB_ERR_DCF_KEY_FULL;
+		return FAIL;
+	}
+
+	imgCluz = appPbBytes2ClusterCalculate(gpbImgCb.imgWidth*gpbImgCb.imgHeight);
+		/*-- maximun estimation, W*H*2/2 */
+	freeCluz = appPbDiskFreeClusterGet(gpbDiskCb.dskInfo.actDsk);
+
+	PB_VERBOSE("imgCluz(%d), freeCluz(%d) \n", imgCluz, freeCluz);
+
+	if (imgCluz > freeCluz) 
+	{
+		gpbMainCb.err = PB_ERR_DISK_FULL;
+		return FAIL;
+	}
+
+	return SUCCESS;
+}
+
+/*-------------------------------------------------------------------------
+ *  File Name : videoFlyingPlayExecute
+ *------------------------------------------------------------------------*/
+static
+void
+videoFlyingPlayExecute(
+	pbMediaFlyingDir_t flyingDir
+)
+{
+	UINT32 flyingCtrl, flyingSpeed;
+	BOOL isInverseFlying = FALSE;
+
+	PB_VERBOSE("%s: flyingDir(%s) \n", __FUNCTION__, (flyingDir==PB_MEDIA_FLYING_FF ? "FF" : "REW") );
+
+	/*-- flying speed control */
+	flyingSpeed = gpbImgCb.mediaPlaySpeed;
+	if (flyingDir==PB_MEDIA_FLYING_FF) 
+	{
+		if (gpbMainCb.subStat==PB_VIDEO_STAT_REW)
+		{
+			/* Inverse flying !! */
+			isInverseFlying = TRUE;
+		}
+		flyingCtrl = SP5K_MEDIA_PLAY_FORWARD;
+		gpbMainCb.subStat = PB_VIDEO_STAT_FF;
+	}
+	else if (flyingDir==PB_MEDIA_FLYING_REW) 
+	{
+		if (gpbMainCb.subStat==PB_VIDEO_STAT_FF) 
+		{
+			/* Inverse flying !! */
+			isInverseFlying = TRUE;
+		}
+		flyingCtrl = SP5K_MEDIA_PLAY_REWIND;
+		gpbMainCb.subStat = PB_VIDEO_STAT_REW;
+	} 
+	else if (flyingDir==PB_MEDIA_FLYING_SLOW_MOTION) 
+	{
+		if (gpbMainCb.subStat==PB_VIDEO_STAT_SLOW_MOTION) 
+		{
+			/* Inverse flying !! */
+			isInverseFlying = TRUE;
+		}
+		flyingCtrl = SP5K_MEDIA_PLAY_SLOW_MOTION;
+		gpbMainCb.subStat = PB_VIDEO_STAT_SLOW_MOTION;
+	}
+	else
+	{
+		return;
+	}
+
+	if (isInverseFlying) 
+	{
+		/*-- Reset to ACC_1 speed for inverse flying */
+		gpbImgCb.mediaPlaySpeed = flyingSpeed = PB_PLAY_SPEED_ACCELERAT_1;
+	} 
+	else
+	{
+		PB_INDEX_INC(flyingSpeed, PB_PLAY_SPEED_ACCELERAT_1, PB_PLAY_SPEED_ACCELERAT_MAX);
+		gpbImgCb.mediaPlaySpeed = flyingSpeed;
+	}
+
+	/*-- go on media control for flying play */
+	if (flyingSpeed==PB_PLAY_SPEED_NORMAL) 
+	{
+		sp5kMediaPlayControl(SP5K_MEDIA_PLAY_RESUME, 0, 0);
+		gpbMainCb.subStat = PB_VIDEO_STAT_PLAYING;
+		PB_DBG("%s: Resume to NORMAL Spped !! \n", __FUNCTION__);
+	}
+	else 
+	{
+		if (flyingSpeed==PB_PLAY_SPEED_ACCELERAT_MAX || flyingDir==PB_MEDIA_FLYING_REW) 
+		{
+			flyingSpeed *= 2; /* mapping enum to real multiple */
+		}
+		if (flyingDir==PB_MEDIA_FLYING_SLOW_MOTION)
+		{
+			   flyingSpeed *= 2;
+		}
+		sp5kMediaPlayControl(flyingCtrl, flyingSpeed, 0);
+		PB_DBG("%s: flyingCtrl(%d), speedX(%d) \n", __FUNCTION__, flyingCtrl, flyingSpeed);
+	}
+
+	if (flyingDir==PB_MEDIA_FLYING_FF && gpbMainCb.subStat==PB_VIDEO_STAT_FF) 
+	{
+		; /* do noting */
+	}
+	else if (flyingDir==PB_MEDIA_FLYING_REW && gpbMainCb.subStat==PB_VIDEO_STAT_REW)
+	{
+		; /* do noting */
+	}
+	else if (flyingDir==PB_MEDIA_FLYING_SLOW_MOTION && gpbMainCb.subStat==PB_MEDIA_FLYING_SLOW_MOTION) 
+	{
+		; /* do noting */
+	}
+	else 
+	{
+		/*- SP5K does not allow any operation during this period */
+		VIDEO_CRITICAL_OP_POST_SLEEP;
+	}
+
+	return;
+}
+
+/*-------------------------------------------------------------------------
+ *  File Name : videoFlyingConstraintCheckup
+ *------------------------------------------------------------------------*/
+static
+UINT32
+videoFlyingConstraintCheckup(
+	UINT8 opCmd
+)
+{
+	UINT32 videoStat;
+	UINT32 elapT, totalT, critT;
+
+	PB_VERBOSE("%s: opCmd(%d) \n", __FUNCTION__, opCmd);
+
+	videoStat = gpbMainCb.subStat;
+	sp5kMediaPlayAttrGet(SP5K_MEDIA_ATTR_ELAPSED_TIME, &elapT);
+	gpbImgCb.mediaElapTime = elapT;
+	totalT = gpbImgCb.mediaTotalTime;
+	critT = PB_VIDEO_CRITICAL_TIME;
+	PB_VERBOSE("%s: videoStat(%d), elapT(%d), critT(%d), totalT(%d) \n", __FUNCTION__, videoStat, elapT, critT, totalT);
+
+	switch (opCmd) 
+	{
+	default:
+		return FAIL;
+	case PB_MEDIA_FLYING_FF:
+		/* The constraints :
+		 * A. The end of 2 sec while PLAYING, NO FF !!
+		 * B. The end of 2 sec while REWINDING, NO FF !!
+		 * C. The begining 2 sec while REWINDING, NO FF !!
+		 * D. 500ms of critical constraining time is needed for reverse operation,
+		 *    --> e.g., Ask to FF while MEDIA is rewinding.
+		 */
+		if (videoStat==PB_VIDEO_STAT_PLAYING) 
+		{
+			/*-- Media is playing */
+			if (IS_MEDIA_ENDING_CRITICAL_TIME(elapT, critT, totalT))
+			{
+				PB_VERBOSE("VDO: FF - Rule (A), ignored !!\n");
+				return FAIL;
+			}
+		}
+		else if (videoStat==PB_VIDEO_STAT_REW) 
+		{
+			/*-- Media is rewinding */
+			if (IS_MEDIA_ENDING_CRITICAL_TIME(elapT, critT, totalT)) 
+			{
+				return FAIL;
+			}
+			else if (IS_MEDIA_BEGINNING_CRITICAL_TIME(elapT, critT))
+			{
+				return FAIL;
+			}
+		}
+		break;
+	case PB_MEDIA_FLYING_REW:
+		/* The constraints :
+		 * A. The beginning of 2 sec while PLAYING, NO REW !!
+		 * B. The endinf 2 sec while PLAYING, NO REW !!
+		 * C. The begining 2 sec while F.FORWARDING, NO REW !!
+		 * D. The ending 2 sec while F.FORWARDING, NO REW !!
+		 * D. 500ms of critical constraining time is needed for reverse operation,
+		 *    --> e.g., Ask to FF while MEDIA is rewinding.
+		 */
+		if (videoStat==PB_VIDEO_STAT_PLAYING) 
+		{
+			/*-- Media is playing */
+			if (IS_MEDIA_BEGINNING_CRITICAL_TIME(elapT, critT)) 
+			{
+				PB_VERBOSE("VDO: REW - Rule (A), ignored !!\n");
+				return FAIL;
+			} 
+			else if (IS_MEDIA_ENDING_CRITICAL_TIME(elapT, critT, totalT))
+			{
+				PB_VERBOSE("VDO: REW - Rule (B), ignored !!\n");
+				return FAIL;
+			}
+		}
+		else if (videoStat==PB_VIDEO_STAT_FF)
+		{
+			if (IS_MEDIA_BEGINNING_CRITICAL_TIME(elapT, critT)) 
+			{
+				PB_VERBOSE("VDO: REW - Rule (C), ignored !!\n");
+				return FAIL;
+			}
+			else if (IS_MEDIA_ENDING_CRITICAL_TIME(elapT, critT, totalT)) 
+			{
+				PB_VERBOSE("VDO: REW - Rule (D), ignored !!\n");
+				return FAIL;
+			}
+		}
+		break;
+	case PB_MEDIA_FLYING_SLOW_MOTION:
+		break;	
+	}
+
+	return SUCCESS;
+}
+
+/*-------------------------------------------------------------------------
+ *  File Name : appPbVideoResume
+ *------------------------------------------------------------------------*/
+static
+void
+appPbVideoResume(
+	void
+)
+{
+
+	/*-- Retrieve elapsed time */
+	sp5kMediaPlayAttrGet(SP5K_MEDIA_ATTR_ELAPSED_TIME, &gpbImgCb.mediaElapTime);
+
+	/*-- Star ELAP_TMR */
+	if (gvideoElapTimer==TIMER_NULL)
+	{
+		/*-- If resume from FF || REW, the ElapTimer is still working !! */
+		gvideoElapTimer=appTimerSet(PB_VIDEO_ELAPSED_TIMER_MS, "ELAP_TMR");
+	}
+	if (TIMER_NULL==gvideoElapTimer)
+	{
+		sp5kHostMsgSend(APP_UI_MSG_PB_VIDEO_ERROR, VIDEO_ERR_OUT_OF_ELAPSE_TMR);
+		return;
+	}
+
+	/*-- Go on Resume */
+	sp5kMediaPlayControl(SP5K_MEDIA_PLAY_RESUME, 0, 0);
+	gpbImgCb.mediaPlaySpeed = PB_PLAY_SPEED_NORMAL;
+	gpbMainCb.subStat = PB_VIDEO_STAT_PLAYING;
+
+}
+
+/*-------------------------------------------------------------------------
+ *  File Name : appPbVideoPause
+ *------------------------------------------------------------------------*/
+static
+UINT32
+appPbVideoPause(
+	void
+)
+{
+
+	/*-- Constraint :
+	 * A. The very beginning and ending 2 sec, NO Pause.
+	 */
+	sp5kMediaPlayAttrGet(SP5K_MEDIA_ATTR_ELAPSED_TIME, &gpbImgCb.mediaElapTime);
+	if ( IS_MEDIA_BEGINNING_CRITICAL_TIME(gpbImgCb.mediaElapTime, PB_VIDEO_CRITICAL_TIME) 
+		 || IS_MEDIA_ENDING_CRITICAL_TIME(gpbImgCb.mediaElapTime, PB_VIDEO_CRITICAL_TIME, gpbImgCb.mediaTotalTime) )
+	{
+		return FAIL;
+	}
+
+	/*-- Go On Puase operation */
+	sp5kMediaPlayControl(SP5K_MEDIA_PLAY_PAUSE, 0, 0);
+	gpbImgCb.mediaPlaySpeed = PB_PLAY_SPEED_NORMAL;
+	gpbMainCb.subStat = PB_VIDEO_STAT_PAUSE;
+
+	/*-- Stop ELAP_TMR */
+	//PB_LOG("PbVideo: TMR(%d) clearing \n", gvideoElapTimer);
+	appTimerClear(&gvideoElapTimer);
+
+	return SUCCESS;
+
+}
+
+/*-------------------------------------------------------------------------
+ *  File Name : appPbVideoSnap
+ *------------------------------------------------------------------------*/
+static
+UINT32
+appPbVideoSnap(
+	void
+)
+{
+	videoUIKeyControl(VDO_SXN_SNAPSHOT_START);
+
+	if (FAIL==videoSnapValidityCheckup()) 
+	{
+		videoUIKeyControl(VDO_SXN_SNAPSHOT_END);
+		return FAIL;
+	}
+
+	appOsdMessageBoxShow(TRUE, ID_STR_IMAGE_SAVED);
+	PB_SLEEP(1000);
+	appOsdMessageBoxShow(FALSE, ID_STR_IMAGE_SAVED);
+	appPlayOsd_MediaPlayStatusDraw( TRUE, PAUSING);
+	
+	if (FAIL==sp5kMediaPlayControl(SP5K_MEDIA_PLAY_FRAME_CAPTURE, 0, 0))
+	{
+		gpbMainCb.err = PB_ERR_DISK_ERROR;
+		videoUIKeyControl(VDO_SXN_SNAPSHOT_END);
+		return FAIL;
+	}
+
+	videoUIKeyControl(VDO_SXN_SNAPSHOT_END);
+
+	return SUCCESS;
+}
+
+/*-------------------------------------------------------------------------
+ *  File Name : appPbVideoTerminate
+ *------------------------------------------------------------------------*/
+static
+UINT32
+appPbVideoTerminate(
+	void
+)
+{
+	/*-- Shall stop timer */
+	appTimerClear(&gvideoElapTimer);
+	
+	/*-- Terminate video play */
+	sp5kMediaPlayControl(SP5K_MEDIA_PLAY_ABORT, 0, 0);
+	gpbMainCb.subStat = PB_VIDEO_STAT_STANDBY;
+	return SUCCESS;
+}
+
+/*-------------------------------------------------------------------------
+ *  File Name : appPbVideoFlyingPlay
+ *------------------------------------------------------------------------*/
+static
+void
+appPbVideoFlyingPlay(
+	pbMediaFlyingDir_t flyingDir
+)
+{
+	if (FAIL==videoFlyingConstraintCheckup(flyingDir))
+	{
+		return;
+	}
+
+	videoFlyingPlayExecute(flyingDir);
+	return;
+}
+
+/*-------------------------------------------------------------------------
+ *  File Name : appPbVideoPlayStart
+ *------------------------------------------------------------------------*/
+static
+UINT32
+appPbVideoPlayStart(
+	void
+)
+{
+	/*-- UI OSD... */
+	#if KIT_WITH_HDMI
+	if(IS_HDMI_IN)
+	{
+		#ifdef HW_DVS5M2
+		appOsdIconModeSet(APP_ICON_MODE_VIDEOPLAY_HDMI_DVS5M2);
+		#else
+		appOsdIconModeSet(APP_ICON_MODE_VIDEOPLAY_HDMI);
+		#endif
+	}
+	else
+	{
+		appOsdIconModeSet(APP_ICON_MODE_VIDEOPLAY);
+	}
+	#else
+	appOsdIconModeSet(APP_ICON_MODE_VIDEOPLAY);
+	#endif
+	
+	appOsd_FontIconFontSet(ID_FONT_ICON);
+	
+	appPlayOsd_VideoCntrlDraw(TRUE,FALSE,TRUE,TRUE);
+	appPlayOsd_VideoTimeDraw(TRUE,gpbImgCb.mediaElapTime);
+	if (FAIL==sp5kMediaPlayControl(SP5K_MEDIA_PLAY_START, 0, 0)) 
+	{
+		gpbMainCb.err = PB_ERR_MEDIA_ERROR;
+		return FAIL;
+	}
+	gpbMainCb.subStat = PB_VIDEO_STAT_PLAY_STARTING;
+	/*-- SP5KFW will send SP5K_MSG_MEDIA_PLAY_OK or
+	 * SP5K_MSG_MEDIA_PLAY_FAIL to notify the result of PLAY_START cmd.
+	 * Go and wait for the message !!
+	 */
+	return SUCCESS;
+}
+
+/*-------------------------------------------------------------------------
+ *  File Name : appPbVideoStCreate
+ *------------------------------------------------------------------------*/
+static
+UINT32
+appPbVideoStCreate(
+	void
+)
+{
+	if (FAIL==videoValidityCheckup()) 
+	{
+		return FAIL;
+	}
+
+	if(0==gpbImgCb.mediaTotalTime) 
+	{
+		return FAIL;
+	}
+
+	/*-- Register TIMER for elapsed time process */
+	gvideoElapTimer = appTimerSet(PB_VIDEO_ELAPSED_TIMER_MS, "VDO_ELAP");
+	if (gvideoElapTimer==TIMER_NULL) 
+	{
+		return FAIL;
+	}
+
+	gpbImgCb.mediaPlaySpeed = PB_PLAY_SPEED_NORMAL;
+	gpbImgCb.mediaElapTime = 0;
+
+	appAutoPowerOffEnable(FALSE);/*++ for not power saving while playing video*/
+
+	return SUCCESS;
+
+}
+
+/*-------------------------------------------------------------------------
+ *  File Name : appPbVideoStClose
+ *------------------------------------------------------------------------*/
+static
+void
+appPbVideoStClose(
+	void
+)
+{
+
+	if (gpbMainCb.subStat != PB_VIDEO_STAT_STANDBY) 
+	{
+		appPbVideoTerminate();
+	}
+	seamlessPlayEn = FALSE;/*seamless play is always disable only when you open it by tele key*/
+	gpbMainCb.subStat = PB_VIDEO_STAT_STANDBY;
+}
+
+/*-------------------------------------------------------------------------
+ *  File Name : appPbVideoStExit
+ *------------------------------------------------------------------------*/
+static
+void
+appPbVideoStExit(
+	UINT32 nextSt,
+	UINT32 stMsg
+)
+{
+	appPbVideoStClose();
+	appStateChange(nextSt, stMsg);
+}
+
+/*-------------------------------------------------------------------------
+ *  File Name : appPbVideoStInit
+ *------------------------------------------------------------------------*/
+static
+UINT32
+appPbVideoStInit(
+	void
+)
+{
+	gpbMainCb.subStat = PB_VIDEO_STAT_STANDBY;
+	sp5kHostMsgSend(APP_UI_MSG_PB_VIDEO_CREATE, 0);
+	return SUCCESS;
+}
+
+/*-------------------------------------------------------------------------
+ *  File Name : appPbVideoFlyingCrossFile
+ *------------------------------------------------------------------------*/
+#if /*0*/CAM_TYPE_CVR/*jj add for FF+RW seamless play*/
+static
+UINT32
+appPbVideoSeamlessPlay(
+	UINT8 shiftCtrl
+)
+{
+	UINT8 flySpeed;
+	
+	flySpeed = gpbImgCb.mediaPlaySpeed;
+	appPbVideoTerminate();
+	if(PB_SHIFT_NEXT == shiftCtrl)
+	{
+		if(gcurrDcfIdx == gtotalImgCount)
+		{
+			printf("is last file,stop cross file play\n");
+			appPbVideoStExit(APP_STATE_PB_MAIN, STATE_PARAM_NORMAL_INIT);
+			return FAIL;
+		}
+		PB_INDEX_INC(gcurrDcfIdx, 1, gtotalImgCount);
+
+	}
+	else if(PB_SHIFT_PRE== shiftCtrl)
+	{
+		if(gcurrDcfIdx == 1)
+		{
+			printf("is first file,stop cross file play\n");
+			appPbVideoStExit(APP_STATE_PB_MAIN, STATE_PARAM_NORMAL_INIT);
+			return FAIL;
+		}
+		PB_INDEX_DEC(gcurrDcfIdx, 1, gtotalImgCount);
+
+	}
+	playVideoAttrParamGet();
+	if (FAIL==appPbVideoStCreate()) 
+	{
+		appPbVideoStExit(APP_STATE_PB_MAIN, STATE_PARAM_NORMAL_INIT);
+		return FAIL;
+	}
+	gtotalImgCount = appPbTotalFileCountGet(); /*add for mantis bug 0048419*/
+	if (gtotalImgCount) 
+	{
+		if (FAIL==appPbVideoPlayStart()) 
+		{
+			appPbVideoStExit(APP_STATE_PB_MAIN, STATE_PARAM_NORMAL_INIT);
+			return FAIL;
+		}
+	}
+	else
+	{
+		appPbVideoStExit(APP_STATE_PB_MAIN, STATE_PARAM_NORMAL_INIT);
+		return FAIL;
+	}
+	printf("S gpbImgCb.mediaPlaySpeed = %d\n",gpbImgCb.mediaPlaySpeed);
+	if(PB_PLAY_SPEED_NORMAL!= flySpeed)
+	{
+		gpbImgCb.mediaPlaySpeed = flySpeed-1;/*as appPbVideoFlyingPlay will increase speed,so we should decrease 1 for keep same speed*/
+		printf("E gpbImgCb.mediaPlaySpeed = %d\n",gpbImgCb.mediaPlaySpeed);
+		if(PB_SHIFT_NEXT == shiftCtrl)
+		{
+			appPbVideoFlyingPlay(PB_MEDIA_FLYING_FF);
+		}
+		else if(PB_SHIFT_PRE == shiftCtrl)
+		{
+			printf("set RW Time gpbImgCb.mediaTotalTime = %d\n",gpbImgCb.mediaTotalTime);
+			/*set elapsed time at the end of file for RW play*/
+			sp5kMediaPlayAttrSet(SP5K_MEDIA_ATTR_ELAPSED_TIME,gpbImgCb.mediaTotalTime-100);
+			appPbVideoFlyingPlay(PB_MEDIA_FLYING_REW);
+		}
+	}
+	appPlayOsd_seamlessPlayIndexShow(TRUE);
+	return SUCCESS;
+}
+#endif
+
+/*-------------------------------------------------------------------------
+ *  File Name : appPbVideoStOnMsg
+ *------------------------------------------------------------------------*/
+void
+appPbVideoStOnMsg(
+	UINT32 msg,
+	UINT32 param
+)
+{
+	UINT8 FileNumString[64];
+
+	switch (msg) 
+	{
+	case SP5K_MSG_TIMER:
+		if (gvideoElapTimer!=param) 
+		{
+			break;
+		}
+
+		if (gpbMainCb.subStat==PB_VIDEO_STAT_PLAYING 
+			|| gpbMainCb.subStat==PB_VIDEO_STAT_SLOW_MOTION
+		 	|| gpbMainCb.subStat==PB_VIDEO_STAT_FF 
+		 	|| gpbMainCb.subStat==PB_VIDEO_STAT_REW)
+		{
+			sp5kMediaPlayAttrGet(SP5K_MEDIA_ATTR_ELAPSED_TIME, &gpbImgCb.mediaElapTime);
+		}
+		gtotalImgCount = appPbTotalFileCountGet(); /*add for mantis bug 0048419*/
+		if (gtotalImgCount) 
+		{
+			appPlayOsd_VideoTimeDraw(TRUE,gpbImgCb.mediaElapTime);
+		}
+		break;
+	case SP5K_MSG_MEDIA_PLAY_START:
+		if (param==SP5K_MSG_MEDIA_PARAM_OKAY) 
+		{
+			if (gpbMainCb.subStat != PB_VIDEO_STAT_PLAY_STARTING) 
+			{
+				break;
+			}
+			gpbMainCb.err = PB_ERR_NONE;
+			gpbMainCb.subStat = PB_VIDEO_STAT_PLAYING;
+		} 
+		else 
+		{
+			if (gpbMainCb.subStat != PB_VIDEO_STAT_PLAY_STARTING) 
+			{
+				break;
+			}
+			gpbMainCb.err = PB_ERR_FILETYPE_ERROR;
+			appPbErrorProcess(gpbMainCb.err);
+			appPbVideoTerminate();
+			appPbVideoStExit(APP_STATE_PB_MAIN, STATE_PARAM_NORMAL_INIT);
+		}
+		break;
+	case SP5K_MSG_MEDIA_PLAY_STOP:
+		break;
+	case SP5K_MSG_MEDIA_PLAY_FILE_ERROR:
+		gpbMainCb.err = PB_ERR_FILE_ERROR;
+		appPbErrorProcess(gpbMainCb.err);
+		appPbVideoTerminate();
+		appPbVideoStExit(APP_STATE_PB_MAIN, STATE_PARAM_NORMAL_INIT);
+		break;
+
+	case SP5K_MSG_MEDIA_PLAY_END:
+	case SP5K_MSG_MEDIA_FF_TO_END:
+	case SP5K_MSG_MEDIA_RW_TO_END:
+	#if /*0*/CAM_TYPE_CVR/*jj add for FF+RW seamless play*/
+		printf("\033[35m seamlessPlayEn = %d\033[0m\n",seamlessPlayEn);
+		if(TRUE == seamlessPlayEn)
+		{
+			if((SP5K_MSG_MEDIA_FF_TO_END == msg)||(SP5K_MSG_MEDIA_PLAY_END == msg))
+			{
+				appPbVideoSeamlessPlay(PB_SHIFT_NEXT);
+			}
+			else
+			{
+				appPbVideoSeamlessPlay(PB_SHIFT_PRE);
+			}
+		}
+		else
+	#endif
+		{
+			appPlayOsd_VideoTimeDraw(TRUE,gpbImgCb.mediaTotalTime);
+			appPbVideoTerminate();
+			appPbVideoStExit(APP_STATE_PB_MAIN, STATE_PARAM_NORMAL_INIT);
+		}
+		break;
+	case APP_UI_MSG_PB_VIDEO_CREATE:
+		if (FAIL==appPbVideoStCreate()) 
+		{
+			appPbVideoStExit(APP_STATE_PB_MAIN, STATE_PARAM_NORMAL_INIT);
+			return;
+		}
+		gtotalImgCount = appPbTotalFileCountGet(); /*add for mantis bug 0048419*/
+		if (gtotalImgCount) 
+		{
+			if (FAIL==appPbVideoPlayStart()) 
+			{
+				appPbVideoStExit(APP_STATE_PB_MAIN, STATE_PARAM_NORMAL_INIT);
+				return;
+			}
+		}
+		else
+		{
+			appPbVideoStExit(APP_STATE_PB_MAIN, STATE_PARAM_NORMAL_INIT);
+			return;
+		}
+		#if /*0*/CAM_TYPE_CVR/*show play file IDX when seamless play*/
+		if (TRUE == seamlessPlayEn) {		
+			appPlayOsd_seamlessPlayIndexShow(TRUE);
+		}
+		#endif
+		break;
+	/*----- Video ERROR Handling */
+	case APP_UI_MSG_PB_VIDEO_ERROR:
+		if (param==VIDEO_ERR_OUT_OF_ELAPSE_TMR) 
+		{
+			appPbVideoTerminate();
+			gpbMainCb.err = PB_ERR_VIDEO_ERROR;
+			appPbVideoStExit(APP_STATE_PB_MAIN, STATE_PARAM_NORMAL_INIT);
+		}
+		break;
+	#if 0
+	case SP5K_MSG_MEDIA_PLAY_SEAMLESS_LOAD_NOTIFY: 
+		if (seamlessPlayEn) {
+			gpbImgCb.dcfIdx++;
+			if(gpbImgCb.dcfIdx > gtotalImgCount){
+				gpbImgCb.dcfIdx = 1;
+			}
+			sp5kDcfFsCurFileIdxSet(gpbImgCb.dcfIdx);
+			playImgDcfAttrGet(&gpbImgCb);
+			sp5kMediaPlayFileNameSet(&gpbImgCb.szDcfFileName[0]);
+			sp5kMediaPlayControl(SP5K_MEDIA_PLAY_SEAMLESS_LOAD, (UINT32)(&gpbImgCb.szDcfFileName[0]), 0);
+		}
+		break;
+	case SP5K_MSG_MEDIA_PLAY_SEAMLESS_LOAD_FINISH:		
+		if (seamlessPlayEn) {		
+			APP_OSD_REFRESH_OFF;
+			appOsd_ColorDrawShapeColorSet(PAL_NOCOLOR, PAL_BLEND_100, PAL_NOCOLOR, PAL_BLEND_100);
+			appOsdLib_OsdLayerShapeDraw(APP_OSD_SHAPE_RECT, 100, 0, 210, 36, 0, 0);
+			memset(FileNumString, 0, 10);
+			sprintf(FileNumString, "%d/%d ", gpbImgCb.dcfIdx,gpbMainCb.totalImg);
+			appOsd_ColorDrawTextColorSet(PAL_WHITE, PAL_BLACK, PAL_NOCOLOR, PAL_BLEND_100);
+			appOsdLib_TextDraw(160, 2, SP5K_GFX_ALIGN_TOP_RIGHT, FileNumString);
+			APP_OSD_REFRESH_ON;
+		}
+		break;
+	case SP5K_MSG_MEDIA_PLAY_SEAMLESS_LOAD_FAILED:			
+		seamlessPlayEn = FALSE;
+		/* show your message here */
+		break;
+	#endif
+	default :
+		break;
+	}
+}
+
+
+/*-------------------------------------------------------------------------
+ *  File Name : appPbVideoStOnKey
+ *------------------------------------------------------------------------*/
+void
+appPbVideoStOnKey(
+	UINT32 msg,
+	UINT32 param
+)
+{
+	switch (msg) {
+	case APP_KEY_PRESS_S2:
+		if (gpbMainCb.subStat != PB_VIDEO_STAT_PAUSE) 
+		{
+			break;
+		}
+		if (FAIL==appPbVideoSnap()) 
+		{
+			appPbErrorProcess(gpbMainCb.err);
+			appPbVideoStExit(APP_STATE_PB_MAIN, STATE_PARAM_NORMAL_INIT);
+			break;
+		}
+		break;
+	case APP_KEY_PRESS_MODE: 
+		break;
+
+	case APP_KEY_PRESS_OK:
+	case APP_KEY_PRESS_UP:
+		if (gpbMainCb.subStat==PB_VIDEO_STAT_FF 
+			|| gpbMainCb.subStat==PB_VIDEO_STAT_REW
+			|| gpbMainCb.subStat==PB_VIDEO_STAT_SLOW_MOTION
+		)
+		{
+			appPbVideoResume();
+			appPlayOsd_MediaPlayStatusDraw( FALSE, PAUSING);
+			appPlayOsd_VideoTimeDraw(TRUE,gpbImgCb.mediaElapTime);
+			appPlayOsd_VideoCntrlDraw(TRUE,FALSE,TRUE,TRUE);
+			VIDEO_CRITICAL_OP_POST_SLEEP;
+		}
+		else if (gpbMainCb.subStat==PB_VIDEO_STAT_PLAYING) 
+		{
+			if (FAIL==appPbVideoPause()) 
+			{
+				return;
+			}
+	
+			appPlayOsd_MediaPlayStatusDraw( TRUE, PAUSING);
+			appPlayOsd_VideoTimeDraw(TRUE,gpbImgCb.mediaElapTime);
+			appPlayOsd_VideoCntrlDraw(TRUE,TRUE,TRUE,TRUE);
+		}
+		else if (gpbMainCb.subStat==PB_VIDEO_STAT_PAUSE) 
+		{
+			appPbVideoResume();
+			appPlayOsd_MediaPlayStatusDraw( FALSE, PAUSING);
+			appPlayOsd_VideoTimeDraw(TRUE,gpbImgCb.mediaElapTime);
+			appPlayOsd_VideoCntrlDraw(TRUE,FALSE,TRUE,TRUE);
+		}
+		else  
+		{
+			return;
+		}
+		break;
+	case APP_KEY_PRESS_DOWN:
+		#if 0/*jj mark for press down key should not stop video play */
+		appPbVideoStExit(APP_STATE_PB_MAIN, STATE_PARAM_NORMAL_INIT);
+		#endif
+		break;
+	case APP_KEY_PRESS_SET:
+		break;
+	case APP_KEY_PRESS_LEFT:
+	case APP_KEY_PRESS_RIGHT:
+	case APP_KEY_PRESS_DEL:	
+		if (gpbMainCb.subStat != PB_VIDEO_STAT_PLAYING 
+			&&gpbMainCb.subStat != PB_VIDEO_STAT_FF 
+			&&gpbMainCb.subStat != PB_VIDEO_STAT_REW)
+		{
+			break;
+		}
+
+		if (msg==APP_KEY_PRESS_LEFT) 
+		{
+			appPbVideoFlyingPlay(PB_MEDIA_FLYING_REW);
+		} 
+		else if(msg==APP_KEY_PRESS_RIGHT)
+		{
+			appPbVideoFlyingPlay(PB_MEDIA_FLYING_FF);
+		}
+		/*
+		else if(msg==APP_KEY_PRESS_DEL)
+		{
+			appPbVideoFlyingPlay(PB_MEDIA_FLYING_SLOW_MOTION);
+		}
+		*/  /*Delete the function of slow motion */
+		appPlayOsd_VideoTimeDraw(TRUE,gpbImgCb.mediaElapTime);
+		
+		if(appPbMediaUIStateGet()==PB_MEDIA_UI_STAT_FF)
+		{
+			appPlayOsd_MediaPlayStatusDraw( TRUE, FWDING);
+		}
+		else if(appPbMediaUIStateGet()==PB_MEDIA_UI_STAT_REW)
+		{
+			appPlayOsd_MediaPlayStatusDraw( TRUE, RWDING);
+		}
+		/*else if(appPbMediaUIStateGet()==PB_MEDIA_UI_STAT_SLOWMOTION)
+		{
+			appPlayOsd_MediaPlayStatusDraw( TRUE, SLOW);
+		}*/
+		break;
+	case APP_KEY_PRESS_POWER:
+	case APP_KEY_PRESS_MENU:
+		seamlessPlayEn = FALSE;/*jj add for disable seamless play when stop video play*/
+		appPbVideoTerminate();
+		appPbVideoStExit(APP_STATE_PB_MAIN, STATE_PARAM_NORMAL_INIT);
+		break;
+	case APP_KEY_PRESS_TELE: 
+		if(TRUE == seamlessPlayEn)break;
+		seamlessPlayEn = TRUE;
+		appPlayOsd_seamlessPlayIndexShow(TRUE);
+		/*sp5kMediaPlayControl(SP5K_MEDIA_PLAY_SEAMLESS_EN, 1, 0);*//*jj mark for host control seamless play*/
+		break;
+	case APP_KEY_PRESS_WIDE:
+		if(FALSE == seamlessPlayEn)break;
+		seamlessPlayEn = FALSE;
+		appPlayOsd_seamlessPlayIndexShow(FALSE);
+		/*sp5kMediaPlayControl(SP5K_MEDIA_PLAY_SEAMLESS_EN, 0, 0);*//*jj mark for host control seamless play*/
+		break;
+	default:
+		break;
+	}
+}
+
+/*-------------------------------------------------------------------------
+ *  File Name : appPbVideoState
+ *------------------------------------------------------------------------*/
+void
+appPbVideoState(
+	UINT32 msg,
+	UINT32 param
+)
+{
+
+	switch (msg) 
+	{
+	case APP_STATE_MSG_INIT:
+		RPrintf("appPbVideoState");
+		appPbVideoStInit();
+		/* do nothing */
+		break;
+	case APP_STATE_MSG_CLOSE:
+		appPbVideoStClose();
+		appStateCloseDone();
+		break;
+	case APP_STATE_MSG_ABORT:   
+		appPbVideoTerminate();
+		appPbVideoStExit(APP_STATE_PB_MAIN, STATE_PARAM_NORMAL_INIT);
+	break;
+	default:
+		if (IS_APP_KEY_MSG(msg)) 
+		{
+			appPbVideoStOnKey(msg,param);
+		}
+		else
+		{
+			appPbVideoStOnMsg(msg,param);
+		}
+		break;
+	}
+
+}

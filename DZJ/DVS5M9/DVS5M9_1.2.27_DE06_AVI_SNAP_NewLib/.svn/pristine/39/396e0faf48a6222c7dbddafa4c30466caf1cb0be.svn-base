@@ -1,0 +1,533 @@
+/**************************************************************************
+ *
+ *        Copyright (c) 2006-2008 by Sunplus mMedia Inc., Ltd.
+ *
+ *  This software is copyrighted by and is the property of Sunplus
+ *  mMedia Inc., Ltd. All rights are reserved by Sunplus mMedia
+ *  Inc., Ltd. This software may only be used in accordance with the
+ *  corresponding license agreement. Any unauthorized use, duplication,
+ *  distribution, or disclosure of this software is expressly forbidden.
+ *
+ *  This Copyright notice MUST not be removed or modified without prior
+ *  written consent of Sunplus mMedia Inc., Ltd.
+ *
+ *  Sunplus mMedia Inc., Ltd. reserves the right to modify this
+ *  software without notice.
+ *
+ *  Sunplus mMedia Inc., Ltd.
+ *  19-1, Innovation First Road, Science-Based Industrial Park,
+ *  Hsin-Chu, Taiwan, R.O.C. 
+ *
+ **************************************************************************/
+
+
+#ifndef APP_USER_SETTING_H
+#define APP_USER_SETTING_H
+
+/**************************************************************************
+ *                         H E A D E R   F I L E S                        *
+ **************************************************************************/
+#define APERTURE_DEFAULT	        APERTURE_AUTO
+#define SHUTTER_DEFAULT		        SHUTTER_AUTO
+#define PASM_DEFAULT		        PASM_PROGRAM
+#define LANG_DEFAULT		        LANG_ENGLISH
+#define SCENE_DEFAULT		        SCENE_NONE
+#define QV_TIME_DEFAULT	            QV_TIME_OFF  /*junqiong.hu@20121214 modify for mantis bug 0046564*/
+#define POWER_SAVE_DEFAULT	        POWER_SAVE_3MIN
+#define FILENUM_DEFAULT	            FILENUM_SERIES
+#define BACKLIGHT_DEFAULT	        BACKLIGHT_OUTDOOR	
+#define TV_DEFAULT	                TV_NTSC
+#define USB_DEFAULT                 USB_MSDC/*USB_MSDC*/
+#define POWERON_LOGO_DEFAULT        POWERON_LOGO_SYS
+#define SOUND_CONTROL_DEFAULT       SOUND_ON
+#define POWERON_SOUND_DEFAULT       POWERON_SOUND_1
+#define SOUND_VOLUME_DEFAULT	    SOUND_VOLUME_MIDDLE
+#define SHUTTER_SOUND_DEFAULT       SHUTTER_SOUND_1
+#define BATTERY_TYPE_DEFAULT        BATT_LITHIUM
+#define VIDEO_FORMAT_TYPE_DEFAULT   VIDEO_FORMAT_H264
+#if CAM_TYPE_CVR
+#define MEDIA_FORMAT_TYPE_DEFAULT   MEDIA_FORMAT_AVI
+#else
+#define MEDIA_FORMAT_TYPE_DEFAULT   MEDIA_FORMAT_AVI
+#endif
+#define PERIODICAL_CAPTURE_DEFAULT  PERIODICAL_CAPTURE_OFF
+#define LIGHT_FREQ_DEFAULT          LIGHT_FREQ_50HZ
+#define DATE_TIME_DEFAULT           DATE_TIME_YYMMDD
+#define FILETYPE_DEFAULT	FILETYPE_VIDEO
+
+/**************************************************************************
+ *                           C O N S T A N T S                            *
+ **************************************************************************/
+
+typedef enum {
+	APERTURE_AUTO, 
+	APERTURE_2_8,
+	APERTURE_5_6,
+	APERTURE_MAX
+}aperture_e;
+
+
+typedef enum {
+	FILETYPE_EVENT = 0,
+	FILETYPE_VIDEO,	
+	FILETYPE_JPG,
+	FILETYPE_AUDIO,
+	FILETYPE_MAX
+} fileType_e;
+
+typedef enum {
+	SHUTTER_AUTO,
+	SHUTTER_16S,	
+	SHUTTER_8S,	
+	SHUTTER_4S, 
+	SHUTTER_2S, 
+	SHUTTER_1S, 
+	SHUTTER_1_2S,
+	SHUTTER_1_4S, 
+	SHUTTER_1_8S, 
+	SHUTTER_1_15S,
+	SHUTTER_1_20S,
+	SHUTTER_1_24S,
+	SHUTTER_1_30S, 
+	SHUTTER_1_60S,
+	SHUTTER_1_125S, 
+	SHUTTER_1_250S,
+	SHUTTER_1_500S, 
+	SHUTTER_1_1000S,
+	SHUTTER_1_2000S,
+	SHUTTER_1_4000S,
+	SHUTTER_1_8000S,
+	SHUTTER_1_16000S,
+	SHUTTER_MAX
+}shutter_e;
+
+
+
+typedef enum {
+	PASM_PROGRAM, 
+	PASM_APERTURE, 
+	PASM_SHUTTER, 
+	PASM_MANUAL,
+	SCENE_MODE,
+	VIDEO_MODE,
+	AUDIO_MODE,
+	PASM_MAX
+}pasm_e;
+
+enum scene_e {
+	SCENE_SMILE_DETECTION	= (unsigned char) 0x00,
+	SCENE_SHAKE_FREE		= (unsigned char) 0x01,
+	SCENE_LANDSCAPE 		= (unsigned char) 0x02,
+	SCENE_BACK_LIGHT		= (unsigned char) 0x03,
+	SCENE_NIGHT 			= (unsigned char) 0x04,
+	SCENE_BUILDING			= (unsigned char) 0x05,
+	SCENE_CHILDREN			= (unsigned char) 0x06,
+	SCENE_PORTRAIT			= (unsigned char) 0x07,
+	SCENE_FOOD				= (unsigned char) 0x08,
+	SCENE_TEXT				= (unsigned char) 0x09,
+	SCENE_BEACH_SNOW		= (unsigned char) 0x0A,
+	SCENE_FIRE_WORKS		= (unsigned char) 0x0B,
+	SCENE_SUNSET			= (unsigned char) 0x0C,		
+	SCENE_WDR				= (unsigned char) 0x0D,
+	SCENE_HDR				= (unsigned char) 0x0E,
+	SCENE_PANORAMA			= (unsigned char) 0x0F,
+	SCENE_BLINK				= (unsigned char) 0x10,
+	SCENE_MODE_TOTAL		= (unsigned char) 0x11,
+	SCENE_ID_PHOTO			= (unsigned char) 0x12,
+	SCENE_CLOSE_UP			= (unsigned char) 0x13,
+	SCENE_MAX				= (unsigned char) 0x14,
+	SCENE_NONE				= (unsigned char) 0xFF,
+};
+
+enum{
+	SENCEMENU_PROGRAM				= (unsigned char) 0x00,
+	SENCEMENU_MOVIE					= (unsigned char) 0x01,
+	SENCEMENU_SMILEDET				= (unsigned char) 0x02,
+	SENCEMENU_SHAKE_FREE			= (unsigned char) 0x03,
+	SENCEMENU_LANDSCAPE				= (unsigned char) 0x04,		
+	SENCEMENU_BACK_LIGHT			= (unsigned char) 0x05,
+	SENCEMENU_NIGHT					= (unsigned char) 0x06,
+	SENCEMENU_BUILDING				= (unsigned char) 0x07,
+	SENCEMENU_CHILDREN				= (unsigned char) 0x08,
+	SENCEMENU_PORTRAIT				= (unsigned char) 0x09,
+	SENCEMENU_FOOD					= (unsigned char) 0x0a,
+	SENCEMENU_TEXT					= (unsigned char) 0x0b,
+	SENCEMENU_BEACH_SNOW			= (unsigned char) 0x0c,
+	SENCEMENU_FIRE_WORKS			= (unsigned char) 0x0d,
+	SENCEMENU_SUNSET				= (unsigned char) 0x0e,
+	SENCEMENU_WDR					= (unsigned char) 0x0f,
+	SENCEMENU_HDR					= (unsigned char) 0x10,
+	SENCEMENU_PANORAMA				= (unsigned char) 0x11,
+	SENCEMENU_BLINKDETECT			= (unsigned char) 0x12,
+	SENCEMENU_VOICEREC				= (unsigned char) 0x13,
+	SENCEMENU_MAX					= (unsigned char) 0x14,
+
+};
+
+
+typedef enum {
+	LANG_ENGLISH			= (unsigned char) 0x00,
+	LANG_T_CHINESE			= (unsigned char) 0x01,
+	LANG_S_CHINESE			= (unsigned char) 0x02,
+	LANG_SPANISH 			= (unsigned char) 0x03,
+	LANG_MAX				= (unsigned char) 0x04,
+	LANG_CZECH				= (unsigned char) 0x05,
+	LANG_DUTCH				= (unsigned char) 0x06,
+	LANG_FRENCH 			= (unsigned char) 0x07,
+	LANG_GREEK				= (unsigned char) 0x08,
+	LANG_HUNGARY			= (unsigned char) 0x09,
+	LANG_ITALIAN			= (unsigned char) 0x10,
+	LANG_INDONESIAN			= (unsigned char) 0x11,
+	LANG_MALAY				= (unsigned char) 0x12,
+	LANG_POLISH 			= (unsigned char) 0x13,
+	LANG_PORTUGESE			= (unsigned char) 0x14,
+	LANG_RUSSIAN			= (unsigned char) 0x15,
+	LANG_ROMANIAN			= (unsigned char) 0x16,
+	LANG_GERMAN				= (unsigned char) 0x17,
+	LANG_SWEDISH			= (unsigned char) 0x18,
+	LANG_TURKISH			= (unsigned char) 0x19,
+	LANG_CROATION			= (unsigned char) 0x20,
+	LANG_ARABIC 			= (unsigned char) 0x21,
+	LANG_THAI				= (unsigned char) 0x22,
+	LANG_JAPANESE			= (unsigned char) 0x23,
+	LANG_KOREAN				= (unsigned char) 0x24,
+}language_e;
+
+ typedef enum {	
+	QV_TIME_OFF  = 0,
+	QV_TIME_1SEC,         	
+	QV_TIME_3SEC,  
+	QV_TIME_5SEC,
+	QV_TIME_MAX
+} qvTime_e;
+
+typedef enum {
+	POWER_SAVE_OFF,
+	POWER_SAVE_1MIN, 
+	POWER_SAVE_3MIN,
+	POWER_SAVE_5MIN,
+	POWER_SAVE_MAX
+}poweSave_e ;
+
+typedef enum {
+	FILENUM_SERIES = 0,
+	FILENUM_RESET,	
+	FILENUM_MAX
+} fileNum_e;
+
+
+typedef enum {
+	BACKLIGHT_INDOOR, 
+	BACKLIGHT_OUTDOOR,
+	BACKLIGHT_MAX
+}backlight_e;
+
+typedef enum {
+	TV_NTSC, 
+	TV_PAL,
+	TV_MAX,
+	TV_HDMI
+}tv_e;
+
+
+typedef enum {
+	USB_MSDC,
+	USB_PICTBRIDGE,
+	USB_UVCH264,
+	USB_UVCMJPG,
+	USB_MAX
+}usb_e;
+
+typedef enum {
+	POWERON_LOGO_NONE, 
+	POWERON_LOGO_SYS,
+	POWERON_LOGO_CUSTOM,
+	POWERON_LOGO_MAX
+}powerOnLogo_e;
+
+typedef enum 
+{
+	#if !CAM_TYPE_CVR
+	SOUNDS_SHTTUER	= 0x00,
+	SOUNDS_STARTUP,
+	#endif
+	SOUNDS_BEEP    ,
+	SOUNDS_VOULUME	,
+	SOUNDS_REC	,
+	SOUNDS_TOTAL,
+}SOUNDS_e;
+
+typedef enum 
+{
+	SOUND_OFF		= (unsigned char) 0x00,
+	SOUND_ON			= (unsigned char) 0x01,
+	SOUND_TOTAL		= (unsigned char) 0x02,
+} SOUNDCONTROL_MODE_e;
+
+
+
+typedef enum 
+{
+	BEEP_OFF		= (unsigned char) 0x00,
+	BEEP_ON			= (unsigned char) 0x01,
+	BEEP_TOTAL		= (unsigned char) 0x02,
+} BEEP_MODE_e;
+
+typedef enum 
+{
+	VOICEREC_OFF		= (unsigned char) 0x00,
+	VOICEREC_ON			= (unsigned char) 0x01,
+	VOICEREC_TOTAL		= (unsigned char) 0x02,
+} VOICEREC_MODE_e;
+
+typedef enum {
+	POWERON_SOUND_NONE, 
+	POWERON_SOUND_1,
+	POWERON_SOUND_2,
+	POWERON_SOUND_3,
+	POWERON_SOUND_MAX
+}powerOnSound_e;
+
+
+ typedef enum {	
+	SOUND_VOLUME_OFF  = 0,
+	SOUND_VOLUME_LOW,         	
+	SOUND_VOLUME_MIDDLE,  
+	SOUND_VOLUME_HIGH,
+	SOUND_VOLUME_MAX
+} soundVolume_e;
+
+
+typedef enum {
+	SHUTTER_SOUND_NONE, 
+	SHUTTER_SOUND_1,
+	SHUTTER_SOUND_MAX
+}powerOnShutter_e;
+
+ typedef enum {	
+	BATT_AKALINE  = 0,
+	BATT_NIMH,         	
+	BATT_LITHIUM,  
+	BATT_OXYRIDE,
+	BATT_TYPE_MAX
+} battType_e;
+
+ typedef enum _DATE_STYLE{	
+	DATE_TIME_YYMMDD  = 0,    	
+	DATE_TIME_MMDDYY,  
+	DATE_TIME_DDMMYY,
+	DATE_TIME_MAX
+} dateTimeType_e;
+
+typedef enum _DATE_TIME_SET
+{
+	YEAR_SET				= (unsigned char) 0x00,
+	MONTH_SET				= (unsigned char) 0x01,
+	DAY_SET					= (unsigned char) 0x02,
+	HOUR_SET				= (unsigned char) 0x03,
+	MIN_SET					= (unsigned char) 0x04,
+	DATE_STYLE_SET			= (unsigned char) 0x05,
+	DAY_TIME_SET_TOTAL		= (unsigned char) 0x06,
+	PM_AM_SET,
+} DATE_TIME_SET_e;
+
+#if CAM_TYPE_CVR
+typedef enum
+{
+	UI_TimeZones_west12=0,
+	UI_TimeZones_west11,
+	UI_TimeZones_west10,
+	UI_TimeZones_west9,
+	UI_TimeZones_west8,
+	UI_TimeZones_west7,
+	UI_TimeZones_west6,
+	UI_TimeZones_west5,
+	UI_TimeZones_west4,
+	UI_TimeZones_west3,
+	UI_TimeZones_west2,
+	UI_TimeZones_west1,
+	UI_TimeZones_0,
+	UI_TimeZones_East1,
+	UI_TimeZones_East2,
+	UI_TimeZones_East3,
+	UI_TimeZones_East4,
+	UI_TimeZones_East5,
+	UI_TimeZones_East6,
+	UI_TimeZones_East7,
+	UI_TimeZones_East8,
+	UI_TimeZones_East9,
+	UI_TimeZones_East10,
+	UI_TimeZones_East11,
+	UI_TimeZones_East12,
+	UI_TimeZones_MAX,
+}TIME_ZONE_e;
+
+typedef enum{
+	FACTORY_RESET,
+	RESET_SYSTEM_INFO,
+	RESET_CARD_INFO,
+	GPS_GSVINFO,
+	SYSTEM_MAX,
+}SYSTEM_e;
+#endif
+
+typedef enum {
+	RESET, 
+	RESET_RETURN,
+	RESET_MAX
+}RESET_ALL_e;
+
+typedef enum 
+{
+	FORMAT_YES		= (unsigned char) 0x00,
+	FORMAT_NO			,
+	FORMAT_TOTAL	,
+} FORMAT_e;
+
+typedef enum 
+{
+	VIDEO_FORMAT_MJPG		= (unsigned char) 0x00,
+	VIDEO_FORMAT_H264			,
+	VIDEO_FORMAT_TOTAL	,
+} VIDEO_FORMAT_e;
+
+typedef enum 
+{
+	MEDIA_FORMAT_AVI		= (unsigned char) 0x00,
+	MEDIA_FORMAT_MOV	,
+	MEDIA_FORMAT_TOTAL	,
+	MEDIA_FORMAT_MP4    ,
+} MEDIA_FORMAT_e;
+
+typedef enum 
+{
+	PERIODICAL_CAPTURE_OFF			= (unsigned char) 0x00,
+	PERIODICAL_CAPTURE_5SEC			= (unsigned char) 0x01,
+	PERIODICAL_CAPTURE_10SEC			= (unsigned char) 0x02,
+	PERIODICAL_CAPTURE_30SEC			= (unsigned char) 0x03,
+	PERIODICAL_CAPTURE_60SEC			= (unsigned char) 0x04,
+	PERIODICAL_CAPTURE_TOTAL		= (unsigned char) 0x05,
+
+} PERIODICAL_CAPTURE_e;
+
+
+typedef enum
+{
+  LIGHT_FREQ_50HZ	      = (unsigned char) 0x00,
+  LIGHT_FREQ_60HZ,
+  LIGHT_FREQ_AUTO,
+  LIGHT_FREQ_TOTAL,
+}LIGHT_FREQ_e;
+
+typedef enum 
+{
+	SH_SOUND_OFF		= (unsigned char) 0x00,
+	SH_SOUND_ON		= (unsigned char) 0x01,
+	SH_SOUND_TOTAL	= (unsigned char) 0x02,
+
+} SH_SOUND_MODE;
+
+typedef enum UI_SETUP_MENU_CHANGE
+{
+	UI_SETUP_FIRSTMENU 		= 0x00,
+	UI_SETUP_SETUPMENU,	
+	UI_SETUP_MENUCHANGE_TOTAL,		
+}UI_SETUP_MENU_CHANGE;
+
+
+#define RTC_YEAR_MIN   2000
+#define RTC_YEAR_MAX  2000 + 50
+
+
+
+/**************************************************************************
+ *                          D A T A    T Y P E S                          *
+ **************************************************************************/
+
+typedef struct {
+	UINT8 CurViewMode; /* PASM ,Scene ,Video, Audio */
+	UINT8 CurScene; /* Current scene */
+	UINT8 qvSec;
+	UINT8 reserve;
+} appCaptureSetting_t;
+
+
+typedef struct uiSoundSetting_s {
+	#if !CAM_TYPE_CVR
+	UINT8 shutter;
+	UINT8 powerOn;
+	#endif
+	UINT8 beep;
+	UINT8 volume;
+	#if CAM_TYPE_CVR
+	UINT8 voicerec;
+	#endif
+} uiSoundSetting_t;
+
+typedef struct uiPbSlideSettings_s {
+	UINT8 intvl;	/* slide interval time */
+	UINT8 trans;	/* effect transition */
+	UINT8 music;	/* background music */
+	UINT8 isRepeat;
+} uiPbSlideSettings_t;
+
+/*if you add variable to struct,you must modify  relative file in \sphost\resource\B\USER_RES*/
+
+typedef struct uiParamSetting_s 
+{
+	UINT16 dcfDirKey;
+	UINT16 dcfFileKey;
+	appCaptureSetting_t capSetting;
+	uiSoundSetting_t sound;
+	uiPbSlideSettings_t pbSlideSetting;
+	UINT8 qvTime;
+	UINT8 powerSave;
+	UINT8 language;
+	UINT8 fileNumber;
+	UINT8 dateTime;
+	UINT8 TV;
+	UINT8 usbMode;
+	UINT8 powerOnLogo;	
+	UINT8 batteryType;	
+	UINT8 lightFrequency; 
+	UINT8 soundcontrol;
+	UINT8 videoFormat;
+	UINT8 mediaFormat;
+	UINT8 periodicalCap;
+	UINT8 drivermode;
+} uiParamSetting_t;
+
+typedef struct uiDPS_SET
+{	
+	UINT8	nPrint;
+	UINT8	nImage;
+	UINT8	nQuality;
+	UINT8	nLayout;
+	UINT8	nPaperSize;
+	UINT8	nPaperType;
+	UINT8	nDate;
+	UINT8	nFileNo;
+	UINT8	nReset;
+}uiDPS_SET,*PuiDPS_SET;
+
+/**************************************************************************
+ *                               M A C R O S                              *
+ **************************************************************************/
+
+/**************************************************************************
+ *          M O D U L E   V A R I A B L E S   R E F E R E N C E S         *
+ **************************************************************************/
+extern uiParamSetting_t *pUiSetting;
+/**************************************************************************
+ *                F U N C T I O N   D E C L A R A T I O N S               *
+ **************************************************************************/
+UINT32 appUserSettingLoad(uiParamSetting_t *pbuf);
+UINT32 appUserSettingSave(uiParamSetting_t *pbuf);
+void appDcfUserSettingGet(fileNum_e *fnumRule, UINT16 * dirKey, UINT16 *fileKey);
+void appFactorySettingApply(void);
+#if CAM_TYPE_CVR
+void appWIFIPassword(void);
+#endif
+#endif  /* APP_USER_SETTING_H */
+
+

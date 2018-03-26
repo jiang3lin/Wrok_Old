@@ -1,0 +1,111 @@
+#
+# CFLAGS are for c code, other defines are for makefile
+#
+nand := 1
+
+ifdef HOST_ROOT # called by host/Makefile or host/Customization/HostFw/Makefile
+
+ifndef PRJ # use last project if no project specified
+-include $(HOST_ROOT)/lastprj.def
+ifndef PRJ
+PRJ := PRJ_CVR
+endif
+endif
+
+#ifneq ($(PRJ), FPGA)
+#nand := 1
+#endif
+
+-include $(HOST_ROOT)/last_hwver_$(PRJ).def
+include $(HOST_ROOT)/project/$(PRJ).def
+
+ifeq ($(CHIP), 5210) # for compatibility
+ PLATFORM_PATH := 5210
+else
+ PLATFORM_PATH := spca$(CHIP)
+endif
+
+# gcc warning option
+#CFLAGS += -Wall
+#CFLAGS += -W
+CFLAGS += -Wimplicit
+CFLAGS += -Wmain
+CFLAGS += -Wreturn-type
+#CFLAGS += -Wunused
+CFLAGS += -Wswitch
+CFLAGS += -Wcomment
+CFLAGS += -Wtrigraphs
+CFLAGS += -Wformat
+CFLAGS += -Wchar-subscripts
+#CFLAGS += -Wuninitialized
+CFLAGS += -Wparentheses
+CFLAGS += -Wsign-compare
+
+# make all warnings into errors
+ifeq ($(SPHOST_LIB_SOURCE_RELEASE), YES)
+CFLAGS += -Werror
+endif
+
+# for c code
+CFLAGS += -DCHIP='"SPCA$(CHIP)"'
+CFLAGS += -DPRJ_$(PRJ_NAME) 
+CFLAGS += -D$(HW_NAME)
+CFLAGS += -DHW_VER_$(HW_VER)
+CFLAGS += -DAPP_MODEL='"$(PRJ_NAME)"'
+CFLAGS += -DHW_MODEL='"$(HW_NAME)_$(HW_VER)"'
+CFLAGS += -DGPIO_INC='"app_Gpio_$(HW_NAME)_$(HW_VER).h"'
+ifeq ($(TOUCH_PANEL), YES)
+CFLAGS += -DTOUCH_FUNC_ENABLE
+endif
+
+
+ifndef RSV_A_SIZE
+ RSV_A_SIZE := 0x7A0000
+endif
+
+ifndef RSV_B_SIZE
+ RSV_B_SIZE := 0x80000
+endif
+
+ifeq ($(findstring BQ,$(PRJ_NAME)), BQ)
+  ifeq ($(findstring BQB403T,$(PRJ_NAME)), BQB403T)
+    VQ_UI := YES
+  else
+    BQ_UI := YES
+  endif
+else
+ifeq ($(findstring BY,$(PRJ_NAME)), BY)
+ BBY_UI := YES
+else
+ VQ_UI := YES
+endif
+endif
+
+ifeq ($(TOUCH_PANEL), YES)
+TOUCH_UI := YES
+else
+TOUCH_UI := NO
+endif
+
+HW_FACETRACK := YES 
+
+HW_DIST:= 
+
+ifeq ($(HW_FACETRACK), YES)
+CFLAGS += -DHW_FACETRACK
+endif
+
+ifeq ($(HW_DIST), YES)
+CFLAGS += -DHW_DIST
+endif
+
+
+ifeq ($(H264SET), 1)
+CFLAGS += -DH264_SETFLG=1
+else
+CFLAGS += -DH264_SETFLG=0
+endif
+
+# CFLAGS += -DWHQL_TEST
+
+endif # HOST_ROOT

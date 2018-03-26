@@ -1,0 +1,301 @@
+/**************************************************************************
+ *
+ *       Copyright (c) 2002-2011 by iCatch Technology, Inc.
+ *
+ *  This software is copyrighted by and is the property of iCatch Technology,
+ *  Inc.. All rights are reserved by iCatch Technology, Inc..
+ *  This software may only be used in accordance with the corresponding
+ *  license agreement. Any unauthorized use, duplication, distribution,
+ *  or disclosure of this software is expressly forbidden.
+ *
+ *  This Copyright notice MUST not be removed or modified without prior
+ *  written consent of iCatch Technology, Inc..
+ *
+ *  iCatch Technology, Inc. reserves the right to modify this software
+ *  without notice.
+ *
+ *  iCatch Technology, Inc.
+ *  19-1, Innovation First Road, Science-Based Industrial Park,
+ *  Hsin-Chu, Taiwan, R.O.C.
+ *
+ *  Author: Eric Su
+ *
+ **************************************************************************/
+#ifndef _SP5K_UTILITY_API_H_
+#define _SP5K_UTILITY_API_H_
+
+/**************************************************************************
+ *                         H E A D E R   F I L E S
+ **************************************************************************/
+#include "middleware/speffect_def.h"
+
+/**************************************************************************
+ *                           C O N S T A N T S
+ **************************************************************************/
+#define SP5K_SSC_PORT_TIMEOUT	0x80000000
+
+#define SP5K_PORT_MASK_DMA_MODE 0x80000000
+
+typedef enum {
+	SP5K_SSC_PORT_0 = 0x00,
+	SP5K_SSC_PORT_1 = 0x10,
+	SP5K_SSC_PORT_2 = 0x20,
+	SP5K_SSC_PORT_3 = 0x30,
+} sp5kSscPortId_t;
+
+typedef enum {
+	SP5K_SSC_CFG_MODE,
+	SP5K_SSC_SYNC,    /* not open? #1:9208 */
+	SP5K_SSC_CFG_PIN, /* 0:(lmi10 or lmi11)/tg12/tg13(I2C) or lcdif (SPI), 1:(lmi10 or lmi11)/lmi8/lmi9 */
+	SP5K_GSI_CFG_PHY, /* #3 9200(sifmode) 925c(cs) 9152(ini) 9254(pos) 9150(freq) */
+	SP5K_SPI_CFG_PHY, /* #1 9200(sifmode) 925c(cs) 9152(ini) 9254(pos) 9150(freq), #2 4070(freq) 4071(mode) 407b(bit) */
+	SP5K_I2C_CFG_PHY, /* 9200(sifmode) 9240(slaveaddr) 9238(saddren) 9230(freq) 9234(idle) */
+	SP5K_SSC_LOCK,    /* #2 FW lock for 4050[4:6], not implemented yet */
+} sp5kSscCfg_t;
+
+typedef enum {
+	SP5K_I2C_CLK_DIVISOR_8192,
+	SP5K_I2C_CLK_DIVISOR_4096,
+	SP5K_I2C_CLK_DIVISOR_2048,
+	SP5K_I2C_CLK_DIVISOR_1024,
+	SP5K_I2C_CLK_DIVISOR_512,
+	SP5K_I2C_CLK_DIVISOR_256,
+	SP5K_I2C_CLK_DIVISOR_128,
+	SP5K_I2C_CLK_DIVISOR_64,
+	SP5K_I2C_CLK_DIVISOR_MAX,
+} sp5kI2cClockDivisor_t;
+
+#define SP5K_I2C_CFG_SLAVE_ADDR_16BIT		0x40
+#define SP5K_I2C_CFG_SUB_ADDR_16BIT			0x20
+#define SP5K_I2C_CFG_SUB_ADDR_NONE			0x10
+
+#define SP5K_I2C_READ_MODE_NO_DUMMY_WRITE	0
+#define SP5K_I2C_READ_MODE_DUMMY_WRITE		1
+#define SP5K_I2C_READ_MODE_2				2 /* dummy write + stop bit omission */
+
+#define SP5K_I2C_WRITE_MODE_SEQ				0
+#define SP5K_I2C_WRITE_MODE_BURST			1
+
+typedef enum {
+	SP5K_GSI_CLK_DIVISOR_2,
+	SP5K_GSI_CLK_DIVISOR_4,
+	SP5K_GSI_CLK_DIVISOR_8,
+	SP5K_GSI_CLK_DIVISOR_16,
+	SP5K_GSI_CLK_DIVISOR_32,
+	SP5K_GSI_CLK_DIVISOR_64,
+	SP5K_GSI_CLK_DIVISOR_128,
+	SP5K_GSI_CLK_DIVISOR_256,
+	SP5K_GSI_CLK_DIVISOR_MAX,
+} sp5kGsiClockDivisor_t;
+
+typedef enum {
+	SP5K_SPI_PORT3_CLK_48MHZ,
+	SP5K_SPI_PORT2_CLK_24MHZ,
+	SP5K_SPI_PORT2_CLK_12MHZ,
+	SP5K_SPI_PORT2_CLK_6MHZ,
+	SP5K_SPI_PORT2_CLK_3MHZ,
+	SP5K_SPI_PORT2_CLK_1_5MHZ,
+	SP5K_SPI_PORT2_CLK_400KHZ,
+	SP5K_SPI_PORT2_CLK_96MHZ,
+	SP5K_SPI_PORT2_CLK_MAX,
+} sp5kSpiPort2Clock_t;
+
+#define SP5K_SPI_CLK_IDLE_LOW_LATCH_RISE	0
+#define SP5K_SPI_CLK_IDLE_LOW_LATCH_FALL	1
+#define SP5K_SPI_CLK_IDLE_HIGH_LATCH_FALL	2
+#define SP5K_SPI_CLK_IDLE_HIGH_LATCH_RISE	3
+#define SP5K_SPI_CLK_IDLE_LOW_LATCH_RISE_1T	4 /* same as SP5K_SPI_CLK_IDLE_LOW_READ_AT_RISE but with 1T delay */
+#define SP5K_SPI_SDO_IDLE_HIGH				8
+
+typedef enum {
+	SP5K_SSC_MODE_I2C,
+	SP5K_SSC_MODE_SPI,
+	SP5K_SSC_MODE_MAX
+} sp5kSscPortType_t;
+
+typedef enum {
+	SP5K_SSC_CFG_SSC1_PIN0, /* SPI:LCDIF13~15 I2C:TG12/13 */
+	SP5K_SSC_CFG_SSC1_PIN1, /* LMI8/LMI9 */
+	SP5K_SSC_CFG_SSC1_PIN_MAX,
+} sp5kSsc1Pin_t;
+
+typedef enum {
+	SP5K_UART_BAUDRATE = 0,
+	SP5K_UART_TIME_OUT = 1,
+} sp5kUartCfgSelector_e;
+
+typedef enum {
+	SP5K_SCALE_FORMAT_YUV = 0,
+	SP5K_SCALE_FORMAT_RGB = 1,
+} sp5kYuvScaleFormat_e;
+
+/* for sp5kUtilYuvFilter() */
+typedef enum {
+	SP5K_YUV_FILTER_1D_PERSPECTIVE,
+	SP5K_YUV_FILTER_RADIAL_BLUR,
+	SP5K_YUV_FILTER_HDR_MARK_NORMAL,
+	SP5K_YUV_FILTER_HDR_MARK_UNDER,
+	SP5K_YUV_FILTER_HDR_MARK_OVER,
+	SP5K_YUV_FILTER_HDR_COMPOSE,
+	SP5K_YUV_FILTER_WDR,
+	SP5K_YUV_FILTER_TOTAL,
+} sp5kUtilYuvFilterSel_e;
+
+typedef enum {
+	PERIPHERAL_SYS_CFG_SIF2_PIN, /* obsolete */
+	PERIPHERAL_SYS_CFG_TOTAL,
+} peripheralSysCfg_t;
+
+typedef enum {
+	SP5K_UART_MODE_PIO = 0,
+	SP5K_UART_MODE_DMA = 1,
+} sp5kUartModeSelector_e;
+
+/* for sp5kSuspendResume() */
+typedef enum {
+	SP5K_RESUME_SRC_DISP_GPIO17_RISE 	= (1<<0), 
+	SP5K_RESUME_SRC_DISP_GPIO17_FALL 	= (1<<12), 
+	SP5K_RESUME_SRC_PWRON0_RISE			= (1<<24),
+	SP5K_RESUME_SRC_PWRON1_RISE			= (1<<25),
+	SP5K_RESUME_SRC_PWRON2_RISE			= (1<<26),
+	SP5K_RESUME_SRC_PWRON0_FALL			= (1<<28),
+	SP5K_RESUME_SRC_PWRON1_FALL			= (1<<29),
+	SP5K_RESUME_SRC_PWRON2_FALL			= (1<<30),
+} sp5kSuspendResult_t;
+
+/**************************************************************************
+ *                          D A T A    T Y P E S
+ **************************************************************************/
+/*
+ * The physical yuv scale parameters. All the coordinate system is in physical
+ * domain.
+ */
+typedef struct sp5kYuvScale_s {
+	UINT8 *psrcAddr;  /*!< The source buffer address to be scaled */
+	UINT8 *pdstAddr;  /*!< The output destination address */
+	UINT16 srcWidth;  /*!< Width of source buffer, 16x */
+	UINT16 srcHeight; /*!< Height of source buffer, 8x */
+	UINT16 dstWidth;  /*!< Width of destination buffer, 16x */
+	UINT16 dstHeight; /*!< Height of destination buffer, 8x */
+	UINT16 cropWidth; /*!< ROI width of source buffer, 16x */
+	UINT16 cropHeight;/*!< ROI height of source buffer, 8x */
+	UINT16 cropOffX;  /*!< ROI x offset of source buffer, 2x */
+	UINT16 cropOffY;  /*!< ROI y offset of source buffer */
+} sp5kYuvScale_t;
+
+/*
+ * The virtual yuv scale parameters. The source parameters are based on vitual
+ * (logical) coordinate system. The destination parameters are still based on
+ * physical coordinate system.
+ */
+typedef struct sp5kYuvScaleVirtual_s {
+	UINT8 *psrcAddr;  /*!< The source buffer address to be scaled */
+	UINT8 *pdstAddr;  /*!< The output destination address */
+	UINT16 srcWidth;  /*!< Virtual width of source buffer */
+	UINT16 srcHeight; /*!< Virtual height of source buffer */
+	UINT16 dstWidth;  /*!< Width of destination buffer, 16x */
+	UINT16 dstHeight; /*!< Height of destination buffer, 8x */
+	UINT16 cropWidth; /*!< ROI width of source buffer (Virtual) */
+	UINT16 cropHeight;/*!< ROI height of source buffer (Virtual) */
+	UINT16 cropOffX;  /*!< ROI x offset of source buffer (Virtual) */
+	UINT16 cropOffY;  /*!< ROI y offset of source buffer (Virtual) */
+	UINT16 baseWidth; /*!< The real physical width of source buffer */
+	UINT16 baseHeight;/*!< The real physical height of source buffer */
+} sp5kYuvScaleVirtual_t;
+
+typedef void (*fpsp5kUtilCardIspCallback_t)(UINT32 elapseFileCnt, UINT32 totalFileCnt);
+typedef void (*fpsp5kUtilNormalIspCallback_t)(void);
+
+/*
+ * The virtual yuv scale parameters. The source parameters are based on vitual
+ * (logical) coordinate system. The destination parameters are still based on
+ * physical coordinate system.
+ */
+typedef struct sp5kYuvRotate_s {
+	UINT8 *psrcAddr;  /*!< the source buffer address to be rotate, 16X */
+	UINT8 *pdstAddr;  /*!< the output destination address, 16X */
+	UINT16 srcWidth;  /*!< source width of source buffer, 16X */
+	UINT16 srcHeight; /*!< destination height of source buffer, 16X */
+	UINT32 rotate;    /*!< rotate degree */
+} sp5kYuvRotate_t;
+
+/**
+ * \note
+ * pbuf: the YUV buffer address, must align to 256
+ * bufW: the width of the yuv buffer, align to 16
+ * bufH: the height of the yuv buffer, align to 16
+ * roiX: the offset x of the ROI, align to 2
+ * roiY: the offset y of the ROI
+ */
+#define sp5kYuvBuf_t	effectYuvBuf_t
+
+/**************************************************************************
+ *               F U N C T I O N    D E C L A R A T I O N S
+ **************************************************************************/
+UINT32 sp5kSscCfgSet(UINT32,UINT32,UINT32 );
+UINT32 sp5kI2cRead(UINT32 ,UINT32 *, UINT32);
+UINT32 sp5kI2cWrite(UINT32 ,UINT32 );
+UINT32 sp5kI2cWriteMulti( UINT32 subAddr, UINT32 *data, UINT32 cnt );
+UINT32 sp5kSpiRead(UINT32 port, UINT8* data, UINT32 bitCnt);
+UINT32 sp5kSpiWrite(UINT32 port, const UINT8* data, UINT32 bitCnt);
+UINT32 sp5kSpiReadBe16(UINT32, UINT8 *, UINT32); /* use it when SPI data is big endian 16 */
+UINT32 sp5kUartInit(UINT32 port, UINT32 baud);
+UINT32 sp5kUartRead(UINT32 port, UINT32 *ch);
+UINT32 sp5kUartWrite(UINT32 port, UINT8 *buf, UINT32 len);
+UINT32 sp5kUartRxCallbackSet(UINT32 port, int (*pf)(int));
+UINT32 sp5kUartModeSet(UINT32 port, UINT32 mode);
+UINT8  sp5kUartModeGet(UINT32 port);
+UINT32 sp5kPowerCtrl(UINT32 ,UINT32 );
+UINT32 sp5kDscFirmwareBoot(UINT8 *,UINT32 );
+UINT32 sp5kDscFirmwareUpdate(UINT8 *pfilename, fpsp5kUtilCardIspCallback_t pfunc);
+UINT32 sp5kDscFirmwareUpdateWithBuf( UINT8 *fileBuf, UINT32 bufSize, UINT8 devId, fpsp5kUtilCardIspCallback_t pfunc );
+UINT32 sp5kSuspendResume(UINT32 resumeSrc);
+UINT32 sp5kUtilYuvScale(sp5kYuvScale_t * param, sp5kYuvScaleFormat_e format);
+UINT32 sp5kUtilYuvScaleVirtual(sp5kYuvScaleVirtual_t *param, sp5kYuvScaleFormat_e format); /* obsolete */
+UINT32 sp5kUtilPbBufGet(UINT8 **ppbuf, UINT32 *pwidth, UINT32 *pheight, UINT32 *plinebyte);
+void   sp5kUtilYuvToRgb565Convert(UINT8 y,UINT8 u,UINT8 v,UINT16 *prgb565);
+void   sp5kUtilRgb565ToYuvConvert(UINT16 rgb565,UINT8 *py,UINT8 *pu,UINT8 *pv);
+UINT32 sp5kUtilYuvFilter(UINT32 sel,UINT32 opt,UINT8 *p,UINT32 w,UINT32 h);
+UINT32 sp5kUtilYuvRotate(sp5kYuvRotate_t *param,UINT32 rotate_op);
+#if 0
+/**
+ * \param[in] effect the ID of effect in speffectID_t
+ * \param[in] psrcBuf the source YUV buffer
+ * \param[in] pdstBuf the destination YUV buffer
+ * \param[in] roiW the width of the ROI to apply the effect
+ * \param[in] roiH the height of the ROI to apply the effect
+ * \param[in] para1 the 1st input argument
+ * \param[in] para2 the 2nd input argument
+ * \note
+ * if effect == SPE_EFFECT_MOSAIC
+ *    para1: the block size of mosaic in pixel
+ *    para2: not used
+ * othres are not implemented yet
+ */
+#endif
+UINT32 sp5kUtilYuvEffect(UINT32 effect, sp5kYuvBuf_t *psrcBuf, sp5kYuvBuf_t *pdstBuf, 
+						 UINT32 roiW, UINT32 roiH, UINT32 para1, UINT32 para2);
+	
+
+/**
+ * @brief Allocate a frame buffer in YUV format.
+ * @param [in] bufW Frame buffer width (unit in pixel).
+ * @param [in] bufH Frame buffer height (uint in pixel).
+ * @return Frame buffer address.
+ */
+void *sp5kYuvBufferAlloc(UINT32 bufW, UINT32 bufH);
+/**
+ * @brief Free a frame buffer in YUV format.
+ * @param [in] ptr Allocated frame buffer address.
+ * @return None.
+ */
+void sp5kYuvBufferFree(void *ptr);
+/**
+ @brief Switch PLL to specific frequency. Also apply new DRAMPARA which adapt to new DRAM clock.
+ @param[in] clk specific clock frequency.
+ @retval SUCCESS 0 while success
+ @retval FAIL Fail to switch PLL. Usually happened while no DRAMPARA within DMEM.
+ */
+UINT32 sp5kSystemPllSet(UINT32 clk);
+#endif  /* _SP5K_UTILITY_API_H_ */
+

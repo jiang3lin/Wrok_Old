@@ -1,0 +1,85 @@
+0x00   //UINT8  AfSign
+0x00   //UINT8  ObSign
+0x00   //UINT8  ShutterSign 
+0x00   //UINT8  IsoSign
+0x00   //UINT8  WbSign
+0x00   //UINT8  FlashSign
+0x00   //UINT8	PvDPCSign
+0x00   //UINT8	CapDPCSign
+0x00   //UINT8  LcdSign
+0x00   //UINT8  PvRawSign
+0x00   //UINT8  StillRawSign
+0x00   //UINT8	MTBFSign
+0x00   //UINT8  CIPASign
+0x00   //UINT8  BatterySign
+0x00   //UINT8  KeySign
+0x00   //UINT8  UsbSetting
+0x00   //UINT8  capSatGainSign
+0x00   //UINT8  rawBatchEnable
+0x00   //UINT8  prefhStamp
+0x00   //UINT8  afFullScan
+0x00   //UINT8  IsoObSign
+0x00	 //UINT8  pvOBSign
+0x00	 //UINT8  pcApiTest
+0x00	 //UINT8  videoRecDateStamp
+0x00   //UINT8  Dzoom enable
+0x00   //UINT8  AE Debug
+0x00   //UINT8  Awb Debug
+0x00   //reserved8[0]
+0x00   //reserved8[1] 
+0x40   //SINT16 Ob
+0x01   //
+0x00   //UINT16 Flash
+0x00   //
+0x38   //SINT16 PvIso   
+0x00   //
+0x38   //SINT16 CapIso 
+0x00   //
+0x3A   //UINT16 ShutterEarly[2]
+0x0C   //
+0xFD   //ShutterEarly[1]
+0x0C   //
+0xD6   //UINT16 WbRgain
+0x06   //
+0x9E   //UINT16 WbBgain
+0x07   //
+0x00   //UINT16 MTBF
+0x00   //
+0x00   //SINT16 sensDiff
+0x00   // 
+0x00   //SINT16 irisDiff
+0x00   //
+0x00   //SINT16 capSatGain
+0x00   //
+0x00   //SINT16 isoOb[8]  //ISO:50/100/200/400/800/1600/3200/6400
+0x00   //
+0x00   // OB:ISO100
+0x00   //
+0x00   // OB:ISO200
+0x00   //
+0x00   // OB:ISO400
+0x00   //
+0x00   // OB:ISO800
+0x00   //
+0x00   // OB:ISO1600
+0x00   //
+0x00   // OB:ISO3200
+0x00   //
+0x00   // OB:ISO6400
+0x00   //
+0x00   //CIPACapCnt
+0x00   //
+0x24	 // SINT16 :PV OB:R
+0x00	 //
+0x22	 // PV OB:Gr
+0x00   //
+0x23   // PV OB:B
+0x00   //
+0x22   // PV OB:Gb
+0x00   //
+0x00   //UINT16 reserved[8]
+0x00   //
+0x00   //reserved[1]
+0x00   //
+0x00   //reserved[2]
+0x00   //

@@ -1,0 +1,532 @@
+0x005F	//Tag , a fixed value for checking by EEPROM ********* ColdMain ***********
+0x00A4	//Version
+0x0000	//Fw Version Main
+0x0000	//Fw Version Sub
+0x0000	//BarCode[0]:Bar Code 1
+0x0000	//BarCode[1]:Bar Code 2
+0x0000	//BarCode[2]:Bar Code 3
+0x0000	//BarCode[3]:Bar Code 4
+0x0000	//BarCode[4]:Bar Code 5
+0x0000	//BarCode[5]:Bar Code 6
+0x0000	//BarCode[6]:Bar Code 7
+0x0000	//BarCode[7]:Bar Code 8
+0x0000	//BarCode[8]:Bar Code 9
+0x0000	//BarCode[9]:Bar Code 10
+0x0000	//DisableTest;	//Lock Test Mode
+0x0000	//LanguageArea[0]
+0x0000	//LanguageArea[1]
+0x0000	//LanguageArea[2]
+0x0000	//LanguageArea[3]
+0x0000	//BoxSeries[0]
+0x0000	//BoxSeries[1]
+0x0000	//BoxSeries[2]
+0x0000	//BoxSeries[3]
+0x0000	//BoxSeries[4]
+0x0000	//BoxSeries[5]
+0x0000	//BoxSeries[6]
+0x0000	//BoxSeries[7]
+0x0000	//BoxSeries[8]
+0x0000	//BoxSeries[9]
+0x0000	//BoxSeries[10]
+0x0000	//BoxSeries[11]
+0x0000	//ELFCodeCKSum[0]
+0x0000	//ELFCodeCKSum[1]
+0x0000	//Reserved[0]
+0x0000	//Reserved[1]
+0x0000	//Reserved[2]
+0x0914	//Flag AF ******************** ColdFlag **********************
+0x0414	//OB
+0x0514	//AGC
+0x0014	//Defocus
+0x0614	//Me-shutter26
+0x0714	//Me-shutter80
+0x0A14	//Light DPC
+0x0814	//Dark DPC
+0x0014	//S.Shutter DPC
+0x0B14	//Flash WB
+0x0000	//FgAFLamp
+0x0014	//FgLensShading
+0x0000	//MTBF
+0x0114	//MB Test
+0x0014	//Lcd Test
+0x0000	//Capture Raw
+0x0004	//Boot Type
+0x0014	//USB Mode
+0x0008	//Auto Calibration
+0x0014  //battery test
+0x0014	//FgDSCCheck
+0x0000	//FgHisto
+0x0000	//FgRawType
+0x0000	//FgTGSetting
+0x0000	//LsdFlash
+0x0000	//FgUIDebug
+0x0000	//FgAeReport
+0x0000	//FgFixPreviewDPC
+0x0018	//FgDISPLangSet
+0x0000	//FgFuncCheck
+0x0000	//FgFlashTest
+0x0000	//FgSDCardUpdate
+0x0000	//Reserved[0]
+0x0000	//Reserved[1]
+0x0000	//Reserved[2]
+0x0000	//Reserved[3]
+0x0000	//Reserved[4]
+0x0000	//Reserved[5]
+0x0000	//Reserved[6]
+0x0000	//Reserved[7]
+0x003F	//OB RGain *********************** ColdVal ***************************
+0x003F	//OB GGain
+0x003F	//OB BGain
+0x0080	//MinAGC
+0x00D0	//MinAGC index
+0x01BD  //DayLight WB RGain
+0x0100	//DayLight WB GGain
+0x01A1  //DayLight WB BGain
+0x01DB	//Flash WB RGain
+0x0100	//Flash WB GGain
+0x0158	//Flash WB BGain
+0x0000	//Ex-Flash WB RGain
+0x0000	//Ex-Flash WB GGain
+0x0000	//Ex-Flash WB BGain
+0x0000	//Light DPC Number
+0x0000	//Dark DPC Number
+0x0000	//S.Shutter DPC Number1.
+0x0000	//S.Shutter DPC Number2.
+0x0B86 	//Me-shutter Iris 1 MainDelay
+0x0000  //Me-shutter Iris 1 SubDelay
+0x0B86 	//Me-shutter Iris 2 MainDelay
+0x0000  //Me-shutter Iris 2 SubDelay
+0x00B0	//Me-shutter Iris 3 MainDelay
+0x0002	//Me-shutter Iris 3 SubDelay
+0x00B1	//Me-shutter Iris 4 MainDelay
+0x0002	//Me-shutter Iris 4 SubDelay
+0x00B0	//Me-shutter Iris 5 MainDelay
+0x0002	//Me-shutter Iris 5 SubDelay
+0x00B1	//Me-shutter Iris 6 MainDelay
+0x0002	//Me-shutter Iris 6 SubDelay
+0x0000	//Me-shutter Iris 7 MainDelay
+0x0000	//Me-shutter Iris 7 SubDelay
+0x0000	//Me-shutter Iris 8 MainDelay
+0x0000	//Me-shutter Iris 8 SubDelay
+0x0000	//Me-shutter Iris 9 MainDelay
+0x0000	//Me-shutter Iris 9 SubDelay
+0x0000	//UI_DebugSetting
+0x0000	//UI_MacroFlash
+0x0000	//PreVFinalTH
+0x0000	//DarkFinalTH
+0x0000	//LightFinalT
+0x0000	//SShutFinalTH
+0x0000	//Language Type, 0:English
+0x0000	//Model Status, Enable Clbt UI default setting 
+0x0000	//Model Type
+0x0000	//Language Version
+0x0000	//NoSub_R
+0x0000	//NoSub_G
+0x0000	//NoSub_B
+0x0000	//Sub_R
+0x0000	//Sub_G
+0x0000	//Sub_B
+0x0100	//P2WB_RGain: Second Color Temperature WB RGain
+0x0100	//P2WB_GGain: Second Color Temperature WB GGain
+0x0100	//P2WB_BGain: Second Color Temperature WB BGain
+0x0000	//PicCheck, Follow Nikon codes:
+0x0000	//Reserved[0]
+0x0000	//Reserved[1]
+0x0000	//Reserved[2]
+0x0000	//Reserved[3]
+0x0000	//Reserved[4]
+0x0000	//Reserved[5]
+0x0000	//Reserved[6]
+0x0000	//Reserved[7]
+0x02F	//Creteria OB MIN ********************* ColdCre ***********************
+0x3FF   //Creteria OB MAX
+0x0C8	//Creteria Gain MIN
+0x0EB	//Creteria Gain MAX
+0x12C   //Creteria Daylight R MIN
+0x258  //Creteria Daylight R MAX
+0x100   //Creteria Daylight G MIN
+0x100   //Creteria Daylight G MAX
+0x140  //Creteria Daylight B MIN
+0x258   //Creteria Daylight B MAX
+0x17C   //Creteria Flash R MIN
+0x2EE   //Creteria Flash R MAX
+0x100   //Creteria Flash G MIN
+0x100   //Creteria Flash G MAX
+0x096   //Creteria Flash B MIN
+0x226   //Creteria Flash B MAX
+2650		//Creteria Me-Shutter26 MIN, Only use this
+3100		//Creteria Me-Shutter26 MAX, Only use this
+2650		//Creteria Me-Shutter80 MIN
+3100		//Creteria Me-Shutter80 MAX
+0x0000	//CreLensFwType
+0x0000	//CreQRCode[0]
+0x0000	//CreQRCode[1]
+0x0000	//CreQRCode[2]
+0x0000	//CreQRCode[3]
+0x0000	//CreQRCode[4]
+0x0000	//CreQRCode[5]
+0x0000	//CreQRCode[6]
+0x0000	//CreQRCode[7]
+0x0000	//CreQRCode[8]
+0x0000	//Reserved[0]
+0x0000	//Reserved[1]
+0x0000	//Reserved[2]
+0x0000	//Reserved[3]
+0x0000	//Reserved[4]
+0x0000	//Reserved[5]
+0x0000	//Reserved[6]
+0x0000	//Reserved[7]
+0x0000	//Reserved[8]
+0x0000	//Reserved[9]
+10		//Parameter - DPC Warm Time ********************* ColdParam ***********************
+30		//Parameter - Dpc Light Threshold
+85		//Parameter - DPC Dark Threshold
+30		//Parameter - DPC SShut Threshold
+20		//Parameter - DPC SShut Needed Pix
+50		//Parameter - DPC SShut Max Pix
+75		//Parameter - DPC SShut Red Percentage
+80		//Parameter - DPC SShut Blue Percentage
+0		//Parameter - Dpc_MTBFTime
+0		//Parameter - Dpc_MTBFActualTime
+0x0000	//Parameter - Dpc_AutoRunType
+0		//Parameter - WBLightSrcClibType
+0		//Parameter - WBLightSrcP1RGainRatio
+0		//Parameter - WBLightSrcP1BGainRatio
+0		//Parameter - WBLightSrcP2RGainRatio
+0		//Parameter - WBLightSrcP2BGainRatio
+0	//Parameter - run defocus
+0	//Parameter - run lcd test
+0		//Parameter - run Video MB test
+0		//Parameter - PreviewDPCHighThreshold
+0		//Parameter - ZoomFullDuty
+0x0000	//Reserved[0]
+0x0000	//Reserved[1]
+0x0000	//Reserved[2]
+0x0000	//PreviewTG[0] ********************* ColdTG ***********************
+0x0000	//PreviewTG[1]
+0x0000	//PreviewTG[2]
+0x0000	//PreviewTG[3]
+0x0000 	//PreviewTG[4]
+0x0000	//PreviewTG[5]
+0x0000	//PreviewTG[6]
+0x0000	//PreviewTG[7]
+0x0000	//PreviewTG[8]
+0x0000	//PreviewTG[9]
+0x0000	//PreviewTG[10]
+0x0000	//PreviewTG[11]
+0x0000	//PreviewTG[12]
+0x0000	//PreviewTG[13]
+0x0000	//PreviewTG[14]
+0x0000	//PreviewTG[15]
+0x0000	//PreviewTG[16]
+0x0000	//PreviewTG[17]
+0x0000	//PreviewTG[18]
+0x0000	//PreviewTG[19]
+0x0000	//PreviewTG[20]
+0x0000	//PreviewTG[21]
+0x0000	//PreviewTG[22]
+0x0000	//PreviewTG[23]
+0x0000	//PreviewTG[24]
+0x0000	//PreviewTG[25]
+0x0000	//PreviewTG[26]
+0x0000	//PreviewTG[27]
+0x0000	//PreviewTG[28]
+0x0000	//PreviewTG[29]
+0x0000	//PreviewTG[30]
+0x0000	//PreviewTG[31]
+0x0000	//PreviewTG[32]
+0x0000	//PreviewTG[33]
+0x0000	//PreviewTG[34]
+0x0000	//PreviewTG[35]
+0x0000	//PreviewTG[36]
+0x0000	//PreviewTG[37]
+0x0000	//PreviewTG[38]
+0x0000	//PreviewTG[39]
+0x0000	//CaptureTG[0]
+0x0000	//CaptureTG[1]
+0x0000	//CaptureTG[2]
+0x0000	//CaptureTG[3]
+0x0000	//CaptureTG[4]
+0x0000	//CaptureTG[5]
+0x0000	//CaptureTG[6]
+0x0000	//CaptureTG[7]
+0x0000	//CaptureTG[8]
+0x0000	//CaptureTG[9]
+0x0000	//CaptureTG[10]
+0x0000	//CaptureTG[11]
+0x0000	//CaptureTG[12]
+0x0000	//CaptureTG[13]
+0x0000	//CaptureTG[14]
+0x0000	//CaptureTG[15]
+0x0000	//CaptureTG[16]
+0x0000	//CaptureTG[17]
+0x0000	//CaptureTG[18]
+0x0000	//CaptureTG[19]
+0x0000	//VideoTG[0]
+0x0000	//VideoTG[1]
+0x0000	//VideoTG[2]
+0x0000	//VideoTG[3]
+0x0000	//VideoTG[4]
+0x0000	//VideoTG[5]
+0x0000	//VideoTG[6]
+0x0000	//VideoTG[7]
+0x0000	//VideoTG[8]
+0x0000	//VideoTG[9]
+0x0000	//Reserved[0]
+0x0000	//Reserved[1]
+92  	//ColorMatrix[0]: Color Matrix1********************* ColdIQ ***********************
+137		//ColorMatrix[1]: Color Matrix2
+27		//ColorMatrix[2]: Color Matrix3
+-25		//ColorMatrix[3]: Color Matrix4
+-164	//ColorMatrix[4]: Color Matrix5
+189		//ColorMatrix[5]: Color Matrix6
+182		//ColorMatrix[6]: Color Matrix7
+-182	//ColorMatrix[7]: Color Matrix8
+0   	//ColorMatrix[8]: Color Matrix9
+0x0000 	//ColorMatrix[9]: Color Matrix10 - offset1
+0x0000 	//ColorMatrix[10]:Color Matrix11 - offset2
+0x0000	//ImgQuality[0]: Img Quality1
+0x0000	//ImgQuality[1]: Img Quality2
+0x0000	//ImgQuality[2]: Img Quality3
+0x0000	//ImgQuality[3]: Img Quality4
+0x0000	//ImgQuality[4]: Img Quality5
+0x0000	//ImgQuality[5]: Img Quality6
+0x0000	//ImgQuality[6]: Img Quality7
+0x0000	//ImgQuality[7]: Img Quality8
+0x0000	//ImgQuality[8]: Img Quality9
+0x0000 	//ImgQuality[9]: Img Quality10
+0x0000 	//ImgQuality[10]:Img Quality11
+0x0000	//Reserved[0]
+0x0000	//Reserved[1]
+0x0000	//AFRes[0] ********************* ColdAF ***********************
+0x0000	//AFRes[1]
+0x0000	//AFRes[2]
+0x0000	//AFRes[3]
+0x0000	//AFRes[4]
+0x0000	//AFRes[5]
+0x0000	//AFRes[6]
+0x0000	//AFRes[7]
+0x0000	//AFRes[8]
+0x0000	//AFRes[9]
+0x0000	//AFRes[10]
+0x0000	//AFRes[11]
+0x0000	//AFRes[12]
+0x0000	//AFRes[13]
+0x0000	//AFRes[14]
+0x0000	//AFRes[15]
+0x0000	//AFRes[16]
+0x0000	//AFRes[17]
+0x0000	//AFRes[18]
+0x0000	//AFRes[19]
+0x0000	//FocusTemp[0]
+0x0000	//FocusTemp[1]
+0x0000	//FocusTemp[2]
+0x0000	//FocusTemp[3]
+0x0000	//FocusTemp[4]
+0x0000	//FocusTemp[5]
+0x0000	//FocusTemp[6]
+0x0000	//FocusTemp[7]
+0x0000	//FocusTemp[8]
+0x0000	//FocusTemp[9]
+0x0000	//FocusTemp[10]
+0x0000	//FocusTemp[11]
+0x0000	//FocusTemp[12]
+0x0000	//FocusTemp[13]
+0x0000	//FocusTemp[14]
+0x0000	//FocusTemp[15]
+0x0000	//FocusTemp[16]
+0x0000	//FocusTemp[17]
+0x0000	//FocusTemp[18]
+0x0000	//FocusTemp[19]
+0x0000 	//Defocus[0]: Defocus
+0x0000 	//Defocus[1]: Defocus
+0x0000 	//Defocus[2]: Defocus
+0x0000 	//Defocus[3]: Defocus
+0x0000 	//Defocus[4]: Defocus
+0x0000 	//Defocus[5]: Defocus
+0x0000 	//Defocus[6]: Defocus
+0x0000 	//Defocus[7]: Defocus
+0x0000 	//Defocus[8]: Defocus
+0x0000 	//Defocus[9]: Defocus
+0x0000 	//Defocus[10]: Defocus
+0x0000 	//Defocus[11]: Defocus
+0x0000 	//Defocus[12]: Defocus
+0x0000 	//Defocus[13]: Defocus
+0x0000 	//Defocus[14]: Defocus
+0x0000 	//Defocus[15]: Defocus
+0x0000 	//Defocus[16]: Defocus
+0x0000 	//Defocus[17]: Defocus
+0x0000 	//Defocus[18]: Defocus
+0x0000 	//Defocus[19]: Defocus
+0x0000 	//Zoom Pos [0]
+0x0000 	//Zoom Pos [1]
+0x0000 	//Zoom Pos [2]
+0x0000 	//Zoom Pos [3]
+0x0000 	//Zoom Pos [4]
+0x0000 	//Zoom Pos [5]
+0x0000 	//Zoom Pos [6]
+0x0000 	//Zoom Pos [7]
+0x0000 	//Zoom Pos [8]
+0x0000 	//Zoom Pos [9]
+0x0000 	//Zoom Pos [10]
+0x0000 	//Zoom Pos [11]
+0x0000 	//Zoom Pos [12]
+0x0000 	//Zoom Pos [13]
+0x0000 	//Zoom Pos [14]
+0x0000 	//Zoom Pos [15]
+0x0000 	//Zoom Pos [16]
+0x0000 	//Zoom Pos [17]
+0x0000 	//Zoom Pos [18]
+0x0000 	//Zoom Pos [19]
+0x0000 	//LensReserved[0]
+0x0000 	//LensReserved[1]
+0x0000 	//LensReserved[2]
+0x0000 	//LensReserved[3]
+0x0000 	//LensReserved[4]
+0x0000 	//LensReserved[5]
+0x0000 	//LensReserved[6]
+0x0000 	//LensReserved[7]
+0x0000 	//LensReserved[8]
+0x0000 	//LensReserved[9]
+0x0000	//Reserved[0]
+0x0000	//Reserved[1]
+0x0000	//Reserved[2]
+0x0000	//Reserved[3]
+0x0000	//Reserved[4]
+0x0000	//Reserved[5]
+0x0000 	//OISData[0] ********************* ColdOIS ***********************
+0x0000 	//OISData[1]
+0x0000 	//OISData[2]
+0x0000 	//OISData[3]
+0x0000 	//OISData[4]
+0x0000 	//OISData[5]
+0x0000 	//OISData[6]
+0x0000 	//OISData[7]
+0x0000 	//OISData[8]
+0x0000 	//OISData[9]
+0x0000 	//OISData[10]
+0x0000 	//OISData[11]
+0x0000 	//OISData[12]
+0x0000 	//OISData[13]
+0x0000 	//OISData[14]
+0x0000 	//OISData[15]
+0x0000 	//OISData[16]
+0x0000 	//OISData[17]
+0x0000 	//OISData[18]
+0x0000 	//OISData[19]
+0x0000 	//OISData[20]
+0x0000 	//OISData[21]
+0x0000 	//OISData[22]
+0x0000 	//OISData[23]
+0x0000 	//OISData[24]
+0x0000 	//OISData[25]
+0x0000 	//OISData[26]
+0x0000 	//OISData[27]
+0x0000 	//OISData[28]
+0x0000 	//OISData[29]
+0x0000 	//OISData[30]
+0x0000 	//OISData[31]
+0x0000 	//OISData[32]
+0x0000 	//OISData[33]
+0x0000 	//OISData[34]
+0x0000 	//OISData[35]
+0x0000 	//OISData[36]
+0x0000 	//OISData[37]
+0x0000 	//OISData[38]
+0x0000 	//OISData[39]
+0x0000 	//OISData[40]
+0x0000 	//OISData[41]
+0x0000 	//OISData[42]
+0x0000 	//OISData[43]
+0x0000 	//OISData[44]
+0x0000 	//OISData[45]
+0x0000 	//OISData[46]
+0x0000 	//OISData[47]
+0x0000 	//OISData[48]
+0x0000 	//OISData[49]
+0x0000 	//OISData[50]
+0x0000 	//OISData[51]
+0x0000 	//OISData[52]
+0x0000 	//OISData[53]
+0x0000 	//OISData[54]
+0x0000 	//OISData[55]
+0x0000 	//OISData[56]
+0x0000 	//OISData[57]
+0x0000 	//OISData[58]
+0x0000 	//OISData[59]
+0x0000 	//OISData[60]
+0x0000 	//OISData[61]
+0x0000 	//OISData[62]
+0x0000 	//OISData[63]
+0x0000 	//ExeItemTime[0] ********************* ColdOther ***********************
+0x0000 	//ExeItemTime[1]
+0x0000 	//ExeItemTime[2]
+0x0000 	//ExeItemTime[3]
+0x0000 	//ExeItemTime[4]
+0x0000 	//ExeItemTime[5]
+0x0000 	//ExeItemTime[6]
+0x0000 	//ExeItemTime[7]
+0x0000 	//ExeItemTime[8]
+0x0000 	//ExeItemTime[9]
+0x0000 	//ExeItemTime[10]
+0x0000 	//ExeItemTime[11]
+0x0000 	//ExeItemTime[12]
+0x0000 	//ExeItemTime[13]
+0x0000 	//ExeItemTime[14]
+0x0000 	//ExeItemTime[15]
+0x0000 	//ExeItemTime[16]
+0x0000 	//ExeItemTime[17]
+0x0000 	//ExeItemTime[18]
+0x0000 	//ExeItemTime[19]
+0x0000 	//ExeItemTime[20]
+0x0000 	//ExeItemTime[21]
+0x0000 	//ExeItemTime[22]
+0x0000 	//ExeItemTime[23]
+0x0000 	//ExeItemTime[24]
+0x0000 	//ExeItemTime[25]
+0x0000 	//ExeItemTime[26]
+0x0000 	//ExeItemTime[27]
+0x0000 	//ExeItemTime[28]
+0x0000 	//ExeItemTime[29]
+0x0000 	//ExeItemTime[30]
+0x0000 	//ExeItemTime[31]
+0x0000 	//Reserved[0]
+0x0000 	//Reserved[1]
+0x0000 	//Reserved[2]
+0x0000 	//Reserved[3]
+0x0000 	//Reserved[4]
+0x0000 	//Reserved[5]
+0x0000 	//Reserved[6]
+0x0000 	//Reserved[7]
+0x0000 	//Reserved[8]
+0x0000 	//Reserved[9]
+0x0000 	//Reserved[10]
+0x0000 	//Reserved[11]
+0x0000 	//Reserved[12]
+0x0000 	//Reserved[13]
+0x0000 	//Reserved[14]
+0x0000 	//Reserved[15]
+0x0000 	//Reserved[16]
+0x0000 	//Reserved[17]
+0x0000 	//Reserved[18]
+0x0000 	//Reserved[19]
+0x0000 	//Reserved[20]
+0x0000 	//Reserved[21]
+0x0000 	//Reserved[22]
+0x0000 	//Reserved[23]
+0x0000 	//Reserved[24]
+0x0000 	//Reserved[25]
+0x0000 	//Reserved[26]
+0x0000 	//Reserved[27]
+0x0000 	//Reserved[28]
+0x0000 	//Reserved[29]
+0x0000 	//Reserved[30]
+0x0000 	//Reserved[31]
+0x0000 	//Reserved[32]
+0x0000 	//Reserved[33]
+0x0000 	//Reserved[34]
+0x0000 	//Reserved[35]
+0x0000 	//Reserved[36]
+0x0000 	//Reserved[37]
+0x0000 	//Reserved[38]
+0x0000	//CheckSum ==========================================================

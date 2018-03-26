@@ -1,0 +1,94 @@
+/**************************************************************************
+ *
+ *        Copyright (c) 2006-2008 by Sunplus mMedia Inc., Ltd.
+ *
+ *  This software is copyrighted by and is the property of Sunplus
+ *  mMedia Inc., Ltd. All rights are reserved by Sunplus mMedia
+ *  Inc., Ltd. This software may only be used in accordance with the
+ *  corresponding license agreement. Any unauthorized use, duplication,
+ *  distribution, or disclosure of this software is expressly forbidden.
+ *
+ *  This Copyright notice MUST not be removed or modified without prior
+ *  written consent of Sunplus mMedia Inc., Ltd.
+ *
+ *  Sunplus mMedia Inc., Ltd. reserves the right to modify this
+ *  software without notice.
+ *
+ *  Sunplus mMedia Inc., Ltd.
+ *  19-1, Innovation First Road, Science-Based Industrial Park,
+ *  Hsin-Chu, Taiwan, R.O.C. 
+ *
+ **************************************************************************/
+#include "app_user_setting.h"
+#ifndef APP_BATTERY_H
+#define APP_BATTERY_H
+
+/**************************************************************************
+ *                         H E A D E R   F I L E S                        *
+ **************************************************************************/
+
+/**************************************************************************
+ *                           C O N S T A N T S                            *
+ **************************************************************************/
+ typedef enum {
+	APP_BATT_CHK_SYS_BOOT  = 0,  
+	APP_BATT_CHK_LENS_BOOT,         
+	APP_BATT_CHK_LENS_MOVE,
+	APP_BATT_CHK_AF_MOVE,
+	APP_BATT_CHK_STROBE_CHARGE,
+	APP_BATT_CHK_OPTION_TOTAL
+} appBatteryCheckOption_e;
+
+typedef enum {
+	APP_BATT_LEVEL_0  = 0,  /* battery empty */
+	APP_BATT_LEVEL_1,         /* 1/3  */
+	APP_BATT_LEVEL_2,         /* 2/3 */
+	APP_BATT_LEVEL_3,        /* battery full */	
+	APP_BATT_LEVEL_TOTAL
+} appBatteryLevel_e;
+
+typedef enum {
+	BATTERY_STATUS_NON_FULL = 0,
+	BATTERY_STATUS_FULL
+} appBatteryStatus_e;
+
+typedef enum {
+	BATTERY_DCSRC_PC = 0x0000,
+	BATTERY_DCSRC_ADAPTER
+} appDCSRC_e;
+
+
+#define MAX_BATTERY_LEVEL_IN_USED   APP_BATT_LEVEL_3
+
+/**************************************************************************
+ *                          D A T A    T Y P E S                          *
+ **************************************************************************/
+typedef struct appBattery_s {
+	UINT16 sysBoot; 	/* min voltage for boot */
+	UINT16 lensBoot;	/* min voltage for power on lens init  */
+	UINT16 lensMove;/* min voltage for normal len move */
+	UINT16 shutDown;/* cut of voltage for shut down */ 
+	UINT16 level[APP_BATT_LEVEL_TOTAL];	/* voltage of each battery level */
+	UINT16 sampleNum; /* amount of sample point */
+	UINT16 reserved;
+} appBattery_t;
+
+/**************************************************************************
+ *          M O D U L E   V A R I A B L E S   R E F E R E N C E S         *
+ **************************************************************************/
+
+/**************************************************************************
+ *                F U N C T I O N   D E C L A R A T I O N S               *
+ **************************************************************************/
+void appBatteryCheckInit(void);
+void appBatteryCheckEnableSet(BOOL enable);
+UINT32 appBatteryLevelGet(void);
+UINT32 appLowBatteryCheck( appBatteryCheckOption_e option);
+UINT32 appBatteryTypeChange(battType_e battType);
+UINT32 appLensBootBatteryLevelGet( void);
+UINT32 appBatteryAdcValueGet(void);
+/**************************************************************************
+ *                               M A C R O S                              *
+ **************************************************************************/
+
+#endif  /* APP_BATTERY_H*/

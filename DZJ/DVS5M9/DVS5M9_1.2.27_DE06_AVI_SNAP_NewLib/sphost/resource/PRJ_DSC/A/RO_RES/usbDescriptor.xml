@@ -1,0 +1,1193 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<usbDescriptor>
+  <configuration alias="Configuration">
+    <bLength value="0x9" type="byte" />
+    <bDescriptorType value="0x02" type="byte" />
+    <wTotalLength value="0x53f" type="short" />
+    <bNumInterfaces value="0x5" type="byte" />
+    <bConfigurationValue value="0x01" type="byte" />
+    <iConfiguration value="0x00" type="byte" />
+    <bmAttributes value="0xc0" type="byte" />
+    <MaxPower value="0x32" type="byte" />
+  </configuration>
+  <videoDescriptor alias="Video Desrciptor">
+    <IAD alias="Interface Association Descriptor">
+      <bLength value="0x08" type="byte" />
+      <bDescriptorType value="0x0b" type="byte" />
+      <bFirstInterface value="0x00" type="byte" />
+      <bInterfaceCount value="0x03" type="byte" />
+      <bFunctionClass value="0x0E" type="byte" />
+      <bFunctionSubClass value="0x03" type="byte" />
+      <bFunctionProtocol value="0x00" type="byte" />
+      <iFunction value="0x00" type="byte" />
+    </IAD>
+    <videoControlInterface alias="VC Interface Descriptor">
+      <standardVCInterface alias="Standard VC Interface">
+        <bLength value="0x09" type="byte" />
+        <bDescriptorType value="0x04" type="byte" />
+        <bInterfaceNumber value="0x00" type="byte" />
+        <bAlternateSetting value="0x00" type="byte" />
+        <bNumEndpoints value="0x01" type="byte" />
+        <bInterfaceClass value="0x0E" type="byte" />
+        <bInterfaceSubClass value="0x01" type="byte" />
+        <bInterfaceProtocol value="0x00" type="byte" />
+        <iInterface value="0x00" type="byte" />
+      </standardVCInterface>
+      <classSpecificVCInterfaceHeader alias="Class-specific VC Interface Header">
+        <bLength value="0x0E" type="byte" />
+        <bDescriptorType value="0x24" type="byte" />
+        <bDescriptorSubtype value="0x01" type="byte" />
+        <bcdVDC value="0x0100" type="short" />
+        <wTotalLength value="0x005A" type="short" />
+        <dwClockFrequency value="0x02DC6C00" type="int" />
+        <bInCollection value="0x02" type="byte" />
+        <baInterfaceNr value="0x02" type="byte" />
+        <baInterfaceNr value="0x01" type="byte" />
+      </classSpecificVCInterfaceHeader>
+      <cameraTerminalDescriptor alias="Camera Terminal Descriptor">
+        <bLength value="0x12" type="byte" />
+        <bDescriptorType value="0x24" type="byte" />
+        <bDescriptorSubtype value="0x02" type="byte" />
+        <bTerminalID value="0x01" type="byte" />
+        <wTerminalType value="0x0201" type="short" />
+        <bAssocTerminal value="0x00" type="byte" />
+        <iTerminal value="0x00" type="byte" />
+        <wObjectiveFocalLengthMin value="0x0000" type="short" />
+        <wObjectiveFocalLengthMax value="0x0000" type="short" />
+        <wOcularFocalLength value="0x0000" type="short" />
+        <bControlSize value="0x03" type="byte" />
+        <bmControls0 value="0x00" type="byte" />
+        <bmControls1 value="0x00" type="byte" />
+        <bmControls2 value="0x00" type="byte" />
+      </cameraTerminalDescriptor>
+      <processingUnitDescriptor alias="Processing Unit Descriptor">
+        <bLength value="0x0B" type="byte" />
+        <bDescriptorType value="0x24" type="byte" />
+        <bDescriptorSubtype value="0x05" type="byte" />
+        <bUnitID value="0x02" type="byte" />
+        <bSourceID value="0x01" type="byte" />
+        <wMaxMultiplier value="0x0000" type="short" />
+        <bControlSize value="0x02" type="byte" />
+        <bmControls value="0x0000" type="short" />
+        <iProcessing value="0x00" type="byte" />
+      </processingUnitDescriptor>
+      <exTensionUnitDescriptor alias="Extension Unit Descriptor">
+        <bLength value="0x1D" type="byte" />
+        <bDescriptorType value="0x24" type="byte" />
+        <bDescriptorSubtype value="0x06" type="byte" />
+        <bUnitID value="0x03" type="byte" />
+        <guidExtensionCode_p1 value="0x63610682" type="int" />
+        <guidExtensionCode_p2 value="0x49ab5070" type="int" />
+        <guidExtensionCode_p3 value="0x85B3ccb8" type="int" />
+        <guidExtensionCode_p4 value="0x1D228D5E" type="int" />
+        <bNumControls value="0x00" type="byte" />
+        <bNrInPins value="0x01" type="byte" />
+        <baSourceID1 value="0x02" type="byte" />
+        <bControlSize value="0x04" type="byte" />
+        <bmControls value="0xffffffff" type="int" />
+        <iExtension value="0x00" type="byte" />
+      </exTensionUnitDescriptor>
+      <outputTerminalDescriptor alias="Output Terminal Descriptor">
+        <bLength value="0x09" type="byte" />
+        <bDescriptorType value="0x24" type="byte" />
+        <bDescriptorSubtype value="0x03" type="byte" />
+        <bTerminalID value="0x04" type="byte" />
+        <wTerminalType value="0x0101" type="short" />
+        <bAssocTerminal value="0x00" type="byte" />
+        <bSourceID value="0x03" type="byte" />
+        <iTerminal value="0x00" type="byte" />
+      </outputTerminalDescriptor>
+      <outputTerminalDescriptor alias="Output Terminal Descriptor">
+        <bLength value="0x09" type="byte" />
+        <bDescriptorType value="0x24" type="byte" />
+        <bDescriptorSubtype value="0x03" type="byte" />
+        <bTerminalID value="0x05" type="byte" />
+        <wTerminalType value="0x0101" type="short" />
+        <bAssocTerminal value="0x00" type="byte" />
+        <bSourceID value="0x03" type="byte" />
+        <iTerminal value="0x00" type="byte" />
+      </outputTerminalDescriptor>
+      <standardinterruptEndPointDescriptor alias="Standard Interrupt Endpoint Descriptor">
+        <bLength value="0x07" type="byte" />
+        <bDescriptorType value="0x05" type="byte" />
+        <bEndpointAddress value="0x87" type="byte" />
+        <bmAttributes value="0x03" type="byte" />
+        <wMaxPacketSize value="0x0010" type="short" />
+        <bInterval value="0x01" type="byte" />
+      </standardinterruptEndPointDescriptor>
+      <classSpecificInterruptEndpointDescriptor alias="Class-specific Interrupt Endpoint Descriptor">
+        <bLength value="0x05" type="byte" />
+        <bDescriptorType value="0x25" type="byte" />
+        <bDescriptorSubType value="0x03" type="byte" />
+        <wMaxTransferSize value="0x0010" type="short" />
+      </classSpecificInterruptEndpointDescriptor>
+    </videoControlInterface>
+    <vsInterface alias="VS Interface1 Descriptor">
+      <standardVSInterfaceDescriptor alias="Standard VS Interface1 Descriptor">
+        <bLength value="0x09" type="byte" />
+        <bDescriptorType value="0x04" type="byte" />
+        <bInterfaceNumber value="0x01" type="byte" />
+        <bAlternateSetting value="0x00" type="byte" />
+        <bNumEndpoints value="0x00" type="byte" />
+        <bInterfaceClass value="0x0E" type="byte" />
+        <bInterfaceSubClass value="0x02" type="byte" />
+        <bInterfaceProtocol value="0x00" type="byte" />
+        <iInterface value="0x00" type="byte" />
+      </standardVSInterfaceDescriptor>
+      <vsInputHdrDesc alias="Class-specific VS Input Header Descriptor">
+        <bLength value="0x0e" type="byte" />
+        <bDescriptorType value="0x24" type="byte" />
+        <bDescriptorSubtype value="0x01" type="byte" />
+        <bNumFormats value="0x01" type="byte" />
+        <wTotalLength value="0x00C5" type="short" />
+        <bEndpointAddress value="0x88" type="byte" />
+        <bmInfo value="0x00" type="byte" />
+        <bTerminalLink value="0x04" type="byte" />
+        <bStillCaptureMethod value="0x01" type="byte" />
+        <bTriggerSupport value="0x00" type="byte" />
+        <bTriggerUsage value="0x00" type="byte" />
+        <bControlSize value="0x01" type="byte" />
+        <bmControls value="0x00" type="byte" />
+      </vsInputHdrDesc>
+      <vsYUY2 alias="Video streaming for YUY2">
+        <formatTypeDescriptor alias="Class-specific VS Payload Format Descriptor (YUY2)">
+          <bLength value="0x1B" type="byte" />
+          <bDescriptorType value="0x24" type="byte" />
+          <bDescriptorSubtype value="0x04" type="byte" />
+          <bFormatIndex value="0x01" type="byte" />
+          <bNumFrameDescriptors value="0x03" type="byte" />
+          <dwguidFormat value="0x32595559" type="int" />
+          <dwguidFormat value="0x00100000" type="int" />
+          <dwguidFormat value="0xAA000080" type="int" />
+          <dwguidFormat value="0x719B3800" type="int" />
+          <bBitsPerPixel value="0x10" type="byte" />
+          <bDefaultFrameIndex value="0x01" type="byte" />
+          <bAspectRatioX value="0x00" type="byte" />
+          <bAspectRatioY value="0x00" type="byte" />
+          <bmInterlaceFlags value="0x00" type="byte" />
+          <bCopyProtect value="0x00" type="byte" />
+        </formatTypeDescriptor>
+        <frameTypeDescriptor alias="Class-specific VS Video Frame Descriptor (YUY2:320*240)">
+          <bLength value="0x32" type="byte" />
+          <bDescriptorType value="0x24" type="byte" />
+          <bDescriptorSubtype value="0x05" type="byte" />
+          <bFrameIndex value="0x01" type="byte" />
+          <bmCapabilities value="0x00" type="byte" />
+          <wWidth value="0x0140" type="short" />
+          <wHeight value="0x00f0" type="short" />
+          <dwMinBitRate value="0x005dc000" type="int" />
+          <dwMaxBitRate value="0x02328000" type="int" />
+          <dwMaxVideoFrameBufferSize value="0x00025800" type="int" />
+          <dwDefaultFrameInterval value="0x00051615" type="int" />
+          <bFrameIntervalType value="0x06" type="byte" />
+          <dwFrameInterval value="0x00051615" type="int" />
+          <dwFrameInterval value="0x00061a80" type="int" />
+          <dwFrameInterval value="0x0007a120" type="int" />
+          <dwFrameInterval value="0x000a2c2a" type="int" />
+          <dwFrameInterval value="0x000f4240" type="int" />
+          <dwFrameInterval value="0x001e8480" type="int" />
+        </frameTypeDescriptor>
+        <frameTypeDescriptor alias="Class-specific VS Video Frame Descriptor (YUY2:640*480)">
+          <bLength value="0x32" type="byte" />
+          <bDescriptorType value="0x24" type="byte" />
+          <bDescriptorSubtype value="0x05" type="byte" />
+          <bFrameIndex value="0x02" type="byte" />
+          <bmCapabilities value="0x00" type="byte" />
+          <wWidth value="0x0280" type="short" />
+          <wHeight value="0x01E0" type="short" />
+          <dwMinBitRate value="0x01770000" type="int" />
+          <dwMaxBitRate value="0x08CA0000" type="int" />
+          <dwMaxVideoFrameBufferSize value="0x00096000" type="int" />
+          <dwDefaultFrameInterval value="0x00051615" type="int" />
+          <bFrameIntervalType value="0x06" type="byte" />
+          <dwFrameInterval value="0x00051615" type="int" />
+          <dwFrameInterval value="0x00061a80" type="int" />
+          <dwFrameInterval value="0x0007a120" type="int" />
+          <dwFrameInterval value="0x000a2c2a" type="int" />
+          <dwFrameInterval value="0x000f4240" type="int" />
+          <dwFrameInterval value="0x001e8480" type="int" />
+        </frameTypeDescriptor>
+        <frameTypeDescriptor alias="Class-specific VS Video Frame Descriptor (YUY2:384*216)">
+          <bLength value="0x32" type="byte" />
+          <bDescriptorType value="0x24" type="byte" />
+          <bDescriptorSubtype value="0x05" type="byte" />
+          <bFrameIndex value="0x03" type="byte" />
+          <bmCapabilities value="0x00" type="byte" />
+          <wWidth value="0x0180" type="short" />
+          <wHeight value="0x00D8" type="short" />
+          <dwMinBitRate value="0x00654000" type="int" />
+          <dwMaxBitRate value="0x025F8000" type="int" />
+          <dwMaxVideoFrameBufferSize value="0x00028800" type="int" />
+          <dwDefaultFrameInterval value="0x00051615" type="int" />
+          <bFrameIntervalType value="0x06" type="byte" />
+          <dwFrameInterval value="0x00051615" type="int" />
+          <dwFrameInterval value="0x00061a80" type="int" />
+          <dwFrameInterval value="0x0007a120" type="int" />
+          <dwFrameInterval value="0x000a2c2a" type="int" />
+          <dwFrameInterval value="0x000f4240" type="int" />
+          <dwFrameInterval value="0x001e8480" type="int" />
+        </frameTypeDescriptor>
+        <colorMatchingDescriptor alias="Class-specific VS Color Matching Descriptor">
+          <bLength value="0x06" type="byte" />
+          <bDescriptorType value="0x24" type="byte" />
+          <bDescriptorSubtype value="0x0D" type="byte" />
+          <bColorPrimaries value="0x01" type="byte" />
+          <bTransferCharacteristics value="0x01" type="byte" />
+          <bMatrixCoefficients value="0x04" type="byte" />
+        </colorMatchingDescriptor>
+      </vsYUY2>
+      <alternateSetting alias="AlternateSetting">
+        <interfaceDescriptor alias="Interface 1, AlternateSetting 1">
+          <bLength value="0x09" type="byte" />
+          <bDescriptorType value="0x04" type="byte" />
+          <bInterfaceNumber value="0x01" type="byte" />
+          <bAlternateSetting value="0x01" type="byte" />
+          <bNumEndpoints value="0x01" type="byte" />
+          <bInterfaceClass value="0x0E" type="byte" />
+          <bInterfaceSubClass value="0x02" type="byte" />
+          <bInterfaceProtocol value="0x00" type="byte" />
+          <iInterface value="0x00" type="byte" />
+        </interfaceDescriptor>
+        <endpointDescriptor alias="Standard VS Isochronous Video Data Endpoint Descriptor">
+          <bLength value="0x07" type="byte" />
+          <bDescriptorType value="0x05" type="byte" />
+          <bEndpointAddress value="0x88" type="byte" />
+          <bmAttributes value="0x05" type="byte" />
+          <wMaxPacketSize value="0x0080" type="short" />
+          <bInterval value="0x01" type="byte" />
+        </endpointDescriptor>
+      </alternateSetting>
+      <alternateSetting alias="AlternateSetting">
+        <interfaceDescriptor alias="Interface 1, AlternateSetting 2">
+          <bLength value="0x09" type="byte" />
+          <bDescriptorType value="0x04" type="byte" />
+          <bInterfaceNumber value="0x01" type="byte" />
+          <bAlternateSetting value="0x02" type="byte" />
+          <bNumEndpoints value="0x01" type="byte" />
+          <bInterfaceClass value="0x0E" type="byte" />
+          <bInterfaceSubClass value="0x02" type="byte" />
+          <bInterfaceProtocol value="0x00" type="byte" />
+          <iInterface value="0x00" type="byte" />
+        </interfaceDescriptor>
+        <endpointDescriptor alias="Standard VS Isochronous Video Data Endpoint Descriptor">
+          <bLength value="0x07" type="byte" />
+          <bDescriptorType value="0x05" type="byte" />
+          <bEndpointAddress value="0x88" type="byte" />
+          <bmAttributes value="0x05" type="byte" />
+          <wMaxPacketSize value="0x0180" type="short" />
+          <bInterval value="0x01" type="byte" />
+        </endpointDescriptor>
+      </alternateSetting>
+      <alternateSetting alias="AlternateSetting">
+        <interfaceDescriptor alias="Interface 1, AlternateSetting 3">
+          <bLength value="0x09" type="byte" />
+          <bDescriptorType value="0x04" type="byte" />
+          <bInterfaceNumber value="0x01" type="byte" />
+          <bAlternateSetting value="0x03" type="byte" />
+          <bNumEndpoints value="0x01" type="byte" />
+          <bInterfaceClass value="0x0E" type="byte" />
+          <bInterfaceSubClass value="0x02" type="byte" />
+          <bInterfaceProtocol value="0x00" type="byte" />
+          <iInterface value="0x00" type="byte" />
+        </interfaceDescriptor>
+        <endpointDescriptor alias="Standard VS Isochronous Video Data Endpoint Descriptor">
+          <bLength value="0x07" type="byte" />
+          <bDescriptorType value="0x05" type="byte" />
+          <bEndpointAddress value="0x88" type="byte" />
+          <bmAttributes value="0x05" type="byte" />
+          <wMaxPacketSize value="0x0200" type="short" />
+          <bInterval value="0x01" type="byte" />
+        </endpointDescriptor>
+      </alternateSetting>
+      <alternateSetting alias="AlternateSetting">
+        <interfaceDescriptor alias="Interface 1, AlternateSetting 4">
+          <bLength value="0x09" type="byte" />
+          <bDescriptorType value="0x04" type="byte" />
+          <bInterfaceNumber value="0x01" type="byte" />
+          <bAlternateSetting value="0x04" type="byte" />
+          <bNumEndpoints value="0x01" type="byte" />
+          <bInterfaceClass value="0x0E" type="byte" />
+          <bInterfaceSubClass value="0x02" type="byte" />
+          <bInterfaceProtocol value="0x00" type="byte" />
+          <iInterface value="0x00" type="byte" />
+        </interfaceDescriptor>
+        <endpointDescriptor alias="Standard VS Isochronous Video Data Endpoint Descriptor">
+          <bLength value="0x07" type="byte" />
+          <bDescriptorType value="0x05" type="byte" />
+          <bEndpointAddress value="0x88" type="byte" />
+          <bmAttributes value="0x05" type="byte" />
+          <wMaxPacketSize value="0x0A80" type="short" />
+          <bInterval value="0x01" type="byte" />
+        </endpointDescriptor>
+      </alternateSetting>
+      <alternateSetting alias="AlternateSetting">
+        <interfaceDescriptor alias="Interface 1, AlternateSetting 5">
+          <bLength value="0x09" type="byte" />
+          <bDescriptorType value="0x04" type="byte" />
+          <bInterfaceNumber value="0x01" type="byte" />
+          <bAlternateSetting value="0x05" type="byte" />
+          <bNumEndpoints value="0x01" type="byte" />
+          <bInterfaceClass value="0x0E" type="byte" />
+          <bInterfaceSubClass value="0x02" type="byte" />
+          <bInterfaceProtocol value="0x00" type="byte" />
+          <iInterface value="0x00" type="byte" />
+        </interfaceDescriptor>
+        <endpointDescriptor alias="Standard VS Isochronous Video Data Endpoint Descriptor">
+          <bLength value="0x07" type="byte" />
+          <bDescriptorType value="0x05" type="byte" />
+          <bEndpointAddress value="0x88" type="byte" />
+          <bmAttributes value="0x05" type="byte" />
+          <wMaxPacketSize value="0x0B00" type="short" />
+          <bInterval value="0x01" type="byte" />
+        </endpointDescriptor>
+      </alternateSetting>
+      <alternateSetting alias="AlternateSetting">
+        <interfaceDescriptor alias="Interface 1, AlternateSetting 6">
+          <bLength value="0x09" type="byte" />
+          <bDescriptorType value="0x04" type="byte" />
+          <bInterfaceNumber value="0x01" type="byte" />
+          <bAlternateSetting value="0x06" type="byte" />
+          <bNumEndpoints value="0x01" type="byte" />
+          <bInterfaceClass value="0x0E" type="byte" />
+          <bInterfaceSubClass value="0x02" type="byte" />
+          <bInterfaceProtocol value="0x00" type="byte" />
+          <iInterface value="0x00" type="byte" />
+        </interfaceDescriptor>
+        <endpointDescriptor alias="Standard VS Isochronous Video Data Endpoint Descriptor">
+          <bLength value="0x07" type="byte" />
+          <bDescriptorType value="0x05" type="byte" />
+          <bEndpointAddress value="0x88" type="byte" />
+          <bmAttributes value="0x05" type="byte" />
+          <wMaxPacketSize value="0x0B80" type="short" />
+          <bInterval value="0x01" type="byte" />
+        </endpointDescriptor>
+      </alternateSetting>
+      <alternateSetting alias="AlternateSetting">
+        <interfaceDescriptor alias="Interface 1, AlternateSetting 7">
+          <bLength value="0x09" type="byte" />
+          <bDescriptorType value="0x04" type="byte" />
+          <bInterfaceNumber value="0x01" type="byte" />
+          <bAlternateSetting value="0x07" type="byte" />
+          <bNumEndpoints value="0x01" type="byte" />
+          <bInterfaceClass value="0x0E" type="byte" />
+          <bInterfaceSubClass value="0x02" type="byte" />
+          <bInterfaceProtocol value="0x00" type="byte" />
+          <iInterface value="0x00" type="byte" />
+        </interfaceDescriptor>
+        <endpointDescriptor alias="Standard VS Isochronous Video Data Endpoint Descriptor">
+          <bLength value="0x07" type="byte" />
+          <bDescriptorType value="0x05" type="byte" />
+          <bEndpointAddress value="0x88" type="byte" />
+          <bmAttributes value="0x05" type="byte" />
+          <wMaxPacketSize value="0x0BFC" type="short" />
+          <bInterval value="0x01" type="byte" />
+        </endpointDescriptor>
+      </alternateSetting>
+    </vsInterface>
+    <vsInterface alias="VS Interface2 Descriptor">
+      <standardVSInterfaceDescriptor alias="Standard VS Interface1 Descriptor">
+        <bLength value="0x09" type="byte" />
+        <bDescriptorType value="0x04" type="byte" />
+        <bInterfaceNumber value="0x02" type="byte" />
+        <bAlternateSetting value="0x00" type="byte" />
+        <bNumEndpoints value="0x00" type="byte" />
+        <bInterfaceClass value="0x0E" type="byte" />
+        <bInterfaceSubClass value="0x02" type="byte" />
+        <bInterfaceProtocol value="0x00" type="byte" />
+        <iInterface value="0x00" type="byte" />
+      </standardVSInterfaceDescriptor>
+      <vsInputHdrDesc alias="Class-specific VS Input Header Descriptor">
+        <bLength value="0x0F" type="byte" />
+        <bDescriptorType value="0x24" type="byte" />
+        <bDescriptorSubtype value="0x01" type="byte" />
+        <bNumFormats value="0x02" type="byte" />
+        <wTotalLength value="0x01A3" type="short" />
+        <bEndpointAddress value="0x81" type="byte" />
+        <bmInfo value="0x00" type="byte" />
+        <bTerminalLink value="0x05" type="byte" />
+        <bStillCaptureMethod value="0x02" type="byte" />
+        <bTriggerSupport value="0x01" type="byte" />
+        <bTriggerUsage value="0x01" type="byte" />
+        <bControlSize value="0x01" type="byte" />
+        <bmControls value="0x00" type="byte" />
+        <bmControls value="0x00" type="byte" />
+      </vsInputHdrDesc>
+      <vsMJPEG alias="Video streaming for MJPEG">
+        <formatTypeDescriptor alias="Class-specific VS Payload Format Descriptor (MJPEG)">
+          <bLength value="0x0B" type="byte" />
+          <bDescriptorType value="0x24" type="byte" />
+          <bDescriptorSubtype value="0x06" type="byte" />
+          <bFormatIndex value="0x02" type="byte" />
+          <bNumFrameDescriptors value="0x04" type="byte" />
+          <bmFlags value="0x01" type="byte" />
+          <bDefaultFrameIndex value="0x01" type="byte" />
+          <bAspectRatioX value="0x00" type="byte" />
+          <bAspectRatioY value="0x00" type="byte" />
+          <bmInterlaceFlags value="0x00" type="byte" />
+          <bCopyProtect value="0x00" type="byte" />
+        </formatTypeDescriptor>
+        <frameTypeDescriptor alias="Class-specific VS Video Frame Descriptor (MJPEG:640*480)">
+          <bLength value="0x32" type="byte" />
+          <bDescriptorType value="0x24" type="byte" />
+          <bDescriptorSubtype value="0x07" type="byte" />
+          <bFrameIndex value="0x1" type="byte" />
+          <bmCapabilities value="0x00" type="byte" />
+          <wWidth value="0x0280" type="short" />
+          <wHeight value="0x01E0" type="short" />
+          <dwMinBitRate value="0x01770000" type="int" />
+          <dwMaxBitRate value="0x08CA0000" type="int" />
+          <dwMaxVideoFrameBufferSize value="0x00096000" type="int" />
+          <dwDefaultFrameInterval value="0x00051615" type="int" />
+          <bFrameIntervalType value="0x06" type="byte" />
+          <dwFrameInterval value="0x00051615" type="int" />
+          <dwFrameInterval value="0x00061a80" type="int" />
+          <dwFrameInterval value="0x0007a120" type="int" />
+          <dwFrameInterval value="0x000a2c2a" type="int" />
+          <dwFrameInterval value="0x000f4240" type="int" />
+          <dwFrameInterval value="0x001e8480" type="int" />
+        </frameTypeDescriptor>
+        <frameTypeDescriptor alias="Class-specific VS Video Frame Descriptor (MJPEG:320*240)">
+          <bLength value="0x32" type="byte" />
+          <bDescriptorType value="0x24" type="byte" />
+          <bDescriptorSubtype value="0x07" type="byte" />
+          <bFrameIndex value="0x2" type="byte" />
+          <bmCapabilities value="0x00" type="byte" />
+          <wWidth value="0x0140" type="short" />
+          <wHeight value="0x00f0" type="short" />
+          <dwMinBitRate value="0x005dc000" type="int" />
+          <dwMaxBitRate value="0x02328000" type="int" />
+          <dwMaxVideoFrameBufferSize value="0x00025800" type="int" />
+          <dwDefaultFrameInterval value="0x00051615" type="int" />
+          <bFrameIntervalType value="0x06" type="byte" />
+          <dwFrameInterval value="0x00051615" type="int" />
+          <dwFrameInterval value="0x00061a80" type="int" />
+          <dwFrameInterval value="0x0007a120" type="int" />
+          <dwFrameInterval value="0x000a2c2a" type="int" />
+          <dwFrameInterval value="0x000f4240" type="int" />
+          <dwFrameInterval value="0x001e8480" type="int" />
+        </frameTypeDescriptor>
+        <frameTypeDescriptor alias="Class-specific VS Video Frame Descriptor (MJPEG:1280*720)">
+          <bLength value="0x32" type="byte" />
+          <bDescriptorType value="0x24" type="byte" />
+          <bDescriptorSubtype value="0x07" type="byte" />
+          <bFrameIndex value="0x3" type="byte" />
+          <bmCapabilities value="0x00" type="byte" />
+          <wWidth value="0x0500" type="short" />
+          <wHeight value="0x02D0" type="short" />
+          <dwMinBitRate value="0x01770000" type="int" />
+          <dwMaxBitRate value="0x08CA0000" type="int" />
+          <dwMaxVideoFrameBufferSize value="0x00096000" type="int" />
+          <dwDefaultFrameInterval value="0x00051615" type="int" />
+          <bFrameIntervalType value="0x06" type="byte" />
+          <dwFrameInterval value="0x00051615" type="int" />
+          <dwFrameInterval value="0x00061a80" type="int" />
+          <dwFrameInterval value="0x0007a120" type="int" />
+          <dwFrameInterval value="0x000a2c2a" type="int" />
+          <dwFrameInterval value="0x000f4240" type="int" />
+          <dwFrameInterval value="0x001e8480" type="int" />
+        </frameTypeDescriptor>
+        <frameTypeDescriptor alias="Class-specific VS Video Frame Descriptor (MJPEG:1600*1200)">
+          <bLength value="0x32" type="byte" />
+          <bDescriptorType value="0x24" type="byte" />
+          <bDescriptorSubtype value="0x07" type="byte" />
+          <bFrameIndex value="0x4" type="byte" />
+          <bmCapabilities value="0x00" type="byte" />
+          <wWidth value="0x0640" type="short" />
+          <wHeight value="0x04B0" type="short" />
+          <dwMinBitRate value="0x01770000" type="int" />
+          <dwMaxBitRate value="0x08CA0000" type="int" />
+          <dwMaxVideoFrameBufferSize value="0x00096000" type="int" />
+          <dwDefaultFrameInterval value="0x00051615" type="int" />
+          <bFrameIntervalType value="0x06" type="byte" />
+          <dwFrameInterval value="0x00051615" type="int" />
+          <dwFrameInterval value="0x00061a80" type="int" />
+          <dwFrameInterval value="0x0007a120" type="int" />
+          <dwFrameInterval value="0x000a2c2a" type="int" />
+          <dwFrameInterval value="0x000f4240" type="int" />
+          <dwFrameInterval value="0x001e8480" type="int" />
+        </frameTypeDescriptor>
+        <stillImageFrameTypeDescriptor alias="Still Image Frame Type Descriptor">
+          <bLength value="0x16" type="byte" />
+          <bDescriptorType value="0x24" type="byte" />
+          <bDescriptorSubtype value="0x03" type="byte" />
+          <bEndpointAddress value="0x00" type="byte" />
+          <bNumImageSizePatterns value="0x4" type="byte" />
+          <wWidth value="0x0400" type="short" />
+          <wHeight value="0x0300" type="short" />
+          <wWidth value="0x0800" type="short" />
+          <wHeight value="0x0600" type="short" />
+          <wWidth value="0x0A00" type="short" />
+          <wHeight value="0x0780" type="short" />
+          <wWidth value="0x0CC0" type="short" />
+          <wHeight value="0x0990" type="short" />
+          <bNumCompressionPattern value="0x00" type="byte" />
+        </stillImageFrameTypeDescriptor>
+      </vsMJPEG>
+      <vsYUY2 alias="Video streaming for YUY2">
+        <formatTypeDescriptor alias="Class-specific VS Payload Format Descriptor (YUY2)">
+          <bLength value="0x1B" type="byte" />
+          <bDescriptorType value="0x24" type="byte" />
+          <bDescriptorSubtype value="0x04" type="byte" />
+          <bFormatIndex value="0x01" type="byte" />
+          <bNumFrameDescriptors value="0x03" type="byte" />
+          <dwguidFormat value="0x32595559" type="int" />
+          <dwguidFormat value="0x00100000" type="int" />
+          <dwguidFormat value="0xAA000080" type="int" />
+          <dwguidFormat value="0x719B3800" type="int" />
+          <bBitsPerPixel value="0x10" type="byte" />
+          <bDefaultFrameIndex value="0x01" type="byte" />
+          <bAspectRatioX value="0x00" type="byte" />
+          <bAspectRatioY value="0x00" type="byte" />
+          <bmInterlaceFlags value="0x00" type="byte" />
+          <bCopyProtect value="0x00" type="byte" />
+        </formatTypeDescriptor>
+        <frameTypeDescriptor alias="Class-specific VS Video Frame Descriptor (YUY2:320*240)">
+          <bLength value="0x32" type="byte" />
+          <bDescriptorType value="0x24" type="byte" />
+          <bDescriptorSubtype value="0x05" type="byte" />
+          <bFrameIndex value="0x01" type="byte" />
+          <bmCapabilities value="0x00" type="byte" />
+          <wWidth value="0x0140" type="short" />
+          <wHeight value="0x00f0" type="short" />
+          <dwMinBitRate value="0x005dc000" type="int" />
+          <dwMaxBitRate value="0x02328000" type="int" />
+          <dwMaxVideoFrameBufferSize value="0x00025800" type="int" />
+          <dwDefaultFrameInterval value="0x00051615" type="int" />
+          <bFrameIntervalType value="0x06" type="byte" />
+          <dwFrameInterval value="0x00051615" type="int" />
+          <dwFrameInterval value="0x00061a80" type="int" />
+          <dwFrameInterval value="0x0007a120" type="int" />
+          <dwFrameInterval value="0x000a2c2a" type="int" />
+          <dwFrameInterval value="0x000f4240" type="int" />
+          <dwFrameInterval value="0x001e8480" type="int" />
+        </frameTypeDescriptor>
+        <frameTypeDescriptor alias="Class-specific VS Video Frame Descriptor (YUY2:640*480)">
+          <bLength value="0x32" type="byte" />
+          <bDescriptorType value="0x24" type="byte" />
+          <bDescriptorSubtype value="0x05" type="byte" />
+          <bFrameIndex value="0x02" type="byte" />
+          <bmCapabilities value="0x00" type="byte" />
+          <wWidth value="0x0280" type="short" />
+          <wHeight value="0x01E0" type="short" />
+          <dwMinBitRate value="0x01770000" type="int" />
+          <dwMaxBitRate value="0x08CA0000" type="int" />
+          <dwMaxVideoFrameBufferSize value="0x00096000" type="int" />
+          <dwDefaultFrameInterval value="0x00051615" type="int" />
+          <bFrameIntervalType value="0x06" type="byte" />
+          <dwFrameInterval value="0x00051615" type="int" />
+          <dwFrameInterval value="0x00061a80" type="int" />
+          <dwFrameInterval value="0x0007a120" type="int" />
+          <dwFrameInterval value="0x000a2c2a" type="int" />
+          <dwFrameInterval value="0x000f4240" type="int" />
+          <dwFrameInterval value="0x001e8480" type="int" />
+        </frameTypeDescriptor>
+        <frameTypeDescriptor alias="Class-specific VS Video Frame Descriptor (YUY2:1280*720)">
+          <bLength value="0x1E" type="byte" />
+          <bDescriptorType value="0x24" type="byte" />
+          <bDescriptorSubtype value="0x05" type="byte" />
+          <bFrameIndex value="0x03" type="byte" />
+          <bmCapabilities value="0x00" type="byte" />
+          <wWidth value="0x0500" type="short" />
+          <wHeight value="0x02D0" type="short" />
+          <dwMinBitRate value="0x09AB0000" type="int" />
+          <dwMaxBitRate value="0x09AB0000" type="int" />
+          <dwMaxVideoFrameBufferSize value="0x001C2000" type="int" />
+          <dwDefaultFrameInterval value="0x000DDF22" type="int" />
+          <bFrameIntervalType value="0x01" type="byte" />
+          <dwFrameInterval value="0x000DDF22" type="int" />
+        </frameTypeDescriptor>
+        <colorMatchingDescriptor alias="Class-specific VS Color Matching Descriptor">
+          <bLength value="0x06" type="byte" />
+          <bDescriptorType value="0x24" type="byte" />
+          <bDescriptorSubtype value="0x0D" type="byte" />
+          <bColorPrimaries value="0x01" type="byte" />
+          <bTransferCharacteristics value="0x01" type="byte" />
+          <bMatrixCoefficients value="0x04" type="byte" />
+        </colorMatchingDescriptor>
+      </vsYUY2>
+      <alternateSetting alias="AlternateSetting">
+        <interfaceDescriptor alias="Interface 2, AlternateSetting 1">
+          <bLength value="0x09" type="byte" />
+          <bDescriptorType value="0x04" type="byte" />
+          <bInterfaceNumber value="0x02" type="byte" />
+          <bAlternateSetting value="0x01" type="byte" />
+          <bNumEndpoints value="0x01" type="byte" />
+          <bInterfaceClass value="0x0E" type="byte" />
+          <bInterfaceSubClass value="0x02" type="byte" />
+          <bInterfaceProtocol value="0x00" type="byte" />
+          <iInterface value="0x00" type="byte" />
+        </interfaceDescriptor>
+        <endpointDescriptor alias="Standard VS Isochronous Video Data Endpoint Descriptor">
+          <bLength value="0x07" type="byte" />
+          <bDescriptorType value="0x05" type="byte" />
+          <bEndpointAddress value="0x81" type="byte" />
+          <bmAttributes value="0x05" type="byte" />
+          <wMaxPacketSize value="0x0080" type="short" />
+          <bInterval value="0x01" type="byte" />
+        </endpointDescriptor>
+      </alternateSetting>
+      <alternateSetting alias="AlternateSetting">
+        <interfaceDescriptor alias="Interface 2, AlternateSetting 2">
+          <bLength value="0x09" type="byte" />
+          <bDescriptorType value="0x04" type="byte" />
+          <bInterfaceNumber value="0x02" type="byte" />
+          <bAlternateSetting value="0x02" type="byte" />
+          <bNumEndpoints value="0x01" type="byte" />
+          <bInterfaceClass value="0x0E" type="byte" />
+          <bInterfaceSubClass value="0x02" type="byte" />
+          <bInterfaceProtocol value="0x00" type="byte" />
+          <iInterface value="0x00" type="byte" />
+        </interfaceDescriptor>
+        <endpointDescriptor alias="Standard VS Isochronous Video Data Endpoint Descriptor">
+          <bLength value="0x07" type="byte" />
+          <bDescriptorType value="0x05" type="byte" />
+          <bEndpointAddress value="0x81" type="byte" />
+          <bmAttributes value="0x05" type="byte" />
+          <wMaxPacketSize value="0x0180" type="short" />
+          <bInterval value="0x01" type="byte" />
+        </endpointDescriptor>
+      </alternateSetting>
+      <alternateSetting alias="AlternateSetting">
+        <interfaceDescriptor alias="Interface 2, AlternateSetting 3">
+          <bLength value="0x09" type="byte" />
+          <bDescriptorType value="0x04" type="byte" />
+          <bInterfaceNumber value="0x02" type="byte" />
+          <bAlternateSetting value="0x03" type="byte" />
+          <bNumEndpoints value="0x01" type="byte" />
+          <bInterfaceClass value="0x0E" type="byte" />
+          <bInterfaceSubClass value="0x02" type="byte" />
+          <bInterfaceProtocol value="0x00" type="byte" />
+          <iInterface value="0x00" type="byte" />
+        </interfaceDescriptor>
+        <endpointDescriptor alias="Standard VS Isochronous Video Data Endpoint Descriptor">
+          <bLength value="0x07" type="byte" />
+          <bDescriptorType value="0x05" type="byte" />
+          <bEndpointAddress value="0x81" type="byte" />
+          <bmAttributes value="0x05" type="byte" />
+          <wMaxPacketSize value="0x0200" type="short" />
+          <bInterval value="0x01" type="byte" />
+        </endpointDescriptor>
+      </alternateSetting>
+      <alternateSetting alias="AlternateSetting">
+        <interfaceDescriptor alias="Interface 2, AlternateSetting 4">
+          <bLength value="0x09" type="byte" />
+          <bDescriptorType value="0x04" type="byte" />
+          <bInterfaceNumber value="0x02" type="byte" />
+          <bAlternateSetting value="0x04" type="byte" />
+          <bNumEndpoints value="0x01" type="byte" />
+          <bInterfaceClass value="0x0E" type="byte" />
+          <bInterfaceSubClass value="0x02" type="byte" />
+          <bInterfaceProtocol value="0x00" type="byte" />
+          <iInterface value="0x00" type="byte" />
+        </interfaceDescriptor>
+        <endpointDescriptor alias="Standard VS Isochronous Video Data Endpoint Descriptor">
+          <bLength value="0x07" type="byte" />
+          <bDescriptorType value="0x05" type="byte" />
+          <bEndpointAddress value="0x81" type="byte" />
+          <bmAttributes value="0x05" type="byte" />
+          <wMaxPacketSize value="0x0A80" type="short" />
+          <bInterval value="0x01" type="byte" />
+        </endpointDescriptor>
+      </alternateSetting>
+      <alternateSetting alias="AlternateSetting">
+        <interfaceDescriptor alias="Interface 2, AlternateSetting 5">
+          <bLength value="0x09" type="byte" />
+          <bDescriptorType value="0x04" type="byte" />
+          <bInterfaceNumber value="0x02" type="byte" />
+          <bAlternateSetting value="0x05" type="byte" />
+          <bNumEndpoints value="0x01" type="byte" />
+          <bInterfaceClass value="0x0E" type="byte" />
+          <bInterfaceSubClass value="0x02" type="byte" />
+          <bInterfaceProtocol value="0x00" type="byte" />
+          <iInterface value="0x00" type="byte" />
+        </interfaceDescriptor>
+        <endpointDescriptor alias="Standard VS Isochronous Video Data Endpoint Descriptor">
+          <bLength value="0x07" type="byte" />
+          <bDescriptorType value="0x05" type="byte" />
+          <bEndpointAddress value="0x81" type="byte" />
+          <bmAttributes value="0x05" type="byte" />
+          <wMaxPacketSize value="0x0B00" type="short" />
+          <bInterval value="0x01" type="byte" />
+        </endpointDescriptor>
+      </alternateSetting>
+      <alternateSetting alias="AlternateSetting">
+        <interfaceDescriptor alias="Interface 2, AlternateSetting 6">
+          <bLength value="0x09" type="byte" />
+          <bDescriptorType value="0x04" type="byte" />
+          <bInterfaceNumber value="0x02" type="byte" />
+          <bAlternateSetting value="0x06" type="byte" />
+          <bNumEndpoints value="0x01" type="byte" />
+          <bInterfaceClass value="0x0E" type="byte" />
+          <bInterfaceSubClass value="0x02" type="byte" />
+          <bInterfaceProtocol value="0x00" type="byte" />
+          <iInterface value="0x00" type="byte" />
+        </interfaceDescriptor>
+        <endpointDescriptor alias="Standard VS Isochronous Video Data Endpoint Descriptor">
+          <bLength value="0x07" type="byte" />
+          <bDescriptorType value="0x05" type="byte" />
+          <bEndpointAddress value="0x81" type="byte" />
+          <bmAttributes value="0x05" type="byte" />
+          <wMaxPacketSize value="0x0B80" type="short" />
+          <bInterval value="0x01" type="byte" />
+        </endpointDescriptor>
+      </alternateSetting>
+      <alternateSetting alias="AlternateSetting">
+        <interfaceDescriptor alias="Interface 2, AlternateSetting 7">
+          <bLength value="0x09" type="byte" />
+          <bDescriptorType value="0x04" type="byte" />
+          <bInterfaceNumber value="0x02" type="byte" />
+          <bAlternateSetting value="0x07" type="byte" />
+          <bNumEndpoints value="0x01" type="byte" />
+          <bInterfaceClass value="0x0E" type="byte" />
+          <bInterfaceSubClass value="0x02" type="byte" />
+          <bInterfaceProtocol value="0x00" type="byte" />
+          <iInterface value="0x00" type="byte" />
+        </interfaceDescriptor>
+        <endpointDescriptor alias="Standard VS Isochronous Video Data Endpoint Descriptor">
+          <bLength value="0x07" type="byte" />
+          <bDescriptorType value="0x05" type="byte" />
+          <bEndpointAddress value="0x81" type="byte" />
+          <bmAttributes value="0x05" type="byte" />
+          <wMaxPacketSize value="0x0BFC" type="short" />
+          <bInterval value="0x01" type="byte" />
+        </endpointDescriptor>
+      </alternateSetting>
+    </vsInterface>
+  </videoDescriptor>
+  <audioDescriptor alias="Audio Desrciptor">
+    <IAD alias="Interface Association Descriptor">
+      <bLength value="0x08" type="byte" />
+      <bDescriptorType value="0x0b" type="byte" />
+      <bFirstInterface value="0x03" type="byte" />
+      <bInterfaceCount value="0x02" type="byte" />
+      <bFunctionClass value="0x01" type="byte" />
+      <bFunctionSubClass value="0x02" type="byte" />
+      <bFunctionProtocol value="0x00" type="byte" />
+      <iFunction value="0x00" type="byte" />
+    </IAD>
+    <AudioControlInterface alias="AC Interface Descriptor">
+      <standardACInterface alias="Standard AC Interface">
+        <bLength value="0x09" type="byte" />
+        <bDescriptorType value="0x04" type="byte" />
+        <bInterfaceNumber value="0x03" type="byte" />
+        <bAlternateSetting value="0x00" type="byte" />
+        <bNumEndpoints value="0x00" type="byte" />
+        <bInterfaceClass value="0x01" type="byte" />
+        <bInterfaceSubClass value="0x01" type="byte" />
+        <bInterfaceProtocol value="0x00" type="byte" />
+        <iInterface value="0x00" type="byte" />
+      </standardACInterface>
+      <classSpecificACInterfaceHeader alias="Class-specific AC Interface Header">
+        <bLength value="0x09" type="byte" />
+        <bDescriptorType value="0x24" type="byte" />
+        <bDescriptorSubtype value="0x01" type="byte" />
+        <bcdVDC value="0x0100" type="short" />
+        <wTotalLength value="0x0026" type="short" />
+        <bInCollection value="0x01" type="byte" />
+        <baInterfaceNr value="0x04" type="byte" />
+      </classSpecificACInterfaceHeader>
+      <InputTerminalDescriptor alias="Input Terminal Descriptor">
+        <bLength value="0x0c" type="byte" />
+        <bDescriptorType value="0x24" type="byte" />
+        <bDescriptorSubtype value="0x02" type="byte" />
+        <bTerminalID value="0x01" type="byte" />
+        <wTerminalType value="0x0201" type="short" />
+        <bAssocTerminal value="0x00" type="byte" />
+        <bNrChannels value="0x01" type="byte" />
+        <wChannelConfig value="0x0000" type="short" />
+        <iChannelNames value="0x00" type="byte" />
+        <iTerminal value="0x00" type="byte" />
+      </InputTerminalDescriptor>
+      <OutputTerminalDesc alias="Output Terminal Descriptor">
+        <bLength value="0x09" type="byte" />
+        <bDescriptorType value="0x24" type="byte" />
+        <bDescriptorSubtype value="0x03" type="byte" />
+        <bTerminalID value="0x03" type="byte" />
+        <wTerminalType value="0x0101" type="short" />
+        <bAssocTerminal value="0x00" type="byte" />
+        <bSourceID value="0x05" type="byte" />
+        <iTerminal value="0x00" type="byte" />
+      </OutputTerminalDesc>
+      <FeatureUnitDesc alias="Feature Unit Descriptor">
+        <bLength value="0x08" type="byte" />
+        <bDescriptorType value="0x24" type="byte" />
+        <bDescriptorSubtype value="0x06" type="byte" />
+        <bUnitID value="0x05" type="byte" />
+        <bSourceID value="0x01" type="byte" />
+        <bControlSize value="0x01" type="byte" />
+        <bmaControls value="0x03" type="byte" />
+        <iFeature value="0x00" type="byte" />
+      </FeatureUnitDesc>
+    </AudioControlInterface>
+    <AudioStreamInterface alias="AS Interface Descriptor" contextMenuMode="0">
+      <standardASInterfaceDescriptor alias="Standard AS Interface Descriptor">
+        <bLength value="0x09" type="byte" />
+        <bDescriptorType value="0x04" type="byte" />
+        <bInterfaceNumber value="0x04" type="byte" />
+        <bAlternateSetting value="0x00" type="byte" />
+        <bNumEndpoints value="0x00" type="byte" />
+        <bInterfaceClass value="0x01" type="byte" />
+        <bInterfaceSubClass value="0x02" type="byte" />
+        <bInterfaceProtocol value="0x00" type="byte" />
+        <iInterface value="0x00" type="byte" />
+      </standardASInterfaceDescriptor>
+      <alternateSetting alias="AlternateSetting">
+        <interfaceDescriptor alias="Standard AS Interface 4, AlternateSetting 1">
+          <bLength value="0x09" type="byte" />
+          <bDescriptorType value="0x04" type="byte" />
+          <bInterfaceNumber value="0x04" type="byte" />
+          <bAlternateSetting value="0x01" type="byte" />
+          <bNumEndpoints value="0x01" type="byte" />
+          <bInterfaceClass value="0x01" type="byte" />
+          <bInterfaceSubClass value="0x02" type="byte" />
+          <bInterfaceProtocol value="0x00" type="byte" />
+          <iInterface value="0x00" type="byte" />
+        </interfaceDescriptor>
+        <ClassSpecificinterfaceDescriptor alias="Class-specific AS General Interface Descriptor">
+          <bLength value="0x07" type="byte" />
+          <bDescriptorType value="0x24" type="byte" />
+          <bDescriptorSubType value="0x01" type="byte" />
+          <bTerminalLink value="0x03" type="byte" />
+          <bDelay value="0x01" type="byte" />
+          <wFormatTag value="0x0001" type="short" />
+        </ClassSpecificinterfaceDescriptor>
+        <TypeformatDescriptor alias="Type I format Type Descriptor">
+          <bLength value="0x0b" type="byte" />
+          <bDescriptorType value="0x24" type="byte" />
+          <bDescriptorSubType value="0x02" type="byte" />
+          <bFormatType value="0x01" type="byte" />
+          <bNrChannels value="0x01" type="byte" />
+          <bSubFrameSize value="0x02" type="byte" />
+          <bBitResolution value="0x10" type="byte" />
+          <bSamFreqType value="0x01" type="byte" />
+          <tSamFreq1 value="0x80" type="byte" />
+          <tSamFreq2 value="0x003E" type="short" />
+        </TypeformatDescriptor>
+        <StandardendpointDescriptor alias="Standard AS Endpoint Descriptor">
+          <bLength value="0x09" type="byte" />
+          <bDescriptorType value="0x05" type="byte" />
+          <bEndpointAddress value="0x86" type="byte" />
+          <bmAttributes value="0x05" type="byte" />
+          <wMaxPacketSize value="0x0020" type="short" />
+          <bInterval value="0x04" type="byte" />
+          <bRefresh value="0x00" type="byte" />
+          <bSyncAddress value="0x00" type="byte" />
+        </StandardendpointDescriptor>
+        <classSpecificendpointDescriptor alias="Class-specific AS Endpoint Descriptor">
+          <bLength value="0x07" type="byte" />
+          <bDescriptorType value="0x25" type="byte" />
+          <bDescriptorSubType value="0x01" type="byte" />
+          <bmAttributes value="0x01" type="byte" />
+          <bLockDelayUnits value="0x00" type="byte" />
+          <wLockDelay value="0x0000" type="short" />
+        </classSpecificendpointDescriptor>
+      </alternateSetting>
+      <alternateSetting alias="AlternateSetting">
+        <interfaceDescriptor alias="Standard AS Interface 4, AlternateSetting 2">
+          <bLength value="0x09" type="byte" />
+          <bDescriptorType value="0x04" type="byte" />
+          <bInterfaceNumber value="0x04" type="byte" />
+          <bAlternateSetting value="0x02" type="byte" />
+          <bNumEndpoints value="0x01" type="byte" />
+          <bInterfaceClass value="0x01" type="byte" />
+          <bInterfaceSubClass value="0x02" type="byte" />
+          <bInterfaceProtocol value="0x00" type="byte" />
+          <iInterface value="0x00" type="byte" />
+        </interfaceDescriptor>
+        <ClassSpecificinterfaceDescriptor alias="Class-specific AS General Interface Descriptor">
+          <bLength value="0x07" type="byte" />
+          <bDescriptorType value="0x24" type="byte" />
+          <bDescriptorSubType value="0x01" type="byte" />
+          <bTerminalLink value="0x03" type="byte" />
+          <bDelay value="0x01" type="byte" />
+          <wFormatTag value="0x0001" type="short" />
+        </ClassSpecificinterfaceDescriptor>
+        <TypeformatDescriptor alias="Type I format Type Descriptor">
+          <bLength value="0x0b" type="byte" />
+          <bDescriptorType value="0x24" type="byte" />
+          <bDescriptorSubType value="0x02" type="byte" />
+          <bFormatType value="0x01" type="byte" />
+          <bNrChannels value="0x01" type="byte" />
+          <bSubFrameSize value="0x02" type="byte" />
+          <bBitResolution value="0x10" type="byte" />
+          <bSamFreqType value="0x01" type="byte" />
+          <tSamFreq1 value="0xC0" type="byte" />
+          <tSamFreq2 value="0x005D" type="short" />
+        </TypeformatDescriptor>
+        <StandardendpointDescriptor alias="Standard AS Endpoint Descriptor">
+          <bLength value="0x09" type="byte" />
+          <bDescriptorType value="0x05" type="byte" />
+          <bEndpointAddress value="0x86" type="byte" />
+          <bmAttributes value="0x05" type="byte" />
+          <wMaxPacketSize value="0x0040" type="short" />
+          <bInterval value="0x04" type="byte" />
+          <bRefresh value="0x00" type="byte" />
+          <bSyncAddress value="0x00" type="byte" />
+        </StandardendpointDescriptor>
+        <classSpecificendpointDescriptor alias="Class-specific AS Endpoint Descriptor">
+          <bLength value="0x07" type="byte" />
+          <bDescriptorType value="0x25" type="byte" />
+          <bDescriptorSubType value="0x01" type="byte" />
+          <bmAttributes value="0x01" type="byte" />
+          <bLockDelayUnits value="0x00" type="byte" />
+          <wLockDelay value="0x0000" type="short" />
+        </classSpecificendpointDescriptor>
+      </alternateSetting>
+      <alternateSetting alias="AlternateSetting">
+        <interfaceDescriptor alias="Standard AS Interface 4, AlternateSetting 3">
+          <bLength value="0x09" type="byte" />
+          <bDescriptorType value="0x04" type="byte" />
+          <bInterfaceNumber value="0x04" type="byte" />
+          <bAlternateSetting value="0x03" type="byte" />
+          <bNumEndpoints value="0x01" type="byte" />
+          <bInterfaceClass value="0x01" type="byte" />
+          <bInterfaceSubClass value="0x02" type="byte" />
+          <bInterfaceProtocol value="0x00" type="byte" />
+          <iInterface value="0x00" type="byte" />
+        </interfaceDescriptor>
+        <ClassSpecificinterfaceDescriptor alias="Class-specific AS General Interface Descriptor">
+          <bLength value="0x07" type="byte" />
+          <bDescriptorType value="0x24" type="byte" />
+          <bDescriptorSubType value="0x01" type="byte" />
+          <bTerminalLink value="0x03" type="byte" />
+          <bDelay value="0x01" type="byte" />
+          <wFormatTag value="0x0001" type="short" />
+        </ClassSpecificinterfaceDescriptor>
+        <TypeformatDescriptor alias="Type I format Type Descriptor">
+          <bLength value="0x0b" type="byte" />
+          <bDescriptorType value="0x24" type="byte" />
+          <bDescriptorSubType value="0x02" type="byte" />
+          <bFormatType value="0x01" type="byte" />
+          <bNrChannels value="0x01" type="byte" />
+          <bSubFrameSize value="0x02" type="byte" />
+          <bBitResolution value="0x10" type="byte" />
+          <bSamFreqType value="0x01" type="byte" />
+          <tSamFreq1 value="0xC0" type="byte" />
+          <tSamFreq2 value="0x005D" type="short" />
+        </TypeformatDescriptor>
+        <StandardendpointDescriptor alias="Standard AS Endpoint Descriptor">
+          <bLength value="0x09" type="byte" />
+          <bDescriptorType value="0x05" type="byte" />
+          <bEndpointAddress value="0x86" type="byte" />
+          <bmAttributes value="0x05" type="byte" />
+          <wMaxPacketSize value="0x0060" type="short" />
+          <bInterval value="0x04" type="byte" />
+          <bRefresh value="0x00" type="byte" />
+          <bSyncAddress value="0x00" type="byte" />
+        </StandardendpointDescriptor>
+        <classSpecificendpointDescriptor alias="Class-specific AS Endpoint Descriptor">
+          <bLength value="0x07" type="byte" />
+          <bDescriptorType value="0x25" type="byte" />
+          <bDescriptorSubType value="0x01" type="byte" />
+          <bmAttributes value="0x01" type="byte" />
+          <bLockDelayUnits value="0x00" type="byte" />
+          <wLockDelay value="0x0000" type="short" />
+        </classSpecificendpointDescriptor>
+      </alternateSetting>
+      <alternateSetting alias="AlternateSetting">
+        <interfaceDescriptor alias="Standard AS Interface 4, AlternateSetting 4">
+          <bLength value="0x09" type="byte" />
+          <bDescriptorType value="0x04" type="byte" />
+          <bInterfaceNumber value="0x04" type="byte" />
+          <bAlternateSetting value="0x04" type="byte" />
+          <bNumEndpoints value="0x01" type="byte" />
+          <bInterfaceClass value="0x01" type="byte" />
+          <bInterfaceSubClass value="0x02" type="byte" />
+          <bInterfaceProtocol value="0x00" type="byte" />
+          <iInterface value="0x00" type="byte" />
+        </interfaceDescriptor>
+        <ClassSpecificinterfaceDescriptor alias="Class-specific AS General Interface Descriptor">
+          <bLength value="0x07" type="byte" />
+          <bDescriptorType value="0x24" type="byte" />
+          <bDescriptorSubType value="0x01" type="byte" />
+          <bTerminalLink value="0x03" type="byte" />
+          <bDelay value="0x01" type="byte" />
+          <wFormatTag value="0x0001" type="short" />
+        </ClassSpecificinterfaceDescriptor>
+        <TypeformatDescriptor alias="Type I format Type Descriptor">
+          <bLength value="0x0b" type="byte" />
+          <bDescriptorType value="0x24" type="byte" />
+          <bDescriptorSubType value="0x02" type="byte" />
+          <bFormatType value="0x01" type="byte" />
+          <bNrChannels value="0x01" type="byte" />
+          <bSubFrameSize value="0x02" type="byte" />
+          <bBitResolution value="0x10" type="byte" />
+          <bSamFreqType value="0x01" type="byte" />
+          <tSamFreq1 value="0x80" type="byte" />
+          <tSamFreq2 value="0x00bb" type="short" />
+        </TypeformatDescriptor>
+        <StandardendpointDescriptor alias="Standard AS Endpoint Descriptor">
+          <bLength value="0x09" type="byte" />
+          <bDescriptorType value="0x05" type="byte" />
+          <bEndpointAddress value="0x86" type="byte" />
+          <bmAttributes value="0x05" type="byte" />
+          <wMaxPacketSize value="0x0080" type="short" />
+          <bInterval value="0x04" type="byte" />
+          <bRefresh value="0x00" type="byte" />
+          <bSyncAddress value="0x00" type="byte" />
+        </StandardendpointDescriptor>
+        <classSpecificendpointDescriptor alias="Class-specific AS Endpoint Descriptor">
+          <bLength value="0x07" type="byte" />
+          <bDescriptorType value="0x25" type="byte" />
+          <bDescriptorSubType value="0x01" type="byte" />
+          <bmAttributes value="0x01" type="byte" />
+          <bLockDelayUnits value="0x00" type="byte" />
+          <wLockDelay value="0x0000" type="short" />
+        </classSpecificendpointDescriptor>
+      </alternateSetting>
+      <alternateSetting alias="AlternateSetting">
+        <interfaceDescriptor alias="Standard AS Interface 4, AlternateSetting 5">
+          <bLength value="0x09" type="byte" />
+          <bDescriptorType value="0x04" type="byte" />
+          <bInterfaceNumber value="0x04" type="byte" />
+          <bAlternateSetting value="0x05" type="byte" />
+          <bNumEndpoints value="0x01" type="byte" />
+          <bInterfaceClass value="0x01" type="byte" />
+          <bInterfaceSubClass value="0x02" type="byte" />
+          <bInterfaceProtocol value="0x00" type="byte" />
+          <iInterface value="0x00" type="byte" />
+        </interfaceDescriptor>
+        <ClassSpecificinterfaceDescriptor alias="Class-specific AS General Interface Descriptor">
+          <bLength value="0x07" type="byte" />
+          <bDescriptorType value="0x24" type="byte" />
+          <bDescriptorSubType value="0x01" type="byte" />
+          <bTerminalLink value="0x03" type="byte" />
+          <bDelay value="0x01" type="byte" />
+          <wFormatTag value="0x0001" type="short" />
+        </ClassSpecificinterfaceDescriptor>
+        <TypeformatDescriptor alias="Type I format Type Descriptor">
+          <bLength value="0x0b" type="byte" />
+          <bDescriptorType value="0x24" type="byte" />
+          <bDescriptorSubType value="0x02" type="byte" />
+          <bFormatType value="0x01" type="byte" />
+          <bNrChannels value="0x01" type="byte" />
+          <bSubFrameSize value="0x02" type="byte" />
+          <bBitResolution value="0x10" type="byte" />
+          <bSamFreqType value="0x01" type="byte" />
+          <tSamFreq1 value="0x80" type="byte" />
+          <tSamFreq2 value="0x00bb" type="short" />
+        </TypeformatDescriptor>
+        <StandardendpointDescriptor alias="Standard AS Endpoint Descriptor">
+          <bLength value="0x09" type="byte" />
+          <bDescriptorType value="0x05" type="byte" />
+          <bEndpointAddress value="0x86" type="byte" />
+          <bmAttributes value="0x05" type="byte" />
+          <wMaxPacketSize value="0x00A0" type="short" />
+          <bInterval value="0x04" type="byte" />
+          <bRefresh value="0x00" type="byte" />
+          <bSyncAddress value="0x00" type="byte" />
+        </StandardendpointDescriptor>
+        <classSpecificendpointDescriptor alias="Class-specific AS Endpoint Descriptor">
+          <bLength value="0x07" type="byte" />
+          <bDescriptorType value="0x25" type="byte" />
+          <bDescriptorSubType value="0x01" type="byte" />
+          <bmAttributes value="0x01" type="byte" />
+          <bLockDelayUnits value="0x00" type="byte" />
+          <wLockDelay value="0x0000" type="short" />
+        </classSpecificendpointDescriptor>
+      </alternateSetting>
+      <alternateSetting alias="AlternateSetting">
+        <interfaceDescriptor alias="Standard AS Interface 4, AlternateSetting 6">
+          <bLength value="0x09" type="byte" />
+          <bDescriptorType value="0x04" type="byte" />
+          <bInterfaceNumber value="0x04" type="byte" />
+          <bAlternateSetting value="0x06" type="byte" />
+          <bNumEndpoints value="0x01" type="byte" />
+          <bInterfaceClass value="0x01" type="byte" />
+          <bInterfaceSubClass value="0x02" type="byte" />
+          <bInterfaceProtocol value="0x00" type="byte" />
+          <iInterface value="0x00" type="byte" />
+        </interfaceDescriptor>
+        <ClassSpecificinterfaceDescriptor alias="Class-specific AS General Interface Descriptor">
+          <bLength value="0x07" type="byte" />
+          <bDescriptorType value="0x24" type="byte" />
+          <bDescriptorSubType value="0x01" type="byte" />
+          <bTerminalLink value="0x03" type="byte" />
+          <bDelay value="0x01" type="byte" />
+          <wFormatTag value="0x0001" type="short" />
+        </ClassSpecificinterfaceDescriptor>
+        <TypeformatDescriptor alias="Type I format Type Descriptor">
+          <bLength value="0x0b" type="byte" />
+          <bDescriptorType value="0x24" type="byte" />
+          <bDescriptorSubType value="0x02" type="byte" />
+          <bFormatType value="0x01" type="byte" />
+          <bNrChannels value="0x01" type="byte" />
+          <bSubFrameSize value="0x02" type="byte" />
+          <bBitResolution value="0x10" type="byte" />
+          <bSamFreqType value="0x01" type="byte" />
+          <tSamFreq1 value="0x80" type="byte" />
+          <tSamFreq2 value="0x00bb" type="short" />
+        </TypeformatDescriptor>
+        <StandardendpointDescriptor alias="Standard AS Endpoint Descriptor">
+          <bLength value="0x09" type="byte" />
+          <bDescriptorType value="0x05" type="byte" />
+          <bEndpointAddress value="0x86" type="byte" />
+          <bmAttributes value="0x05" type="byte" />
+          <wMaxPacketSize value="0x00C0" type="short" />
+          <bInterval value="0x04" type="byte" />
+          <bRefresh value="0x00" type="byte" />
+          <bSyncAddress value="0x00" type="byte" />
+        </StandardendpointDescriptor>
+        <classSpecificendpointDescriptor alias="Class-specific AS Endpoint Descriptor">
+          <bLength value="0x07" type="byte" />
+          <bDescriptorType value="0x25" type="byte" />
+          <bDescriptorSubType value="0x01" type="byte" />
+          <bmAttributes value="0x01" type="byte" />
+          <bLockDelayUnits value="0x00" type="byte" />
+          <wLockDelay value="0x0000" type="short" />
+        </classSpecificendpointDescriptor>
+      </alternateSetting>
+      <alternateSetting alias="AlternateSetting">
+        <interfaceDescriptor alias="Standard AS Interface 4, AlternateSetting 7">
+          <bLength value="0x09" type="byte" />
+          <bDescriptorType value="0x04" type="byte" />
+          <bInterfaceNumber value="0x04" type="byte" />
+          <bAlternateSetting value="0x07" type="byte" />
+          <bNumEndpoints value="0x01" type="byte" />
+          <bInterfaceClass value="0x01" type="byte" />
+          <bInterfaceSubClass value="0x02" type="byte" />
+          <bInterfaceProtocol value="0x00" type="byte" />
+          <iInterface value="0x00" type="byte" />
+        </interfaceDescriptor>
+        <ClassSpecificinterfaceDescriptor alias="Class-specific AS General Interface Descriptor">
+          <bLength value="0x07" type="byte" />
+          <bDescriptorType value="0x24" type="byte" />
+          <bDescriptorSubType value="0x01" type="byte" />
+          <bTerminalLink value="0x03" type="byte" />
+          <bDelay value="0x01" type="byte" />
+          <wFormatTag value="0x0001" type="short" />
+        </ClassSpecificinterfaceDescriptor>
+        <TypeformatDescriptor alias="Type I format Type Descriptor">
+          <bLength value="0x0b" type="byte" />
+          <bDescriptorType value="0x24" type="byte" />
+          <bDescriptorSubType value="0x02" type="byte" />
+          <bFormatType value="0x01" type="byte" />
+          <bNrChannels value="0x01" type="byte" />
+          <bSubFrameSize value="0x02" type="byte" />
+          <bBitResolution value="0x10" type="byte" />
+          <bSamFreqType value="0x01" type="byte" />
+          <tSamFreq1 value="0x80" type="byte" />
+          <tSamFreq2 value="0x00bb" type="short" />
+        </TypeformatDescriptor>
+        <StandardendpointDescriptor alias="Standard AS Endpoint Descriptor">
+          <bLength value="0x09" type="byte" />
+          <bDescriptorType value="0x05" type="byte" />
+          <bEndpointAddress value="0x86" type="byte" />
+          <bmAttributes value="0x05" type="byte" />
+          <wMaxPacketSize value="0x00E0" type="short" />
+          <bInterval value="0x04" type="byte" />
+          <bRefresh value="0x00" type="byte" />
+          <bSyncAddress value="0x00" type="byte" />
+        </StandardendpointDescriptor>
+        <classSpecificendpointDescriptor alias="Class-specific AS Endpoint Descriptor">
+          <bLength value="0x07" type="byte" />
+          <bDescriptorType value="0x25" type="byte" />
+          <bDescriptorSubType value="0x01" type="byte" />
+          <bmAttributes value="0x01" type="byte" />
+          <bLockDelayUnits value="0x00" type="byte" />
+          <wLockDelay value="0x0000" type="short" />
+        </classSpecificendpointDescriptor>
+      </alternateSetting>
+    </AudioStreamInterface>
+  </audioDescriptor>
+</usbDescriptor>

@@ -1,0 +1,689 @@
+#/**************************************************************************
+# *
+# *       Copyright (c) 2002-2008 by Sunplus mMedia Inc., Ltd.
+# *
+# *  This software is copyrighted by and is the property of Sunplus mMedia
+# *  Inc., Ltd. All rights are reserved by Sunplus mMedia Inc., Ltd.
+# *  This software may only be used in accordance with the corresponding
+# *  license agreement. Any unauthorized use, duplication, distribution,
+# *  or disclosure of this software is expressly forbidden.
+# *
+# *  This Copyright notice MUST not be removed or modified without prior
+# *  written consent of Sunplus mMedia Inc., Ltd.
+# *
+# *  Sunplus mMedia Inc., Ltd. reserves the right to modify this software
+# *  without notice.
+# *
+# *  Sunplus mMedia Inc., Ltd.
+# *  19-1, Innovation First Road, Science-Based Industrial Park,
+# *  Hsin-Chu, Taiwan, R.O.C.
+# *
+# *  File Description:
+# *
+# **************************************************************************/
+#init empty simple flavor variables before any include
+CFLAGS :=
+ASFLAGS :=
+CFG_DEFS :=
+CFG_HEADERS :=
+LDFLAGS :=
+LDFLAGS_BSS :=
+RST_OBJS :=
+INI_OBJS :=
+EXT_OBJS :=
+GEN_OBJS :=
+CUSTOM_SUBLIBS :=
+CUSTOM_SUBDIRS :=
+CUSTOM_LIBS :=
+PRJ_LIB :=
+SUBLIBS :=
+SUBDIRS :=
+LIBS :=
+BIN :=
+CDSP_BIN :=
+DAT8 :=
+DAT16 :=
+DAT32 :=
+PRJ_BIN :=
+PRJ_CIQ_BIN :=
+PRJ_DAT8 :=
+PRJ_DAT16 :=
+PRJ_DAT32 :=
+SHARED_BIN :=
+SHARED_DAT8 :=
+SHARED_DAT16 :=
+SHARED_DAT32 :=
+SHARED2_BIN :=
+SHARED2_DAT8 :=
+SHARED2_DAT16 :=
+SHARED2_DAT32 :=
+SHARED3_BIN :=
+SHARED3_DAT8 :=
+SHARED3_DAT16 :=
+SHARED3_DAT32 :=
+
+
+# include & environment
+HOST_MAKE := YES
+HOST_ROOT := .
+TOOL_PATH       := ../tool
+RES_PATH        :=resource
+RES_CATHYWARE_PATH :=customization/hostfw/cathyware/resource
+RO_RES_PATH     := $(RES_PATH)/A/RO_RES
+
+include $(HOST_ROOT)/host.def
+ifndef PLATFORM_PATH
+PLATFORM_PATH   := $(PLATFORM)
+endif
+PLATFORM_ROOT   := ../$(PLATFORM_PATH)
+
+# output
+DEST_DIR        := _$(PRJ)
+DOWN_PATH       := $(DEST_DIR)/download
+RO_DOWN_PATH    := $(DOWN_PATH)/A/RO_RES
+USER_DOWN_PATH  := $(DOWN_PATH)/B/USER_RES
+SYS_RES_PATH    := $(PLATFORM_ROOT)/resource
+FT_DB_PATH      := A/RO_RES/FTRACK
+
+# PLATFORM = 5210 or spca5310 which is defined in tool_chain.def
+include $(PLATFORM_ROOT)/tool_chain.def
+
+#command
+CP := cp -f
+MV := mv -f
+RM := rm -f
+RMR := rm -rf
+MKDIR := mkdir -p -m 777
+ECHO := echo
+CAT := cat
+SENSOR_VER_SET := ./helper.sh sensor_vision
+#---------------------------------------------------------------------------
+# Default definition:
+#---------------------------------------------------------------------------
+CDSPPARA_PATH := $(RO_RES_PATH)
+DOWN_EVTBL_PATH := $(RO_DOWN_PATH)
+
+ifeq (,$(wildcard $(DEST_DIR)/sensor.def))
+-include $(DEST_DIR)/sensor.def
+include $(HOST_ROOT)/sensor.def.tmpl
+else
+include $(DEST_DIR)/sensor.def
+endif
+
+#---------------------------------------------------------------------------
+# Intermediate objects
+#---------------------------------------------------------------------------
+CFG_DEFS += sensor.def
+
+BUILD_CFG_FILES := $(addprefix $(DEST_DIR)/,$(CFG_DEFS) $(CFG_HEADERS))
+
+
+##### ftrack db
+# specifying "NO" not to install ftrack db
+ifneq (NO,$(FT_DB_CFG))
+# default COMPLETE db, selecting COMPLETE, SIMPLE, NO
+ifndef FT_DB_CFG
+FT_DB_CFG := COMPLETE
+endif
+FT_SRC_DIR := $(SYS_RES_PATH)/$(FT_DB_PATH)
+FT_BIN := $(wildcard $(FT_SRC_DIR)/FTRACK.$(FT_DB_CFG).BIN)
+ifneq (,$(FT_BIN))
+FT_DOWN := $(DOWN_PATH)/$(FT_DB_PATH)/FTRACK.BIN
+endif
+endif
+ifeq ($(CVR_FCWS), YES)
+FT_SRC_DIR := $(SYS_RES_PATH)/$(FT_DB_PATH)
+FCWS_BIN := $(wildcard $(FT_SRC_DIR)/FCWS.BIN)
+FCWS_DOWN := $(DOWN_PATH)/$(FT_DB_PATH)/FCWS.BIN
+endif
+
+#BIN += \
+#	A/RO_RES/YGAMMA.BIN \
+#	A/RO_RES/EDGEGLUT.BIN
+
+DAT8 += \
+	A/RO_RES/AECFG.DAT
+
+CDSPPARA := CDSP$(CHIP).BIN
+
+DAT16 += \
+	A/ADF/ADF.DAT \
+	B/UDF/UDF.DAT
+
+CDSP_BIN += \
+	$(CDSPPARA) \
+	AWBCFG.BIN
+#	AWBCTT.BIN AALUT.BIN \
+#	LSC.BIN ARD.BIN LDC.BIN CA.BIN LUT3D.BIN HSC.BIN AHD.BIN
+
+# AFE CMD files merged into AFECMD.BIN
+AFE_FIF_BIN :=
+AFE_ALL_DOWN :=
+
+SENSOR_RES :=
+
+
+ifdef EXPTBL
+SENSOR_RES  += $(EXPTBL)
+AFE_FIF_BIN += EXPOSURE.BIN
+endif
+
+ifdef AGCTBL
+SENSOR_RES  += $(AGCTBL)
+AFE_FIF_BIN += AGC.BIN
+endif
+
+ifdef AFEVIEWTBL
+  ifdef AFEVIEWTBL_SP5K
+    SENSOR_RES  += $(AFEVIEWTBL_SP5K)
+  else
+    SENSOR_RES  += $(AFEVIEWTBL)
+  endif
+AFE_CMD_BIN += AFEVIEW.BIN
+endif
+ifdef AFEQVGAVIEWTBL
+  ifdef AFEQVGAVIEWTBL_SP5K
+    SENSOR_RES  += $(AFEQVGAVIEWTBL_SP5K)
+  else
+    SENSOR_RES  += $(AFEQVGAVIEWTBL)
+  endif
+AFE_CMD_BIN += AFEVIEW1.BIN
+endif
+ifdef AFEVIEW2TBL
+  ifdef AFEVIEW2TBL_SP5K
+    SENSOR_RES  += $(AFEVIEW2TBL_SP5K)
+  else
+    SENSOR_RES  += $(AFEVIEW2TBL)
+  endif
+AFE_CMD_BIN += AFEVIEW2.BIN
+endif
+ifdef AFEVIEW3TBL
+  ifdef AFEVIEW3TBL_SP5K
+    SENSOR_RES  += $(AFEVIEW3TBL_SP5K)
+  else
+    SENSOR_RES  += $(AFEVIEW3TBL)
+  endif
+AFE_CMD_BIN += AFEVIEW3.BIN
+endif
+ifdef AFEVIEW4TBL
+  ifdef AFEVIEW4TBL_SP5K
+    SENSOR_RES  += $(AFEVIEW4TBL_SP5K)
+  else
+    SENSOR_RES  += $(AFEVIEW4TBL)
+  endif
+AFE_CMD_BIN += AFEVIEW4.BIN
+endif
+ifdef AFESNAPTBL
+  ifdef AFESNAPTBL_SP5K
+    SENSOR_RES  += $(AFESNAPTBL_SP5K)
+  else
+    SENSOR_RES  += $(AFESNAPTBL)
+  endif
+AFE_CMD_BIN += AFESNAP.BIN
+endif
+ifdef AFESNAP1TBL
+  ifdef AFESNAP1TBL_SP5K
+    SENSOR_RES  += $(AFESNAP1TBL_SP5K)
+  else
+    SENSOR_RES  += $(AFESNAP1TBL)
+  endif
+AFE_CMD_BIN += AFESNAP1.BIN
+endif
+ifdef AFESNAP2TBL
+  ifdef AFESNAP2TBL_SP5K
+    SENSOR_RES  += $(AFESNAP2TBL_SP5K)
+  else
+    SENSOR_RES  += $(AFESNAP2TBL)
+  endif
+AFE_CMD_BIN += AFESNAP2.BIN
+endif
+ifdef AFERESUMETBL
+  ifdef AFERESUMETBL_SP5K
+    SENSOR_RES  += $(AFERESUMETBL_SP5K)
+  else
+    SENSOR_RES  += $(AFERESUMETBL)
+  endif
+  endifAFE_CMD_BIN += AFERESUM.BIN 
+endif
+ifdef AFESUSPENDTBL
+  ifdef AFESUSPENDTBL_SP5K
+    SENSOR_RES  += $(AFESUSPENDTBL_SP5K)
+  else
+    SENSOR_RES  += $(AFESUSPENDTBL)
+  endif
+AFE_CMD_BIN += AFESUSP.BIN 
+endif
+
+ifdef AFECALI0TBL 
+  ifdef AFECALI0TBL_SP5K
+    SENSOR_RES  += $(AFECALI0TBL_SP5K)
+  else
+    SENSOR_RES  += $(AFECALI0TBL)
+  endif
+AFE_CMD_BIN += AFECAL0.BIN 
+endif
+ifdef AFECALI10TBL 
+  ifdef AFECALI10TBL_SP5K
+    SENSOR_RES  += $(AFECALI10TBL_SP5K)
+  else
+    SENSOR_RES  += $(AFECALI10TBL)
+  endif
+AFE_CMD_BIN += AFECAL10.BIN 
+endif
+ifdef AFECALI11TBL 
+  ifdef AFECALI11TBL_SP5K
+    SENSOR_RES  += $(AFECALI11TBL_SP5K)
+  else
+    SENSOR_RES  += $(AFECALI11TBL)
+  endif
+AFE_CMD_BIN += AFECAL11.BIN 
+endif
+ifdef AFECALI12TBL 
+  ifdef AFECALI12TBL_SP5K
+    SENSOR_RES  += $(AFECALI12TBL_SP5K)
+  else
+    SENSOR_RES  += $(AFECALI12TBL)
+  endif
+AFE_CMD_BIN += AFECAL12.BIN 
+endif
+
+
+AFE_FIF_BIN += $(AFE_CMD_BIN)
+## AFEINIT.BIN is typically load and disposed, set after assigning AFE_FIF_BIN
+ifdef AFEINITTBL
+  ifdef AFEINITTBL_SP5K
+    SENSOR_RES  += $(AFEINITTBL_SP5K)
+  else
+    SENSOR_RES  += $(AFEINITTBL)
+  endif
+AFE_CMD_BIN += AFEINIT.BIN
+AFEINIT_DOWN := $(addprefix $(DOWN_EVTBL_PATH)/,AFEINIT.BIN)
+endif
+
+ifdef AFEINIT1TBL
+  ifdef AFEINIT1TBL_SP5K
+    SENSOR_RES  += $(AFEINIT1TBL_SP5K)
+  else
+    SENSOR_RES  += $(AFEINIT1TBL)
+  endif
+AFE_CMD_BIN += AFEINIT1.BIN
+AFEINIT_DOWN1 := $(addprefix $(DOWN_EVTBL_PATH)/,AFEINIT1.BIN)
+endif
+
+ifdef AFECALITBL
+  ifdef AFECALITBL_SP5K
+    SENSOR_RES  += $(AFECALITBL_SP5K)
+  else
+    SENSOR_RES  += $(AFECALITBL)
+  endif
+AFE_CMD_BIN += AFECALI.BIN
+ AFEINIT_DOWN2 := $(addprefix $(DOWN_EVTBL_PATH)/,AFECALI.BIN)
+endif
+
+AFE_ALL_DOWN += $(AFEINIT_DOWN)
+
+AFE_ALL_DOWN += $(addprefix $(DOWN_EVTBL_PATH)/,$(AFE_FIF_BIN))
+
+# IQ files merged into IQ.BIN
+IQ_FIF_BIN :=	$(CDSPPARA)
+
+# display res files merged into DISP.BIN
+DISP_FIF_BIN := DISPGAMA.BIN DISPMAX.BIN DISPGAM0.BIN DISPMAX0.BIN
+
+# cold data files merged into COLD.BIN
+#COLD_FIF_BIN :=	CALIB.BIN
+
+ifneq (,$(AFE_FIF_BIN))
+AFE_BIN_DOWN := $(addprefix $(DOWN_EVTBL_PATH)/,$(AFE_FIF_BIN))
+AFE_FIF := $(DOWN_EVTBL_PATH)/AFECMD.BIN
+endif
+
+# small wave data merge into SFX.BIN, need libav.a change
+ifneq (,$(APPUI_WAV_BIN))
+WAV_BIN_DOWN := $(addprefix $(RO_DOWN_PATH)/WAV/,$(APPUI_WAV_BIN))
+WAV_FIF := $(RO_DOWN_PATH)/WAV/AUDIO.BIN
+endif
+
+ifneq (,$(IQ_FIF_BIN))
+IQ_BIN_DOWN := $(addprefix $(RO_DOWN_PATH)/,$(IQ_FIF_BIN))
+IQ_FIF := $(RO_DOWN_PATH)/IQ.BIN
+endif
+
+ifneq (,$(DISP_FIF_BIN))
+DISP_BIN_DOWN := $(addprefix $(RO_DOWN_PATH)/DISP/,$(DISP_FIF_BIN))
+DISP_FIF := $(RO_DOWN_PATH)/DISP/DISP.BIN
+endif
+
+ifneq (,$(APPUI_COLD_BIN))
+COLD_BIN_DOWN := $(addprefix $(RO_DOWN_PATH)/CALIB/,$(APPUI_COLD_BIN))
+COLD_FIF := $(RO_DOWN_PATH)/CALIB/COLD.BIN
+endif
+
+ifneq (,$(APPUI_FIF_BIN))
+APPUI_BIN_DOWN := $(addprefix $(USER_DOWN_PATH)/,$(APPUI_FIF_BIN))
+APPUI_FIF := $(USER_DOWN_PATH)/UIDATA.BIN
+endif
+
+ifneq (,$(APPIQ_FIF_BIN))
+APPIQ_BIN_DOWN := $(addprefix $(RO_DOWN_PATH)/IQ/$(CHIP)/,$(APPIQ_FIF_BIN))
+APPIQ_FIF := $(RO_DOWN_PATH)/IQ/APPIQ.BIN
+endif
+
+ifneq (,$(LENSIQ_FIF_BIN))
+LENSIQ_BIN_DOWN := $(addprefix $(RO_DOWN_PATH)/IQ/$(CHIP)/,$(LENSIQ_FIF_BIN))
+LENSIQ_FIF := $(RO_DOWN_PATH)/IQ/LENSIQ.BIN
+endif
+
+ifneq (,$(CIQ_FIF_BIN))
+CIQ_BIN_DOWN := $(addprefix $(RO_DOWN_PATH)/IQ/$(CHIP)/,$(CIQ_FIF_BIN))
+CIQ_FIF := $(RO_DOWN_PATH)/IQ/CIQ.BIN
+endif
+
+# max 8 FIF's supported
+ALL_FIF :=
+ALL_FIF += $(AFE_FIF)
+ALL_FIF += $(WAV_FIF)
+ALL_FIF += $(IQ_FIF)
+ALL_FIF += $(DISP_FIF)
+ALL_FIF += $(COLD_FIF)
+ALL_FIF += $(APPUI_FIF)
+ALL_FIF += $(APPIQ_FIF)
+ALL_FIF += $(LENSIQ_FIF)
+ALL_FIF += $(CIQ_FIF)
+
+# resource derived intermediate variables
+CDSP_DOWN := $(addprefix $(RO_DOWN_PATH)/, $(CDSP_BIN))
+BIN_DOWN := $(addprefix $(DOWN_PATH)/, $(BIN))
+DAT8_DOWN := $(addprefix $(DOWN_PATH)/,$(DAT8:%.DAT=%.BIN))
+DAT16_DOWN := $(addprefix $(DOWN_PATH)/,$(DAT16:%.DAT=%.BIN))
+DAT32_DOWN := $(addprefix $(DOWN_PATH)/,$(DAT32:%.DAT=%.BIN))
+PRJ_BIN_DOWN := $(addprefix $(DOWN_PATH)/,$(PRJ_BIN))
+PRJ_BIN_CIQ_DOWN := $(addprefix $(DOWN_PATH)/,$(PRJ_CIQ_BIN))
+PRJ_DAT8_DOWN := $(addprefix $(DOWN_PATH)/,$(PRJ_DAT8:%.DAT=%.BIN))
+PRJ_DAT16_DOWN := $(addprefix $(DOWN_PATH)/,$(PRJ_DAT16:%.DAT=%.BIN))
+PRJ_DAT32_DOWN := $(addprefix $(DOWN_PATH)/,$(PRJ_DAT32:%.DAT=%.BIN))
+SHARED_BIN_DOWN := $(addprefix $(DOWN_PATH)/,$(SHARED_BIN))
+SHARED_DAT8_DOWN := $(addprefix $(DOWN_PATH)/,$(SHARED_DAT8:%.DAT=%.BIN))
+SHARED_DAT16_DOWN := $(addprefix $(DOWN_PATH)/,$(SHARED_DAT16:%.DAT=%.BIN))
+SHARED_DAT32_DOWN := $(addprefix $(DOWN_PATH)/,$(SHARED_DAT32:%.DAT=%.BIN))
+SHARED2_BIN_DOWN := $(addprefix $(DOWN_PATH)/,$(SHARED2_BIN))
+SHARED2_DAT8_DOWN := $(addprefix $(DOWN_PATH)/,$(SHARED2_DAT8:%.DAT=%.BIN))
+SHARED2_DAT16_DOWN := $(addprefix $(DOWN_PATH)/,$(SHARED2_DAT16:%.DAT=%.BIN))
+SHARED2_DAT32_DOWN := $(addprefix $(DOWN_PATH)/,$(SHARED2_DAT32:%.DAT=%.BIN))
+SHARED3_BIN_DOWN := $(addprefix $(DOWN_PATH)/,$(SHARED3_BIN))
+SHARED3_DAT8_DOWN := $(addprefix $(DOWN_PATH)/,$(SHARED3_DAT8:%.DAT=%.BIN))
+SHARED3_DAT16_DOWN := $(addprefix $(DOWN_PATH)/,$(SHARED3_DAT16:%.DAT=%.BIN))
+SHARED3_DAT32_DOWN := $(addprefix $(DOWN_PATH)/,$(SHARED3_DAT32:%.DAT=%.BIN))
+
+ALL_DOWN :=
+ALL_DOWN += $(AFE_ALL_DOWN)
+ALL_DOWN += $(FT_DOWN) $(FCWS_DOWN) $(CDSP_DOWN) $(BIN_DOWN) $(DAT8_DOWN) $(DAT16_DOWN) $(DAT32_DOWN)
+ALL_DOWN += $(PRJ_BIN_DOWN) $(PRJ_BIN_CIQ_DOWN) $(PRJ_DAT8_DOWN) $(PRJ_DAT16_DOWN) $(PRJ_DAT32_DOWN)
+ALL_DOWN += $(SHARED_BIN_DOWN) $(SHARED_DAT8_DOWN) $(SHARED_DAT16_DOWN) $(SHARED_DAT32_DOWN)
+ALL_DOWN += $(SHARED2_BIN_DOWN) $(SHARED2_DAT8_DOWN) $(SHARED2_DAT16_DOWN) $(SHARED2_DAT32_DOWN)
+ALL_DOWN += $(SHARED3_BIN_DOWN) $(SHARED3_DAT8_DOWN) $(SHARED3_DAT16_DOWN) $(SHARED3_DAT32_DOWN)
+
+ALL_BIN := $(FT_DOWN) $(FCWS_DOWN) $(CDSP_DOWN) $(BIN_DOWN) $(PRJ_BIN_DOWN) $(PRJ_BIN_CIQ_DOWN) $(SHARED_BIN_DOWN) $(SHARED2_BIN_DOWN) $(SHARED3_BIN_DOWN)
+
+ALL_DAT8 :=
+ifneq (,$(EXPTBL))
+ALL_DAT8 += $(DOWN_EVTBL_PATH)/EXPOSURE.BIN
+endif
+ifneq (,$(AGCTBL))
+ALL_DAT8 += $(DOWN_EVTBL_PATH)/AGC.BIN
+endif
+ALL_DAT8 += $(DAT8_DOWN) $(PRJ_DAT8_DOWN) $(SHARED_DAT8_DOWN) $(SHARED2_DAT8_DOWN) $(SHARED3_DAT8_DOWN)
+
+ALL_DAT16 := $(DAT16_DOWN) $(PRJ_DAT16_DOWN) $(SHARED_DAT16_DOWN) $(SHARED2_DAT16_DOWN) $(SHARED3_DAT16_DOWN)
+ALL_DAT32 := $(DAT32_DOWN) $(PRJ_DAT32_DOWN) $(SHARED_DAT32_DOWN) $(SHARED2_DAT32_DOWN) $(SHARED3_DAT32_DOWN)
+
+AFE_CMD_DAT8 := $(addprefix $(DOWN_EVTBL_PATH)/,$(AFE_CMD_BIN))
+
+
+# FIC supporting
+FIC_ALL_BIN :=
+#FIC_ALL_BIN += $(AFEINIT_DOWN)
+#FIC_ALL_BIN += $(AFE_FIF)
+#FIC_ALL_BIN += $(IQ_FIF)
+#FIC_ALL_BIN += $(DISP_FIF)
+#FIC_ALL_BIN += $(SFX_FIF)
+#FIC_ALL_BIN += $(APPIQ_FIF)
+#FIC_ALL_BIN += $(LENSIQ_FIF) # lens iq including lsc calibration data
+#FIC_ALL_BIN += $(PTSTAMP_FIF)
+
+DOWN_FIC := $(DOWN_PATH)/FIC.BIN
+
+#---------------------------------------------------------------------------
+# Explicit rules
+#---------------------------------------------------------------------------
+.PHONY: all resource
+all: resource
+
+.PHONY: RES_FILES RES_FIF RES_FIC
+resource: RES_FILES RES_FIF RES_FIC
+	@$(MKDIR) $(USER_DOWN_PATH)/RES_JPG
+
+RES_FILES: RES_AFEINIT RES_FT RES_STD RES_PRJ RES_SHARED RES_SHARED2 RES_SHARED3
+
+#
+# AGC.BIN & EXPOSURE.BIN
+#
+$(DOWN_EVTBL_PATH)/EXPOSURE.BIN: $(EXPTBL) SENSOR_SYNC
+$(DOWN_EVTBL_PATH)/AGC.BIN: $(AGCTBL) SENSOR_SYNC
+$(DOWN_EVTBL_PATH)/AFEINIT.BIN: $(AFEINITTBL) SENSOR_SYNC
+$(DOWN_EVTBL_PATH)/AFEVIEW.BIN: $(AFEVIEWTBL)
+$(DOWN_EVTBL_PATH)/AFEVIEW1.BIN: $(AFEQVGAVIEWTBL)
+$(DOWN_EVTBL_PATH)/AFEVIEW2.BIN: $(AFEVIEW2TBL)
+$(DOWN_EVTBL_PATH)/AFEVIEW3.BIN: $(AFEVIEW3TBL)
+$(DOWN_EVTBL_PATH)/AFEVIEW4.BIN: $(AFEVIEW4TBL)
+$(DOWN_EVTBL_PATH)/AFESNAP.BIN: $(AFESNAPTBL)
+$(DOWN_EVTBL_PATH)/AFESNAP1.BIN: $(AFESNAP1TBL)
+$(DOWN_EVTBL_PATH)/AFESNAP2.BIN: $(AFESNAP2TBL)
+$(DOWN_EVTBL_PATH)/AFERESUM.BIN: $(AFERESUMETBL)
+
+# AFEINIT is used once and disposed, not to merge to FIF AFECMD.BIN
+.PHONY: RES_AFEINIT
+RES_AFEINIT: $(AFEINIT_DOWN)
+
+#
+# directly under $/$(RES_PATH)/A or $/$(RES_PATH)/B
+#
+.PHONY: RES_STD RES_CDSP RES_BIN RES_DAT8 RES_DAT16 RES_DAT32
+RES_STD: RES_CDSP RES_BIN RES_DAT8 RES_DAT16 RES_DAT32
+RES_CDSP: $(CDSP_DOWN)
+RES_BIN: $(BIN_DOWN)
+RES_DAT8: $(DAT8_DOWN)
+RES_DAT16: $(DAT16_DOWN)
+RES_DAT32: $(DAT32_DOWN)
+$(CDSP_DOWN): $(RO_DOWN_PATH)/%: $(CDSPPARA_PATH)/%
+$(BIN_DOWN): $(DOWN_PATH)/%: $(RES_PATH)/%
+$(DAT8_DOWN): $(DOWN_PATH)/%.BIN: $(RES_PATH)/%.DAT
+$(DAT16_DOWN): $(DOWN_PATH)/%.BIN: $(RES_PATH)/%.DAT
+$(DAT32_DOWN): $(DOWN_PATH)/%.BIN: $(RES_PATH)/%.DAT
+
+#
+# under $/$(RES_PATH)/$(RES_PRJ_PATH)/A or $/$(RES_PATH)/$(RES_PRJ_PATH)/B
+#
+.PHONY: RES_PRJ RES_PRJ_BIN RES_PRJ_CIQ_BIN RES_PRJ_DAT8 RES_PRJ_DAT16 RES_PRJ_DAT32
+RES_PRJ: RES_PRJ_BIN RES_PRJ_CIQ_BIN RES_PRJ_DAT8 RES_PRJ_DAT16 RES_PRJ_DAT32
+RES_PRJ_BIN: $(PRJ_BIN_DOWN)
+RES_PRJ_CIQ_BIN: $(PRJ_BIN_CIQ_DOWN)
+RES_PRJ_DAT8: $(PRJ_DAT8_DOWN)
+RES_PRJ_DAT16: $(PRJ_DAT16_DOWN)
+RES_PRJ_DAT32: $(PRJ_DAT32_DOWN)
+$(PRJ_BIN_DOWN): $(DOWN_PATH)/%: $(RES_CATHYWARE_PATH)/%
+ifeq (, $(wildcard  $(RES_PATH)/$(RES_PRJ_PATH)/$(CATHY_BINPATH)/*.BIN))
+$(PRJ_BIN_CIQ_DOWN): $(DOWN_PATH)/%: $(RES_CATHYWARE_PATH)/%    
+else
+$(PRJ_BIN_CIQ_DOWN): $(DOWN_PATH)/%: $(RES_PATH)/$(RES_PRJ_PATH)/% 
+endif
+#$(PRJ_BIN_DOWN): $(DOWN_PATH)/%: $(RES_PATH)/$(RES_PRJ_PATH)/%
+$(PRJ_DAT8_DOWN): $(DOWN_PATH)/%.BIN: $(RES_PATH)/$(RES_PRJ_PATH)/%.DAT
+$(PRJ_DAT16_DOWN): $(DOWN_PATH)/%.BIN: $(RES_PATH)/$(RES_PRJ_PATH)/%.DAT
+$(PRJ_DAT32_DOWN): $(DOWN_PATH)/%.BIN: $(RES_PATH)/$(RES_PRJ_PATH)/%.DAT
+
+#
+# under $/$(RES_PATH)/$(RES_SHARED_PATH)/A or $/$(RES_PATH)/$(RES_SHARED_PATH)/B
+#
+.PHONY: RES_SHARED RES_SHARED_BIN RES_SHARED_DAT8 RES_SHARED_DAT16 RES_SHARED_DAT32
+RES_SHARED: RES_SHARED_BIN RES_SHARED_DAT8 RES_SHARED_DAT16 RES_SHARED_DAT32
+RES_SHARED_BIN: $(SHARED_BIN_DOWN)
+RES_SHARED_DAT8: $(SHARED_DAT8_DOWN)
+RES_SHARED_DAT16: $(SHARED_DAT16_DOWN)
+RES_SHARED_DAT32: $(SHARED_DAT32_DOWN)
+$(SHARED_BIN_DOWN): $(DOWN_PATH)/%: $(RES_PATH)/$(RES_SHARED_PATH)/%
+$(SHARED_DAT8_DOWN): $(DOWN_PATH)/%.BIN: $(RES_PATH)/$(RES_SHARED_PATH)/%.DAT
+$(SHARED_DAT16_DOWN): $(DOWN_PATH)/%.BIN: $(RES_PATH)/$(RES_SHARED_PATH)/%.DAT
+$(SHARED_DAT32_DOWN): $(DOWN_PATH)/%.BIN: $(RES_PATH)/$(RES_SHARED_PATH)/%.DAT
+
+#
+# under $/$(RES_PATH)/$(RES_SHARED2_PATH)/A or $/$(RES_PATH)/$(RES_SHARED2_PATH)/B
+#
+.PHONY: RES_SHARED2 RES_SHARED2_BIN RES_SHARED2_DAT8 RES_SHARED2_DAT16 RES_SHARED2_DAT32
+RES_SHARED2: RES_SHARED2_BIN RES_SHARED2_DAT8 RES_SHARED2_DAT16 RES_SHARED2_DAT32
+RES_SHARED2_BIN: $(SHARED2_BIN_DOWN)
+RES_SHARED2_DAT8: $(SHARED2_DAT8_DOWN)
+RES_SHARED2_DAT16: $(SHARED2_DAT16_DOWN)
+RES_SHARED2_DAT32: $(SHARED2_DAT32_DOWN)
+$(SHARED2_BIN_DOWN): $(DOWN_PATH)/%: $(RES_PATH)/$(RES_SHARED2_PATH)/%
+$(SHARED2_DAT8_DOWN): $(DOWN_PATH)/%.BIN: $(RES_PATH)/$(RES_SHARED2_PATH)/%.DAT
+$(SHARED2_DAT16_DOWN): $(DOWN_PATH)/%.BIN: $(RES_PATH)/$(RES_SHARED2_PATH)/%.DAT
+$(SHARED2_DAT32_DOWN): $(DOWN_PATH)/%.BIN: $(RES_PATH)/$(RES_SHARED2_PATH)/%.DAT
+
+#
+# under $/$(RES_PATH)/$(RES_SHARED3_PATH)/A or $/$(RES_PATH)/$(RES_SHARED3_PATH)/B
+#
+.PHONY: RES_SHARED3 RES_SHARED3_BIN RES_SHARED3_DAT8 RES_SHARED3_DAT16 RES_SHARED3_DAT32
+RES_SHARED3: RES_SHARED3_BIN RES_SHARED3_DAT8 RES_SHARED3_DAT16 RES_SHARED3_DAT32
+RES_SHARED3_BIN: $(SHARED3_BIN_DOWN)
+RES_SHARED3_DAT8: $(SHARED3_DAT8_DOWN)
+RES_SHARED3_DAT16: $(SHARED3_DAT16_DOWN)
+RES_SHARED3_DAT32: $(SHARED3_DAT32_DOWN)
+$(SHARED3_BIN_DOWN): $(DOWN_PATH)/%: $(RES_PATH)/$(RES_SHARED3_PATH)/%
+$(SHARED3_DAT8_DOWN): $(DOWN_PATH)/%.BIN: $(RES_PATH)/$(RES_SHARED3_PATH)/%.DAT
+$(SHARED3_DAT16_DOWN): $(DOWN_PATH)/%.BIN: $(RES_PATH)/$(RES_SHARED3_PATH)/%.DAT
+$(SHARED3_DAT32_DOWN): $(DOWN_PATH)/%.BIN: $(RES_PATH)/$(RES_SHARED3_PATH)/%.DAT
+
+# fic rules
+RES_FIC: $(DOWN_FIC)
+$(DOWN_FIC): $(FIC_ALL_BIN)
+	@$(MKDIR) $(dir $@)
+ifneq (,$(FIC_ALL_BIN))
+	$(TOOL_PATH)/fic.sh $@ $^
+	@$(RM) $^
+else
+	@$(RM) $@
+	@touch $@
+endif
+
+# fif rules
+RES_FIF: $(ALL_FIF)
+
+.PHONY: RES_FT
+RES_FT: $(FT_DOWN) $(FCWS_DOWN)
+
+ifneq (,$(FT_BIN))
+$(FT_DOWN): $(FT_BIN)
+endif
+ifneq (,$(FCWS_BIN))
+$(FCWS_DOWN): $(FCWS_BIN)
+endif
+
+# AFE CMD files merged into AFECMD.BIN
+$(AFE_FIF): $(AFE_BIN_DOWN)
+
+$(WAV_FIF): $(WAV_BIN_DOWN)
+$(IQ_FIF): $(IQ_BIN_DOWN)
+$(DISP_FIF): $(DISP_BIN_DOWN)
+$(COLD_FIF): $(COLD_BIN_DOWN)
+$(APPUI_FIF): $(APPUI_BIN_DOWN)
+$(APPIQ_FIF): $(APPIQ_BIN_DOWN)
+$(LENSIQ_FIF): $(LENSIQ_BIN_DOWN)
+$(CIQ_FIF): $(CIQ_BIN_DOWN)
+
+ifdef APPUI_FIF_BIN
+$(RO_DOWN_PATH)/UIDATA.BIN: $(APPUI_FIF)
+
+ALL_BIN += $(RO_DOWN_PATH)/UIDATA.BIN
+ALL_DOWN += $(RO_DOWN_PATH)/UIDATA.BIN
+endif
+
+
+SENSOR_SYNC: $(SENSOR_RES)
+	@$(SENSOR_VER_SET) $^
+	
+#---------------------------------------------------------------------------
+# Implicit rules
+#---------------------------------------------------------------------------
+# project dependent config and header files
+.PHONY: CFG_FILES $(CFG_DEFS) $(CFG_HEADERS) $(BUILD_CFG_FILES)
+CFG_FILES: $(CFG_DEFS) $(CFG_HEADERS)
+$(CFG_DEFS) $(CFG_HEADERS): %: $(DEST_DIR)/%
+$(BUILD_CFG_FILES): $(DEST_DIR)/%:
+	@if [ -f "$@" ]; then \
+	  if diff -duN $@.base $(HOST_ROOT)/$*.tmpl > $@.patch; then \
+	    $(RM) $@.patch; \
+	  else \
+	    $(ECHO) "$@: new version '$*.tmpl' differs, merging.."; \
+	    if patch --verbose -u -i $@.patch -r $@.rej -o $@.merge $@; then \
+	      $(RM) $@.patch; \
+	      $(CP) $(HOST_ROOT)/$*.tmpl $@.base && \
+	      $(MV) $@.merge $@; \
+	      if [ $$? != 0 ] ; then \
+	        exit 1 ; \
+	      fi \
+	    else \
+	      $(ECHO) "$@: error: new '$*.tmpl' conflicts"; \
+	      $(ECHO) "$@: error: see '$@.{merge,rej}'"; \
+	    fi \
+	  fi \
+	else \
+	  $(ECHO) "$@: './config.sh', 'make PRJ=xxx' not run, use default"; \
+	  $(MKDIR) $(dir $@) && \
+		$(CP) -u $(HOST_ROOT)/$*.tmpl $@.base && \
+		$(CP) $@.base $@; \
+	  if [ $$? != 0 ] ; then \
+	    exit 1 ; \
+	  fi \
+	fi
+
+
+$(ALL_BIN):
+#	$(ECHO) " $(wildcard  $(RES_PATH)/$(RES_PRJ_PATH)/$(CATHY_BINPATH)/*.BIN)"
+	@$(MKDIR) $(dir $@)
+	$(CP) -u $< $@
+
+$(ALL_DAT8):
+	@$(MKDIR) $(dir $@)
+	@$(TOOL_PATH)/t2b.exe -b 1 $< $@
+
+$(ALL_DAT16):
+	@$(MKDIR) $(dir $@)
+	@$(TOOL_PATH)/t2b.exe -b 2 $< $@
+
+$(ALL_DAT32):
+	@$(MKDIR) $(dir $@)
+	@$(TOOL_PATH)/t2b.exe -b 4 $< $@
+
+$(ALL_FIF):
+	$(TOOL_PATH)/fif.exe -c $@ $^
+	@$(RM) $^
+
+$(AFE_CMD_DAT8):
+	@$(MKDIR) $(dir $@)
+	@$(TOOL_PATH)/t2b.exe -b 1 $< $@
+	@$(TOOL_PATH)/addhdr.exe $@ 5110 1
+
+
+.PHONY: clean
+clean: clean_resource
+
+.PHONY: clean_resource
+clean_resource:
+ifneq (,$(ALL_DOWN))
+	$(RM) $(ALL_DOWN)
+endif
+ifneq (,$(ALL_FIF))
+	$(RM) $(ALL_FIF)
+endif
+	$(RM) $(DOWN_PATH)/FIC.BIN

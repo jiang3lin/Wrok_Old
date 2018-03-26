@@ -1,0 +1,64 @@
+#/**************************************************************************
+# *                                                                        *
+# *       Copyright (c) 2002-2009 by Sunplus Technology Co., Ltd.          *
+# *                                                                        *
+# *  This software is copyrighted by and is the property of Sunplus        *
+# *  Technology Co., Ltd. All rights are reserved by Sunplus Technology    *
+# *  Co., Ltd. This software may only be used in accordance with the       *
+# *  corresponding license agreement. Any unauthorized use, duplication,   *
+# *  distribution, or disclosure of this software is expressly forbidden.  *
+# *                                                                        *
+# *  This Copyright notice MUST not be removed or modified without prior   *
+# *  written consent of Sunplus Technology Co., Ltd.                       *
+# *                                                                        *
+# *  Sunplus Technology Co., Ltd. reserves the right to modify this        *
+# *  software without notice.                                              *
+# *                                                                        *
+# *  Sunplus Technology Co., Ltd.                                          *
+# *  19, Innovation First Road, Science-Based Industrial Park,             *
+# *  Hsin-Chu, Taiwan, R.O.C.                                              *
+# *                                                                        *
+# **************************************************************************/
+HOST_ROOT := ../../../..
+include $(HOST_ROOT)/host.def
+TOOL_PATH := $(HOST_ROOT)/../tool
+IOCONV := $(TOOL_PATH)/ioconv.exe
+
+GPIO_SRC := $(HW_NAME)_$(HW_VER).io
+GOAL := app_Gpio_$(HW_NAME)_$(HW_VER).h
+
+GPIO_TMP := ioconv.tmp
+
+#---------------------------------------------------------------------------
+# Intermediate objects
+#---------------------------------------------------------------------------
+
+#---------------------------------------------------------------------------
+# Explicit ruls
+#---------------------------------------------------------------------------
+.PHONY: all
+all: $(HOST_ROOT)/include/$(GOAL)
+
+$(HOST_ROOT)/include/$(GOAL): $(GOAL)
+	@if ! $(IOCONV) -ver ; then \
+		$(IOCONV) $(GPIO_SRC) -o=$(GPIO_TMP) ; \
+		if ! diff -a -q -N $< $(GPIO_TMP) ; then \
+			echo rebuild $< ; \
+			cp -f $(GPIO_TMP) $< ; \
+		fi ; \
+		rm $(GPIO_TMP) ; \
+	fi
+	@cp -f $< $@
+	$(MSG_GOAL_OK)
+
+$(GOAL): $(HW_NAME)_$(HW_VER).io
+	$(IOCONV) $^
+
+# cancelling implicit rules to build source files
+%.def: ;
+%.io: ;
+
+.PHONY: clean
+clean:
+	$(MSG_SPLIT_LINE)
+	@rm -f $(GOAL) $(HOST_ROOT)/include/$(GOAL)

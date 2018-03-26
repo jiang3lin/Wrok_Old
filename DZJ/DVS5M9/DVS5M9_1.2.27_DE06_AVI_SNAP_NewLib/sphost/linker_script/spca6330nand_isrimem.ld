@@ -1,0 +1,144 @@
+OUTPUT_FORMAT("elf32-littlemips", "elf32-bigmips","elf32-littlemips")
+OUTPUT_ARCH(mips)
+ENTRY(start)
+PROVIDE(__stack = 0xd0002000);
+
+SECTIONS
+{
+	.rom 0x80000000 : {
+		_rom = . ;
+		_except = . ;
+		*(.reset)
+		. = _except + 0x80;
+		*(.exceptRam)
+		. = _except + 0x100;
+		*(.bootParam)
+		. = _except + 0x180;
+		*(.exceptRom)
+		_eexcept = . ;
+		_rom_end = . ;
+		. = ALIGN(16);
+		*(.signature)
+		. = ALIGN(16);
+		_bkdoor_block_limit = . ;
+		*os_wrap_irq.o(.text)
+		*tx_tic.o(.text)
+		*tx_except.o(.text)
+		*(.boot)
+		. = ALIGN(16);
+		_erom = .;
+	}
+
+	.text . : {
+		_text = . ;
+		*(.text)
+		_etext = . ;
+		PROVIDE (etext = .);
+		. = ALIGN(16);
+	}
+
+	.jcr . : {
+		*(.jcr)
+		. = ALIGN(16);
+	}
+
+	.ram_program . : {
+		*(.ram_program)
+		. = ALIGN(16);
+	}
+
+	.cri_sect . : {
+		/*
+		. = ALIGN(1024);
+		. = . + 512;
+		*/
+		*(.cri_sect)
+		. = ALIGN(16);
+	}
+
+	.eh_frame . : {
+		*(.eh_frame)
+		. = ALIGN(16);
+	}
+
+	.init . : {
+		*(.init)
+		. = ALIGN(16);
+	}
+
+	.fini . : {
+		*(.fini)
+		. = ALIGN(16);
+	}
+
+	.ctors . : {
+		*(.ctors)
+		. = ALIGN(16);
+	}
+	.dtors . : {
+		*(.dtors)
+		. = ALIGN(16);
+	}
+	_etext = . ;
+	etext = . ;
+
+	.rodata . : {
+		_rodata = . ;
+		_dataStart = . ;
+		_data = . ;  /*code sentry failed: vfsOpen writes .rodata..*/
+		/* FIC to support sif1dma, must go before .rodata */
+		_fic_start = . ; . += 16 ;
+		. = ALIGN(16);
+		*(.rodata.sif1dma) /* for sensor serial DMA */
+		*(.data.sif1dma.var) /* for sensor serial DMA */
+		_fic_load_end = . ;
+		. = ALIGN(16);
+		*(.rodata)
+		*(.rodata.*) /* For GCC 3.4.x */
+		. = ALIGN(16);
+		_erodata = . ;
+	}
+
+	.data . : {
+		/*_data = . ;  *code sentry failed: vfsOpen writes .rodata..*/
+		*(.data)
+		_edata = . ;
+		. = ALIGN(16);
+	}
+
+	_gp = . + 0x8000 ;
+	__global = _gp ;
+
+	.sdata . : {
+		*(.sdata)
+		. = ALIGN(16);
+	}
+	.sbss . : {
+		_bssStart = . ;
+		*(.scommon .sbss)
+		. = ALIGN(16);
+	}
+	.bss . : {
+		*(.bss COMMON comm)
+		. = ALIGN(16);
+		_bssEnd = . ;
+	}
+	_bottomOfHeap = . ;
+/*	.rel.dyn . : { *(.rel.dyn) } = 0*/
+
+	.reginfo . : {
+		*(.reginfo)
+	}
+	.mdebug . : {
+		*(.mdebug)
+	}
+	.mdebug.abi32 . : {
+		*(.mdebug.abi32)
+	}
+	.pdr . : {
+		*(.pdr)
+	}
+	.stab . : {
+		*(.stab)
+	}
+}

@@ -1,0 +1,7 @@
+---- appLcmBrightness Matches (6 in 4 files) ----
+App_background_timer.c (sphost\customization\hostfw\service\misc):			appLcmBrightness(30);
+App_osd_api_lcm.c (sphost\customization\hostfw\service\osd):void appLcmBrightness(UINT32 duty)
+App_osd_api_lcm.h (sphost\customization\hostfw\include):extern void appLcmBrightness(UINT32 duty);
+App_scdv_global.c (sphost\customization\hostfw\ui\sys):			appLcmBrightness(100);
+App_scdv_global.c (sphost\customization\hostfw\ui\sys):			appLcmBrightness(80);
+App_scdv_global.c (sphost\customization\hostfw\ui\sys):			appLcmBrightness(60);

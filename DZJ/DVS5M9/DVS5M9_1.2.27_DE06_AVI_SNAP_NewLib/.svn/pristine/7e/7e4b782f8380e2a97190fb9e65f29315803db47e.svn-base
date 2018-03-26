@@ -1,0 +1,89 @@
+/**************************************************************************
+ *
+ *        Copyright (c) 2006-2008 by Sunplus mMedia Inc., Ltd.
+ *
+ *  This software is copyrighted by and is the property of Sunplus
+ *  mMedia Inc., Ltd. All rights are reserved by Sunplus mMedia
+ *  Inc., Ltd. This software may only be used in accordance with the
+ *  corresponding license agreement. Any unauthorized use, duplication,
+ *  distribution, or disclosure of this software is expressly forbidden.
+ *
+ *  This Copyright notice MUST not be removed or modified without prior
+ *  written consent of Sunplus mMedia Inc., Ltd.
+ *
+ *  Sunplus mMedia Inc., Ltd. reserves the right to modify this
+ *  software without notice.
+ *
+ *  Sunplus mMedia Inc., Ltd.
+ *  19-1, Innovation First Road, Science-Based Industrial Park,
+ *  Hsin-Chu, Taiwan, R.O.C. 
+ *
+ **************************************************************************/
+#ifndef _APP_SYS_DEF_H_
+#define _APP_SYS_DEF_H_
+
+#include "customization/solution_def.h"
+
+////////////////////////////////////////////////////////////////////////////
+///////////////////////// for DVS5M2 Customs Function /////////////////////////
+//#define USE_PURE_CODE	//will enter APP_STATE_NULL for test
+#define USE_FULL_CODE
+
+//#define USE_DVS5M2_HW		//No WIFI and RF, Need Modify iCatchTek.xls (Delete RF Option and WIFI Password Option)
+#define USE_DVS5M9_HW
+
+#define USE_UART_DEBUG
+//#define USE_USB_DEBUG
+//#define USE_AUTO_WIFI_ON
+
+///////////////////////// for DVS5M2 Customs Function /////////////////////////
+////////////////////////////////////////////////////////////////////////////
+
+#if MP_RELEASE
+#define EZ_DBG_EN	0
+#define SP5K_UART_SWITCH 1
+#else
+/* disable check power key,battery,APO...,  */
+#define EZ_DBG_EN	0
+#define SP5K_UART_SWITCH 0 
+#endif
+
+/*#define NO_VIDEO_PREVIEW_MODE */
+#if EZ_DBG_EN || EZ_DBG_HW
+#define BATTERY_CHECK_DISABLE	1
+#define AUTO_POWER_OFF_DISABLE	1
+#define USB_FORCE_TO_BOOT		1
+#else
+#define AUTO_POWER_OFF_DISABLE	0
+#if defined(HW_EVB_6330)
+#define BATTERY_CHECK_DISABLE	1	
+#else
+#define BATTERY_CHECK_DISABLE	0
+#endif
+#ifdef USE_USB_DEBUG
+#define USB_FORCE_TO_BOOT		1
+#else
+#define USB_FORCE_TO_BOOT		0
+#endif
+#endif
+
+#if EZ_DBG_HW
+#define MTBF_DBG_EN	1
+#else
+#define MTBF_DBG_EN 	0 
+#endif
+
+#define DISK_NAME   "RemovableDisk"
+#define APP_HDR
+
+#if SPCA6330
+#define PANORAMA_MODE 1	/*please enable/disable PANORAMA_SUPPORT in app_init.h too*/
+#else
+#define PANORAMA_MODE 0
+#endif
+
+#endif /*_APP_SYS_DEF_H_*/
+
+/*add by JQ*/
+#define CAP_VID_PV  0   	  /*cap_vid_preview*/
+#define VIEW_YUV_CAP  0   /*video view yuv capture*/
